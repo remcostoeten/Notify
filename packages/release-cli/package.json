@@ -1,0 +1,41 @@
+{
+  "name": "@remcostoeten/release-cli",
+  "version": "1.0.0",
+  "description": "AI-powered release automation CLI with LLM changelog generation",
+  "bin": {
+    "release": "./dist/cli.js",
+    "release-cli": "./dist/cli.js"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": ["dist", "README.md", "LICENSE"],
+  "scripts": {
+    "build": "tsup src/cli.ts src/index.ts --format cjs,esm --dts --clean",
+    "dev": "tsup src/cli.ts src/index.ts --format cjs,esm --dts --watch",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": ["cli", "release", "changelog", "npm", "publish", "semver", "ai", "llm", "claude", "gpt", "automation"],
+  "author": "Remco Stoeten",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0",
+    "enquirer": "^2.4.1",
+    "execa": "^9.5.2",
+    "ora": "^8.1.1",
+    "semver": "^7.6.3",
+    "simple-git": "^3.27.0",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/semver": "^7.5.8",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

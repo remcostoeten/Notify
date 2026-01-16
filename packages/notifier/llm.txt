@@ -1,0 +1,38 @@
+# @remcostoeten/notifier - LLM Instructions
+
+This is a chainable notification system for React applications. When helping users implement this library, follow these guidelines:
+
+## Core Concepts
+
+1. **Single Component Setup**: Place `<Notifier />` once in your app layout/root
+2. **Call notify() Anywhere**: Import and use `notify()` from any component
+3. **Chainable API**: Methods return instances for chaining: `notify.loading("...").success("...")`
+4. **Promise Integration**: Use `notify.promise()` for async operations
+
+## Installation Pattern
+
+```tsx
+// 1. Install
+npm install @remcostoeten/notifier framer-motion
+
+// 2. Add to layout (Next.js example)
+import { Notifier } from '@remcostoeten/notifier'
+
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        {children}
+        <Notifier />
+      </body>
+    </html>
+  )
+}
+
+// 3. Use anywhere
+import { notify } from '@remcostoeten/notifier'
+
+function MyComponent() {
+  const handleClick = () => notify('Hello!')
+  return <button onClick={handleClick}>Notify</button>
+}

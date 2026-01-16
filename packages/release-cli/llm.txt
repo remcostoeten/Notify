@@ -1,0 +1,28 @@
+# @remcostoeten/release-cli
+
+AI-powered release automation CLI with LLM-generated changelogs.
+
+## Purpose
+
+This CLI tool automates the complete software release workflow:
+1. Determines version bump (semver)
+2. Fetches git commits since last tag
+3. Uses AI (Claude, GPT, Gemini, etc.) to generate structured changelog
+4. Updates package.json version
+5. Updates CHANGELOG.md
+6. Builds the package
+7. Creates git commit and tag
+8. Pushes to remote
+9. Publishes to npm
+
+## Architecture
+
+The CLI is structured as a command-based tool using Commander.js with the following components:
+
+### Core Commands
+- `release run` - Full release pipeline
+- `release changelog` - Generate changelog only
+- `release status` - Show current release status
+- `release init` - Interactive setup wizard
+
+### Module Structure

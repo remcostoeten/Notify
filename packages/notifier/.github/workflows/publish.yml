@@ -1,0 +1,41 @@
+name: Publish to npm
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+      
+      - name: Install dependencies
+        working-directory: packages/notifier
+        run: npm ci
+      
+      - name: Run type check
+        working-directory: packages/notifier
+        run: npm run typecheck
+
+      - name: Run tests
+        working-directory: packages/notifier
+        run: npm run test
+      
+      - name: Build
+        working-directory: packages/notifier
+        run: npm run build
+      
+      - name: Publish to npm
+        working-directory: packages/notifier
+        run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
