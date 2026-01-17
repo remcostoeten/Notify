@@ -48,3 +48,4 @@ coverage
 
 # release cli
 .release-cli.json
+apps/web/.next/*
