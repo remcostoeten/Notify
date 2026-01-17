@@ -1,70 +1,89 @@
 {
-  "name": "@remcostoeten/notifier",
-  "version": "1.0.0",
-  "description": "Lightweight chainable notification system for React with smooth animations, confirmations, and promise tracking",
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
-  "sideEffects": false,
-  "exports": {
-    ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+    "name": "@remcostoeten/notifier",
+    "version": "1.0.0",
+    "description": "Lightweight chainable notification system for React with smooth animations, confirmations, and promise tracking",
+    "main": "./dist/index.js",
+    "module": "./dist/index.mjs",
+    "types": "./dist/index.d.ts",
+    "sideEffects": false,
+    "exports": {
+        ".": {
+            "import": "./dist/index.mjs",
+            "require": "./dist/index.js",
+            "types": "./dist/index.d.ts"
+        },
+        "./styles": "./dist/styles/spinner.css",
+        "./compat/sonner": {
+            "import": "./dist/compat/sonner/index.mjs",
+            "require": "./dist/compat/sonner/index.js",
+            "types": "./dist/compat/sonner/index.d.ts"
+        },
+        "./compat/react-hot-toast": {
+            "import": "./dist/compat/react-hot-toast/index.mjs",
+            "require": "./dist/compat/react-hot-toast/index.js",
+            "types": "./dist/compat/react-hot-toast/index.d.ts"
+        },
+        "./compat/shadcn": {
+            "import": "./dist/compat/shadcn/index.mjs",
+            "require": "./dist/compat/shadcn/index.js",
+            "types": "./dist/compat/shadcn/index.d.ts"
+        }
     },
-    "./styles": "./dist/styles/spinner.css"
-  },
-  "files": ["dist", "README.md", "LICENSE"],
-  "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "prepublishOnly": "bun run test && bun run build"
-  },
-  "keywords": [
-    "react",
-    "notification",
-    "toast",
-    "alert",
-    "notifier",
-    "sonner",
-    "chainable",
-    "promise",
-    "confirm",
-    "typescript",
-    "framer-motion",
-    "animation"
-  ],
-  "author": "Remco Stoeten",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/remcostoeten/Notify"
-  },
-  "bugs": {
-    "url": "https://github.com/remcostoeten/notifier/issues"
-  },
-  "homepage": "https://github.com/remcostoeten/notifier#readme",
-  "peerDependencies": {
-    "react": ">=18.0.0",
-    "react-dom": ">=18.0.0",
-    "framer-motion": ">=11.0.0"
-  },
-  "devDependencies": {
-    "@testing-library/react": "^16.0.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "@vitejs/plugin-react": "^4.0.0",
-    "@vitest/coverage-v8": "^2.0.0",
-    "framer-motion": "^12.0.0",
-    "jsdom": "^25.0.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "tsup": "^8.0.0",
-    "typescript": "^5.0.0",
-    "vitest": "^2.0.0"
-  }
+    "files": [
+        "dist",
+        "README.md",
+        "LICENSE"
+    ],
+    "scripts": {
+        "build": "tsup",
+        "dev": "tsup --watch",
+        "typecheck": "tsc --noEmit",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "test:coverage": "vitest run --coverage",
+        "prepublishOnly": "bun run test && bun run build"
+    },
+    "keywords": [
+        "react",
+        "notification",
+        "toast",
+        "alert",
+        "notifier",
+        "sonner",
+        "chainable",
+        "promise",
+        "confirm",
+        "typescript",
+        "framer-motion",
+        "animation"
+    ],
+    "author": "Remco Stoeten",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/remcostoeten/Notify"
+    },
+    "bugs": {
+        "url": "https://github.com/remcostoeten/notifier/issues"
+    },
+    "homepage": "https://github.com/remcostoeten/notifier#readme",
+    "peerDependencies": {
+        "react": ">=18.0.0",
+        "react-dom": ">=18.0.0",
+        "framer-motion": ">=11.0.0"
+    },
+    "devDependencies": {
+        "@testing-library/react": "^16.0.0",
+        "@types/react": "^19.0.0",
+        "@types/react-dom": "^19.0.0",
+        "@vitejs/plugin-react": "^4.0.0",
+        "@vitest/coverage-v8": "^2.0.0",
+        "framer-motion": "^12.0.0",
+        "jsdom": "^25.0.0",
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0",
+        "tsup": "^8.0.0",
+        "typescript": "^5.0.0",
+        "vitest": "^2.0.0"
+    }
 }
