@@ -9,7 +9,7 @@
  * @module @remcostoeten/notifier
  */
 
-import type React from "react"
+import type React from 'react'
 
 /**
  * Notification state representing the current visual and behavioral state of a notification.
@@ -26,7 +26,7 @@ import type React from "react"
  * const state: NotifyState = "loading"
  * ```
  */
-export type NotifyState = "idle" | "loading" | "success" | "error" | "info" | "confirm"
+export type NotifyState = 'idle' | 'loading' | 'success' | 'error' | 'info' | 'confirm'
 
 /**
  * Screen position where notifications appear.
@@ -37,14 +37,14 @@ export type NotifyState = "idle" | "loading" | "success" | "error" | "info" | "c
  * ```
  */
 export type NotifyPositionType =
-  | "top"
-  | "top-left"
-  | "top-center"
-  | "top-right"
-  | "bottom"
-  | "bottom-left"
-  | "bottom-center"
-  | "bottom-right"
+    | 'top'
+    | 'top-left'
+    | 'top-center'
+    | 'top-right'
+    | 'bottom'
+    | 'bottom-left'
+    | 'bottom-center'
+    | 'bottom-right'
 
 /**
  * Reason for notification dismissal, passed to the `onDismiss` callback.
@@ -66,7 +66,7 @@ export type NotifyPositionType =
  * })
  * ```
  */
-export type DismissReasonType = "timeout" | "swipe" | "click" | "manual" | "replaced"
+export type DismissReasonType = 'timeout' | 'swipe' | 'click' | 'manual' | 'replaced'
 
 /**
  * Border radius style variant for notification containers.
@@ -82,7 +82,7 @@ export type DismissReasonType = "timeout" | "swipe" | "click" | "manual" | "repl
  * <Notifier radius="rounded" />
  * ```
  */
-export type RadiusVariant = "pill" | "rounded" | "squared"
+export type RadiusVariant = 'pill' | 'rounded' | 'squared'
 
 /**
  * Color mode for notification theming.
@@ -98,7 +98,7 @@ export type RadiusVariant = "pill" | "rounded" | "squared"
  * <Notifier colorMode="auto" />
  * ```
  */
-export type ColorMode = "dark" | "light" | "auto"
+export type ColorMode = 'dark' | 'light' | 'auto'
 
 /**
  * Icon color mode determining how notification icons are styled.
@@ -114,7 +114,7 @@ export type ColorMode = "dark" | "light" | "auto"
  * <Notifier iconColor="neutral" />
  * ```
  */
-export type IconColorMode = "colored" | "neutral" | "hidden"
+export type IconColorMode = 'colored' | 'neutral' | 'hidden'
 
 /**
  * Border configuration for notification containers.
@@ -132,36 +132,35 @@ export type IconColorMode = "colored" | "neutral" | "hidden"
  * ```
  */
 export interface BorderConfig {
-  /**
-   * Whether to show a border around notifications.
-   * @default false
-   */
-  enabled?: boolean
+    /**
+     * Whether to show a border around notifications.
+     * @default false
+     */
+    enabled?: boolean
 
-  /**
-   * Border width in pixels.
-   * @default 1
-   */
-  width?: number
+    /**
+     * Border width in pixels.
+     * @default 1
+     */
+    width?: number
 
-  /**
-   * Border color as a CSS color value.
-   * When not specified, uses theme-appropriate default.
-   */
-  color?: string
+    /**
+     * Border color as a CSS color value.
+     * When not specified, uses theme-appropriate default.
+     */
+    color?: string
 
-  /**
-   * Border style.
-   * @default "solid"
-   */
-  style?: "solid" | "dashed" | "dotted"
-  style?: "solid" | "dashed" | "dotted"
+    /**
+     * Border style.
+     * @default "solid"
+     */
+    style?: 'solid' | 'dashed' | 'dotted'
 }
 
 /**
  * Color palette configuration for custom theming.
  * Overrides default values from the selected colorMode.
- * 
+ *
  * @example
  * ```tsx
  * <Notifier
@@ -174,14 +173,14 @@ export interface BorderConfig {
  * ```
  */
 export interface ThemePalette {
-  background?: string
-  text?: string
-  textMuted?: string
-  textSubtle?: string
-  border?: string
-  borderHighlight?: string
-  buttonHover?: string
-  shadow?: string
+    background?: string
+    text?: string
+    textMuted?: string
+    textSubtle?: string
+    border?: string
+    borderHighlight?: string
+    buttonHover?: string
+    shadow?: string
 }
 
 /**
@@ -199,26 +198,26 @@ export interface ThemePalette {
  * ```
  */
 export interface IconProps {
-  /**
-   * Current notification state for determining which icon to render.
-   */
-  state: NotifyState
+    /**
+     * Current notification state for determining which icon to render.
+     */
+    state: NotifyState
 
-  /**
-   * Current icon color mode configuration.
-   */
-  colorMode: IconColorMode
+    /**
+     * Current icon color mode configuration.
+     */
+    colorMode: IconColorMode
 
-  /**
-   * Icon size in pixels.
-   * @default 18
-   */
-  size: number
+    /**
+     * Icon size in pixels.
+     * @default 18
+     */
+    size: number
 
-  /**
-   * Suggested icon color based on state and color mode.
-   */
-  color?: string
+    /**
+     * Suggested icon color based on state and color mode.
+     */
+    color?: string
 }
 
 /**
@@ -237,40 +236,40 @@ export interface IconProps {
  * ```
  */
 export interface IconConfig {
-  /**
-   * Custom icon for loading state.
-   * Note: The loading spinner is always shown; this icon appears alongside it.
-   */
-  loading?: React.ReactNode
+    /**
+     * Custom icon for loading state.
+     * Note: The loading spinner is always shown; this icon appears alongside it.
+     */
+    loading?: React.ReactNode
 
-  /**
-   * Custom icon for success state.
-   */
-  success?: React.ReactNode
+    /**
+     * Custom icon for success state.
+     */
+    success?: React.ReactNode
 
-  /**
-   * Custom icon for error state.
-   */
-  error?: React.ReactNode
+    /**
+     * Custom icon for error state.
+     */
+    error?: React.ReactNode
 
-  /**
-   * Custom icon for info state.
-   */
-  info?: React.ReactNode
+    /**
+     * Custom icon for info state.
+     */
+    info?: React.ReactNode
 
-  /**
-   * Custom icon for confirm state.
-   */
-  confirm?: React.ReactNode
+    /**
+     * Custom icon for confirm state.
+     */
+    confirm?: React.ReactNode
 
-  /**
-   * Custom render function for complete control over icon rendering.
-   * When provided, overrides individual icon properties.
-   *
-   * @param props - Icon rendering context
-   * @returns React node to render as the icon
-   */
-  render?: (props: IconProps) => React.ReactNode
+    /**
+     * Custom render function for complete control over icon rendering.
+     * When provided, overrides individual icon properties.
+     *
+     * @param props - Icon rendering context
+     * @returns React node to render as the icon
+     */
+    render?: (props: IconProps) => React.ReactNode
 }
 
 /**
@@ -351,16 +350,16 @@ export type OnUpdateCallback = (id: string, newState: NotifyState, prevState: No
  * ```
  */
 export interface NotifyAction {
-  /**
-   * Button label text displayed to the user.
-   */
-  label: string
+    /**
+     * Button label text displayed to the user.
+     */
+    label: string
 
-  /**
-   * Click handler invoked when the user clicks the action button.
-   * The notification is NOT automatically dismissed; call `.dismiss()` if needed.
-   */
-  onClick: () => void
+    /**
+     * Click handler invoked when the user clicks the action button.
+     * The notification is NOT automatically dismissed; call `.dismiss()` if needed.
+     */
+    onClick: () => void
 }
 
 /**
@@ -375,17 +374,17 @@ export interface NotifyAction {
  * ```
  */
 export interface ConfirmOptions {
-  /**
-   * Label for the confirm/accept button.
-   * @default "Confirm"
-   */
-  confirmLabel?: string
+    /**
+     * Label for the confirm/accept button.
+     * @default "Confirm"
+     */
+    confirmLabel?: string
 
-  /**
-   * Label for the cancel/reject button.
-   * @default "Cancel"
-   */
-  cancelLabel?: string
+    /**
+     * Label for the cancel/reject button.
+     * @default "Cancel"
+     */
+    cancelLabel?: string
 }
 
 /**
@@ -400,25 +399,25 @@ export interface ConfirmOptions {
  * })
  * ```
  */
-export interface PromiseOptions<TError = unknown> {
-  /**
-   * Message displayed during the loading/pending state.
-   * @default "Loading..."
-   */
-  loading?: string
+export interface PromiseOptions<TData = unknown, TError = unknown> {
+    /**
+     * Message displayed during the loading/pending state.
+     * @default "Loading..."
+     */
+    loading?: string
 
-  /**
-   * Message displayed when the promise resolves successfully.
-   * @default "Success"
-   */
-  success?: string
+    /**
+     * Message displayed when the promise resolves successfully.
+     * @default "Success"
+     */
+    success?: string | ((data: TData) => string)
 
-  /**
-   * Message displayed when the promise rejects.
-   * Can be a static string or a function that extracts a message from the error.
-   * @default "Error"
-   */
-  error?: string | ((error: TError) => string)
+    /**
+     * Message displayed when the promise rejects.
+     * Can be a static string or a function that extracts a message from the error.
+     * @default "Error"
+     */
+    error?: string | ((error: TError) => string)
 }
 
 /**
@@ -439,100 +438,100 @@ export interface PromiseOptions<TError = unknown> {
  * ```
  */
 export interface NotifyOptions {
-  /**
-   * Message text to display in the notification.
-   */
-  message?: string
+    /**
+     * Message text to display in the notification.
+     */
+    message?: string
 
-  /**
-   * Override position for this specific notification.
-   * When not specified, uses the position from `<Notifier />` props.
-   */
-  position?: NotifyPositionType
+    /**
+     * Override position for this specific notification.
+     * When not specified, uses the position from `<Notifier />` props.
+     */
+    position?: NotifyPositionType
 
-  /**
-   * Auto-dismiss duration in milliseconds.
-   * Set to `0` for persistent notifications that don't auto-dismiss.
-   * @default 3000
-   */
-  duration?: number
+    /**
+     * Auto-dismiss duration in milliseconds.
+     * Set to `0` for persistent notifications that don't auto-dismiss.
+     * @default 3000
+     */
+    duration?: number
 
-  /**
-   * Whether to show a dismiss (X) button on the notification.
-   * @default false
-   */
-  dismissible?: boolean
+    /**
+     * Whether to show a dismiss (X) button on the notification.
+     * @default false
+     */
+    dismissible?: boolean
 
-  /**
-   * Pause the auto-dismiss timer when user hovers over the notification.
-   * Timer resumes when mouse leaves.
-   * @default true
-   */
-  pauseOnHover?: boolean
+    /**
+     * Pause the auto-dismiss timer when user hovers over the notification.
+     * Timer resumes when mouse leaves.
+     * @default true
+     */
+    pauseOnHover?: boolean
 
-  /**
-   * Allow swipe gestures to dismiss the notification.
-   * Swipe direction is based on notification position.
-   * @default true
-   */
-  swipeToDismiss?: boolean
+    /**
+     * Allow swipe gestures to dismiss the notification.
+     * Swipe direction is based on notification position.
+     * @default true
+     */
+    swipeToDismiss?: boolean
 
-  /**
-   * Dismiss the notification when clicking anywhere on it.
-   * Does not trigger if clicking on action buttons.
-   * @default false
-   */
-  clickToDismiss?: boolean
+    /**
+     * Dismiss the notification when clicking anywhere on it.
+     * Does not trigger if clicking on action buttons.
+     * @default false
+     */
+    clickToDismiss?: boolean
 
-  /**
-   * Action button configuration.
-   * When provided, an action button appears in the notification.
-   */
-  action?: NotifyAction
+    /**
+     * Action button configuration.
+     * When provided, an action button appears in the notification.
+     */
+    action?: NotifyAction
 
-  /**
-   * Confirm dialog options.
-   * Used internally when `.confirm()` is called.
-   */
-  confirm?: ConfirmOptions
+    /**
+     * Confirm dialog options.
+     * Used internally when `.confirm()` is called.
+     */
+    confirm?: ConfirmOptions
 
-  /**
-   * Default message for loading state when not explicitly provided.
-   * @default "Loading..."
-   */
-  loadingMessage?: string
+    /**
+     * Default message for loading state when not explicitly provided.
+     * @default "Loading..."
+     */
+    loadingMessage?: string
 
-  /**
-   * Default message for success state when not explicitly provided.
-   * @default "Success"
-   */
-  successMessage?: string
+    /**
+     * Default message for success state when not explicitly provided.
+     * @default "Success"
+     */
+    successMessage?: string
 
-  /**
-   * Default message for error state when not explicitly provided.
-   * @default "Error"
-   */
-  errorMessage?: string
+    /**
+     * Default message for error state when not explicitly provided.
+     * @default "Error"
+     */
+    errorMessage?: string
 
-  /**
-   * Callback invoked when the notification first appears.
-   */
-  onOpen?: OnOpenCallback
+    /**
+     * Callback invoked when the notification first appears.
+     */
+    onOpen?: OnOpenCallback
 
-  /**
-   * Callback invoked when the notification fully closes (after animation).
-   */
-  onClose?: OnCloseCallback
+    /**
+     * Callback invoked when the notification fully closes (after animation).
+     */
+    onClose?: OnCloseCallback
 
-  /**
-   * Callback invoked when the notification is dismissed (before animation).
-   */
-  onDismiss?: OnDismissCallback
+    /**
+     * Callback invoked when the notification is dismissed (before animation).
+     */
+    onDismiss?: OnDismissCallback
 
-  /**
-   * Callback invoked when the notification transitions between states.
-   */
-  onUpdate?: OnUpdateCallback
+    /**
+     * Callback invoked when the notification transitions between states.
+     */
+    onUpdate?: OnUpdateCallback
 }
 
 /**
@@ -565,97 +564,97 @@ export interface NotifyOptions {
  * ```
  */
 export interface NotifierProps {
-  /**
-   * Default position for all notifications.
-   * Individual notifications can override this via `NotifyOptions.position`.
-   * @default "bottom"
-   */
-  position?: NotifyPositionType
+    /**
+     * Default position for all notifications.
+     * Individual notifications can override this via `NotifyOptions.position`.
+     * @default "bottom"
+     */
+    position?: NotifyPositionType
 
-  /**
-   * Maximum number of notifications visible simultaneously.
-   * When exceeded, the oldest notifications are dismissed with reason `"replaced"`.
-   * @default 5
-   */
-  maxVisible?: number
+    /**
+     * Maximum number of notifications visible simultaneously.
+     * When exceeded, the oldest notifications are dismissed with reason `"replaced"`.
+     * @default 5
+     */
+    maxVisible?: number
 
-  /**
-   * Default auto-dismiss duration in milliseconds.
-   * Can be overridden per-notification via `NotifyOptions.duration`.
-   * @default 3000
-   */
-  duration?: number
+    /**
+     * Default auto-dismiss duration in milliseconds.
+     * Can be overridden per-notification via `NotifyOptions.duration`.
+     * @default 3000
+     */
+    duration?: number
 
-  /**
-   * Enable swipe-to-dismiss gestures globally.
-   * @default true
-   */
-  swipeToDismiss?: boolean
+    /**
+     * Enable swipe-to-dismiss gestures globally.
+     * @default true
+     */
+    swipeToDismiss?: boolean
 
-  /**
-   * Pause auto-dismiss timer on hover globally.
-   * @default true
-   */
-  pauseOnHover?: boolean
+    /**
+     * Pause auto-dismiss timer on hover globally.
+     * @default true
+     */
+    pauseOnHover?: boolean
 
-  /**
-   * Enable click-to-dismiss globally.
-   * @default false
-   */
-  clickToDismiss?: boolean
+    /**
+     * Enable click-to-dismiss globally.
+     * @default false
+     */
+    clickToDismiss?: boolean
 
-  /**
-   * Whether to show a dismiss (X) button on notifications by default.
-   * @default false
-   */
-  dismissible?: boolean
+    /**
+     * Whether to show a dismiss (X) button on notifications by default.
+     * @default false
+     */
+    dismissible?: boolean
 
-  /**
-   * Color theme for notifications.
-   * @default "dark"
-   */
-  colorMode?: ColorMode
+    /**
+     * Color theme for notifications.
+     * @default "dark"
+     */
+    colorMode?: ColorMode
 
-  /**
-   * Border radius style for notification containers.
-   * @default "pill"
-   */
-  radius?: RadiusVariant
+    /**
+     * Border radius style for notification containers.
+     * @default "pill"
+     */
+    radius?: RadiusVariant
 
-  /**
-   * Icon styling mode.
-   * @default "colored"
-   */
-  iconColor?: IconColorMode
+    /**
+     * Icon styling mode.
+     * @default "colored"
+     */
+    iconColor?: IconColorMode
 
-  /**
-   * Border configuration for notification containers.
-   */
-  border?: BorderConfig
+    /**
+     * Border configuration for notification containers.
+     */
+    border?: BorderConfig
 
-  /**
-   * Custom icon configuration.
-   */
-  icons?: IconConfig
+    /**
+     * Custom icon configuration.
+     */
+    icons?: IconConfig
 
-  /**
-   * Custom color palette overrides.
-   * Allows full control over the notification colors.
-   */
-  theme?: ThemePalette
+    /**
+     * Custom color palette overrides.
+     * Allows full control over the notification colors.
+     */
+    theme?: ThemePalette
 
-  /**
-   * Offset from screen edges in pixels.
-   * Can be a single number for both axes or an object for per-axis control.
-   * @default 16
-   */
-  offset?: number | string | { x?: number; y?: number }
+    /**
+     * Offset from screen edges in pixels.
+     * Can be a single number for both axes or an object for per-axis control.
+     * @default 16
+     */
+    offset?: number | string | { x?: number; y?: number }
 
-  /**
-   * Gap between stacked notifications in pixels.
-   * @default 8
-   */
-  gap?: number
+    /**
+     * Gap between stacked notifications in pixels.
+     * @default 8
+     */
+    gap?: number
 }
 
 /**
@@ -676,144 +675,144 @@ export interface NotifierProps {
  * ```
  */
 export interface NotifyInstance {
-  /**
-   * Unique identifier for this notification.
-   * Can be used with `notify.dismiss(id)` to dismiss externally.
-   */
-  readonly id: string
+    /**
+     * Unique identifier for this notification.
+     * Can be used with `notify.dismiss(id)` to dismiss externally.
+     */
+    readonly id: string
 
-  /**
-   * Transition the notification to loading state.
-   *
-   * @param message - Loading message to display
-   * @returns This instance for chaining
-   *
-   * @example
-   * ```typescript
-   * notify({}).loading("Processing...")
-   * ```
-   */
-  loading(message?: string): NotifyInstance
+    /**
+     * Transition the notification to loading state.
+     *
+     * @param message - Loading message to display
+     * @returns This instance for chaining
+     *
+     * @example
+     * ```typescript
+     * notify({}).loading("Processing...")
+     * ```
+     */
+    loading(message?: string): NotifyInstance
 
-  /**
-   * Transition the notification to success state.
-   * Starts the auto-dismiss timer.
-   *
-   * @param message - Success message to display
-   * @returns This instance for chaining
-   *
-   * @example
-   * ```typescript
-   * notify.loading("Saving...").success("Saved!")
-   * ```
-   */
-  success(message?: string): NotifyInstance
+    /**
+     * Transition the notification to success state.
+     * Starts the auto-dismiss timer.
+     *
+     * @param message - Success message to display
+     * @returns This instance for chaining
+     *
+     * @example
+     * ```typescript
+     * notify.loading("Saving...").success("Saved!")
+     * ```
+     */
+    success(message?: string): NotifyInstance
 
-  /**
-   * Transition the notification to error state.
-   * Starts the auto-dismiss timer.
-   *
-   * @param message - Error message to display
-   * @returns This instance for chaining
-   *
-   * @example
-   * ```typescript
-   * notify.loading("Saving...").error("Failed to save")
-   * ```
-   */
-  error(message?: string): NotifyInstance
+    /**
+     * Transition the notification to error state.
+     * Starts the auto-dismiss timer.
+     *
+     * @param message - Error message to display
+     * @returns This instance for chaining
+     *
+     * @example
+     * ```typescript
+     * notify.loading("Saving...").error("Failed to save")
+     * ```
+     */
+    error(message?: string): NotifyInstance
 
-  /**
-   * Transition the notification to info state.
-   * Starts the auto-dismiss timer.
-   *
-   * @param message - Info message to display
-   * @returns This instance for chaining
-   *
-   * @example
-   * ```typescript
-   * notify({}).info("New update available")
-   * ```
-   */
-  info(message?: string): NotifyInstance
+    /**
+     * Transition the notification to info state.
+     * Starts the auto-dismiss timer.
+     *
+     * @param message - Info message to display
+     * @returns This instance for chaining
+     *
+     * @example
+     * ```typescript
+     * notify({}).info("New update available")
+     * ```
+     */
+    info(message?: string): NotifyInstance
 
-  /**
-   * Dismiss this notification immediately.
-   * Triggers exit animation and `onDismiss`/`onClose` callbacks.
-   *
-   * @example
-   * ```typescript
-   * const n = notify("Hello")
-   * setTimeout(() => n.dismiss(), 1000)
-   * ```
-   */
-  dismiss(): void
+    /**
+     * Dismiss this notification immediately.
+     * Triggers exit animation and `onDismiss`/`onClose` callbacks.
+     *
+     * @example
+     * ```typescript
+     * const n = notify("Hello")
+     * setTimeout(() => n.dismiss(), 1000)
+     * ```
+     */
+    dismiss(): void
 
-  /**
-   * Update notification options after creation.
-   * Useful for adding actions dynamically.
-   *
-   * @param options - Partial options to merge
-   * @returns This instance for chaining
-   *
-   * @example
-   * ```typescript
-   * const n = notify("Item deleted")
-   * n.update({
-   *   action: {
-   *     label: "Undo",
-   *     onClick: () => { restore(); n.dismiss() }
-   *   }
-   * })
-   * ```
-   */
-  update(options: Partial<NotifyOptions>): NotifyInstance
+    /**
+     * Update notification options after creation.
+     * Useful for adding actions dynamically.
+     *
+     * @param options - Partial options to merge
+     * @returns This instance for chaining
+     *
+     * @example
+     * ```typescript
+     * const n = notify("Item deleted")
+     * n.update({
+     *   action: {
+     *     label: "Undo",
+     *     onClick: () => { restore(); n.dismiss() }
+     *   }
+     * })
+     * ```
+     */
+    update(options: Partial<NotifyOptions>): NotifyInstance
 
-  /**
-   * Track a promise with automatic state transitions.
-   *
-   * Shows loading state initially, then success or error based on promise result.
-   *
-   * @typeParam T - Promise resolve type
-   * @param promise - Promise to track
-   * @param options - Messages for each state
-   * @returns The original promise result
-   * @throws Re-throws any error from the promise after showing error state
-   *
-   * @example
-   * ```typescript
-   * const data = await notify({}).promise(fetchData(), {
-   *   loading: "Fetching...",
-   *   success: "Data loaded!",
-   *   error: "Failed to fetch"
-   * })
-   * ```
-   */
-  promise<T>(promise: Promise<T>, options?: PromiseOptions): Promise<T>
+    /**
+     * Track a promise with automatic state transitions.
+     *
+     * Shows loading state initially, then success or error based on promise result.
+     *
+     * @typeParam T - Promise resolve type
+     * @param promise - Promise to track
+     * @param options - Messages for each state
+     * @returns The original promise result
+     * @throws Re-throws any error from the promise after showing error state
+     *
+     * @example
+     * ```typescript
+     * const data = await notify({}).promise(fetchData(), {
+     *   loading: "Fetching...",
+     *   success: "Data loaded!",
+     *   error: "Failed to fetch"
+     * })
+     * ```
+     */
+    promise<T>(promise: Promise<T>, options?: PromiseOptions): Promise<T>
 
-  /**
-   * Show a confirmation dialog and wait for user response.
-   *
-   * @param message - Confirmation message to display
-   * @param options - Button label customization
-   * @returns Promise resolving to `true` if confirmed, `false` if cancelled
-   *
-   * @example
-   * ```typescript
-   * const n = notify({})
-   * const confirmed = await n.confirm("Delete file?", {
-   *   confirmLabel: "Delete",
-   *   cancelLabel: "Keep"
-   * })
-   *
-   * if (confirmed) {
-   *   n.loading("Deleting...").success("Deleted!")
-   * } else {
-   *   n.dismiss()
-   * }
-   * ```
-   */
-  confirm(message: string, options?: ConfirmOptions): Promise<boolean>
+    /**
+     * Show a confirmation dialog and wait for user response.
+     *
+     * @param message - Confirmation message to display
+     * @param options - Button label customization
+     * @returns Promise resolving to `true` if confirmed, `false` if cancelled
+     *
+     * @example
+     * ```typescript
+     * const n = notify({})
+     * const confirmed = await n.confirm("Delete file?", {
+     *   confirmLabel: "Delete",
+     *   cancelLabel: "Keep"
+     * })
+     *
+     * if (confirmed) {
+     *   n.loading("Deleting...").success("Deleted!")
+     * } else {
+     *   n.dismiss()
+     * }
+     * ```
+     */
+    confirm(message: string, options?: ConfirmOptions): Promise<boolean>
 }
 
 /**
@@ -832,59 +831,59 @@ export interface NotifyInstance {
  * ```
  */
 export interface NotifyFunction {
-  /**
-   * Create and display a notification.
-   *
-   * @param messageOrOptions - Message string or options object
-   * @param options - Additional options when first param is a message string
-   * @returns Chainable notification instance
-   */
-  (messageOrOptions?: string | NotifyOptions, options?: NotifyOptions): NotifyInstance
+    /**
+     * Create and display a notification.
+     *
+     * @param messageOrOptions - Message string or options object
+     * @param options - Additional options when first param is a message string
+     * @returns Chainable notification instance
+     */
+    (messageOrOptions?: string | NotifyOptions, options?: NotifyOptions): NotifyInstance
 
-  /**
-   * Show a loading notification with spinner.
-   */
-  loading: (message?: string, options?: NotifyOptions) => NotifyInstance
+    /**
+     * Show a loading notification with spinner.
+     */
+    loading: (message?: string, options?: NotifyOptions) => NotifyInstance
 
-  /**
-   * Show a success notification.
-   */
-  success: (message?: string, options?: NotifyOptions) => NotifyInstance
+    /**
+     * Show a success notification.
+     */
+    success: (message?: string, options?: NotifyOptions) => NotifyInstance
 
-  /**
-   * Show an error notification.
-   */
-  error: (message?: string, options?: NotifyOptions) => NotifyInstance
+    /**
+     * Show an error notification.
+     */
+    error: (message?: string, options?: NotifyOptions) => NotifyInstance
 
-  /**
-   * Show an info notification.
-   */
-  info: (message?: string, options?: NotifyOptions) => NotifyInstance
+    /**
+     * Show an info notification.
+     */
+    info: (message?: string, options?: NotifyOptions) => NotifyInstance
 
-  /**
-   * Dismiss a specific notification by ID, or all notifications if no ID provided.
-   */
-  dismiss: (id?: string) => void
+    /**
+     * Dismiss a specific notification by ID, or all notifications if no ID provided.
+     */
+    dismiss: (id?: string) => void
 
-  /**
-   * Track a promise with automatic loading/success/error transitions.
-   */
-  promise: <T>(promise: Promise<T>, options?: PromiseOptions) => Promise<T>
+    /**
+     * Track a promise with automatic loading/success/error transitions.
+     */
+    promise: <T>(promise: Promise<T>, options?: PromiseOptions) => Promise<T>
 
-  /**
-   * Show a confirmation dialog and wait for user response.
-   */
-  confirm: (message: string, options?: ConfirmOptions) => Promise<boolean>
+    /**
+     * Show a confirmation dialog and wait for user response.
+     */
+    confirm: (message: string, options?: ConfirmOptions) => Promise<boolean>
 
-  /**
-   * Configure global defaults.
-   */
-  configure: (config: NotifyContainerConfig) => void
+    /**
+     * Configure global defaults.
+     */
+    configure: (config: NotifyContainerConfig) => void
 
-  /**
-   * Get current global configuration.
-   */
-  getConfig: () => NotifyContainerConfig
+    /**
+     * Get current global configuration.
+     */
+    getConfig: () => NotifyContainerConfig
 }
 
 /**
@@ -892,17 +891,17 @@ export interface NotifyFunction {
  * @internal
  */
 export interface NotifyItem {
-  id: string
-  state: NotifyState
-  message: string
-  options: NotifyOptions
-  visible: boolean
-  prevState: NotifyState
-  confirmResolver: ((confirmed: boolean) => void) | null
-  createdAt: number
-  stateStartedAt: number
-  paused: boolean
-  remainingTime: number | null
+    id: string
+    state: NotifyState
+    message: string
+    options: NotifyOptions
+    visible: boolean
+    prevState: NotifyState
+    confirmResolver: ((confirmed: boolean) => void) | null
+    createdAt: number
+    stateStartedAt: number
+    paused: boolean
+    remainingTime: number | null
 }
 
 /**
@@ -916,13 +915,13 @@ export type StoreListener = () => void
  * @internal
  */
 export interface ThemeConfig {
-  colorMode?: ColorMode
-  radius?: RadiusVariant
-  iconColor?: IconColorMode
-  border?: BorderConfig
-  icons?: IconConfig
-  // Palette overrides
-  palette?: ThemePalette
+    colorMode?: ColorMode
+    radius?: RadiusVariant
+    iconColor?: IconColorMode
+    border?: BorderConfig
+    icons?: IconConfig
+    // Palette overrides
+    palette?: ThemePalette
 }
 
 /**
@@ -930,12 +929,12 @@ export interface ThemeConfig {
  * @internal
  */
 export interface NotifyContainerConfig {
-  position?: NotifyPositionType
-  maxVisible?: number
-  defaultDuration?: number
-  swipeToDismiss?: boolean
-  pauseOnHover?: boolean
-  clickToDismiss?: boolean
-  offset?: number | string | { x?: number; y?: number }
-  gap?: number
+    position?: NotifyPositionType
+    maxVisible?: number
+    defaultDuration?: number
+    swipeToDismiss?: boolean
+    pauseOnHover?: boolean
+    clickToDismiss?: boolean
+    offset?: number | string | { x?: number; y?: number }
+    gap?: number
 }
