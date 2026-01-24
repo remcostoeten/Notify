@@ -17,9 +17,9 @@ const BLADE_COUNT = 12
  * Renders 12 animated blades in a circular pattern.
  *
  * @example
- * \`\`\`tsx
+ * ```tsx
  * <Spinner />
- * \`\`\`
+ * ```
  */
 export function Spinner(): JSX.Element {
   return (

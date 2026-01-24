@@ -10,6 +10,8 @@ import type { NotifyState, NotifyOptions, NotifyItem, StoreListener, DismissReas
 // STORE STATE
 // ============================================================================
 
+console.log("[Notifier] Store Module Initialized")
+
 /** Map of notification items by ID */
 const notifications = new Map<string, NotifyItem>()
 
@@ -28,6 +30,7 @@ const dismissTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
  * @internal
  */
 function emit(): void {
+  console.log("[Notifier] Emitting to listeners:", listeners.size)
   listeners.forEach((listener) => listener())
 }
 
@@ -111,6 +114,7 @@ export function subscribe(listener: StoreListener): () => void {
  * @param options - Additional options
  */
 export function setState(id: string, state: NotifyState, message: string, options: NotifyOptions = {}): void {
+  console.log(`[Notifier] setState: ${id} -> ${state}`, message)
   clearDismissTimeout(id)
 
   const existing = notifications.get(id)

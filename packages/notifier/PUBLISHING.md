@@ -10,8 +10,8 @@
 
 - [ ] Update version in `package.json`
 - [ ] Update `CHANGELOG.md` with new version
-- [ ] Run `npm run build` - verify no errors
-- [ ] Run `npm run typecheck` - verify types are correct
+- [ ] Run `bun run build` - verify no errors
+- [ ] Run `bun run typecheck` - verify types are correct
 - [ ] Test the built package locally
 - [ ] Update README if needed
 - [ ] Commit all changes
@@ -22,13 +22,13 @@ Test the package locally before publishing:
 
 ```bash
 # Build the package
-npm run build
+bun run build
 
 # Create a tarball
 npm pack
 
 # In another project, install the tarball
-npm install /path/to/remcostoeten-notifier-1.0.0.tgz
+bun install /path/to/remcostoeten-notifier-1.0.0.tgz
 ```
 
 ## Publishing Steps
@@ -77,7 +77,7 @@ git push --tags
 ## Post-publish
 
 1. Verify package on npmjs.com: https://www.npmjs.com/package/@remcostoeten/notifier
-2. Test installation: `npm install @remcostoeten/notifier`
+2. Test installation: `bun add @remcostoeten/notifier`
 3. Create GitHub release with changelog
 4. Tweet about it (optional)
 
@@ -130,4 +130,4 @@ npm login
 ```bash
 # Clean and rebuild
 rm -rf dist
-npm run build
+bun run build

@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /**
  * @fileoverview Type definitions for the @remcostoeten/notifier package.
  *
@@ -38,9 +39,11 @@ export type NotifyState = "idle" | "loading" | "success" | "error" | "info" | "c
 export type NotifyPositionType =
   | "top"
   | "top-left"
+  | "top-center"
   | "top-right"
   | "bottom"
   | "bottom-left"
+  | "bottom-center"
   | "bottom-right"
 
 /**
@@ -152,6 +155,33 @@ export interface BorderConfig {
    * @default "solid"
    */
   style?: "solid" | "dashed" | "dotted"
+  style?: "solid" | "dashed" | "dotted"
+}
+
+/**
+ * Color palette configuration for custom theming.
+ * Overrides default values from the selected colorMode.
+ * 
+ * @example
+ * ```tsx
+ * <Notifier
+ *   theme={{
+ *     background: "#000000",
+ *     text: "#ffffff",
+ *     border: "#333333"
+ *   }}
+ * />
+ * ```
+ */
+export interface ThemePalette {
+  background?: string
+  text?: string
+  textMuted?: string
+  textSubtle?: string
+  border?: string
+  borderHighlight?: string
+  buttonHover?: string
+  shadow?: string
 }
 
 /**
@@ -575,6 +605,12 @@ export interface NotifierProps {
   clickToDismiss?: boolean
 
   /**
+   * Whether to show a dismiss (X) button on notifications by default.
+   * @default false
+   */
+  dismissible?: boolean
+
+  /**
    * Color theme for notifications.
    * @default "dark"
    */
@@ -603,11 +639,17 @@ export interface NotifierProps {
   icons?: IconConfig
 
   /**
+   * Custom color palette overrides.
+   * Allows full control over the notification colors.
+   */
+  theme?: ThemePalette
+
+  /**
    * Offset from screen edges in pixels.
    * Can be a single number for both axes or an object for per-axis control.
    * @default 16
    */
-  offset?: number | { x?: number; y?: number }
+  offset?: number | string | { x?: number; y?: number }
 
   /**
    * Gap between stacked notifications in pixels.
@@ -879,9 +921,8 @@ export interface ThemeConfig {
   iconColor?: IconColorMode
   border?: BorderConfig
   icons?: IconConfig
-  background?: string
-  textColor?: string
-  shadow?: string | "none"
+  // Palette overrides
+  palette?: ThemePalette
 }
 
 /**
@@ -895,6 +936,6 @@ export interface NotifyContainerConfig {
   swipeToDismiss?: boolean
   pauseOnHover?: boolean
   clickToDismiss?: boolean
-  offset?: number | { x?: number; y?: number }
+  offset?: number | string | { x?: number; y?: number }
   gap?: number
 }

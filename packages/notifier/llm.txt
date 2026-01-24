@@ -1,21 +1,24 @@
 # @remcostoeten/notifier - LLM Instructions
 
-This is a chainable notification system for React applications. When helping users implement this library, follow these guidelines:
+This is a modern, chainable notification system for React applications.
 
-## Core Concepts
+## Core Features
+1. **Single Component Setup**: Place `<Notifier />` once in your app layout.
+2. **Chainable API**: `notify.loading("Checking").success("Done")`.
+3. **Themes**: Built-in Dark/Light modes + Full Custom Palette support.
+4. **Performance**: Zero-dependency (lightweight wrapper around minimal state).
 
-1. **Single Component Setup**: Place `<Notifier />` once in your app layout/root
-2. **Call notify() Anywhere**: Import and use `notify()` from any component
-3. **Chainable API**: Methods return instances for chaining: `notify.loading("...").success("...")`
-4. **Promise Integration**: Use `notify.promise()` for async operations
+## Installation
 
-## Installation Pattern
+```bash
+bun add @remcostoeten/notifier framer-motion
+# or npm install / yarn add / pnpm add
+```
+
+## Setup (Root Layout)
 
 ```tsx
-// 1. Install
-npm install @remcostoeten/notifier framer-motion
-
-// 2. Add to layout (Next.js example)
+// app/layout.tsx
 import { Notifier } from '@remcostoeten/notifier'
 
 export default function RootLayout({ children }) {
@@ -23,16 +26,67 @@ export default function RootLayout({ children }) {
     <html>
       <body>
         {children}
-        <Notifier />
+        <Notifier
+          position="bottom-right"
+          colorMode="dark"
+        />
       </body>
     </html>
   )
 }
+```
 
-// 3. Use anywhere
+## Component API: `<Notifier />`
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `position` | `NotifyPositionType` | `"bottom"` | `top-left`, `top-center`, `top-right`, `bottom-left`, `bottom-center`, `bottom-right` |
+| `maxVisible` | `number` | `5` | Max notifications on screen |
+| `duration` | `number` | `3000` | Auto-dismiss time in ms |
+| `colorMode` | `"dark" \| "light" \| "auto"` | `"dark"` | Base theme |
+| `radius` | `"pill" \| "rounded" \| "squared"` | `"pill"` | Corner style |
+| `theme` | `ThemePalette` | `undefined` | Custom color overrides (bg, text, border, etc.) |
+| `iconColor` | `"colored" \| "neutral" \| "hidden"` | `"colored"` | Icon styling |
+| `swipeToDismiss` | `boolean` | `true` | Enable swipe gestures |
+| `pauseOnHover` | `boolean` | `true` | Pause timer on hover |
+
+### Custom Theme Example
+
+```tsx
+<Notifier
+  colorMode="dark"
+  theme={{
+    background: "#000000",
+    text: "#ffffff",
+    border: "#333333",
+    buttonHover: "#222222"
+  }}
+/>
+```
+
+## Usage API: `notify`
+
+```tsx
 import { notify } from '@remcostoeten/notifier'
 
-function MyComponent() {
-  const handleClick = () => notify('Hello!')
-  return <button onClick={handleClick}>Notify</button>
-}
+// Basic
+notify('Default message')
+notify.success('Saved!')
+notify.error('Failed')
+notify.loading('Working...')
+
+// Async/Promise
+const data = await notify.promise(fetch('/api'), {
+  loading: 'Fetching...',
+  success: 'Done',
+  error: 'Failed'
+})
+
+// Interactive
+await notify.confirm('Are you sure?') ? deleteItem() : null
+
+// Chaining
+const n = notify.loading('Uploading...')
+await upload()
+n.success('Uploaded!')
+```
