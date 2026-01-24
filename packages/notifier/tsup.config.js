@@ -11,7 +11,7 @@ export default defineConfig({
   dts: true,
   sourcemap: true,
   clean: true,
-  external: ["react", "react-dom", "framer-motion"],
+  external: ["react", "react-dom", "motion"],
   esbuildOptions(options) {
     options.banner = {
       js: '"use client";',

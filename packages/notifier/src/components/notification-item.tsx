@@ -5,7 +5,7 @@
 'use client'
 
 import type * as React from 'react'
-import { motion, useMotionValue, useTransform, type PanInfo } from 'framer-motion'
+import { motion, useMotionValue, useTransform, type PanInfo } from "motion/react"
 import { dismiss, resolveConfirm, pauseTimer, resumeTimer } from '../store'
 import {
     NotifyStateType,
@@ -39,7 +39,7 @@ const XIcon = (props: React.SVGProps<any>) => (
 /**
  * Props for the NotificationItem component.
  */
-interface NotificationItemProps {
+type Props = {
     /** The notification data */
     item: NotifyItem
     /** Position for animation direction */
@@ -52,7 +52,7 @@ interface NotificationItemProps {
  * Individual notification item component.
  * Handles swipe gestures, hover pause, click dismiss, and all interactions.
  */
-export function NotificationItem({ item, position, index }: NotificationItemProps): JSX.Element {
+export function NotificationItem({ item, position, index }: Props): JSX.Element {
     const { id, state, message, visible, options } = item
     const theme = useNotifyTheme()
 
@@ -129,6 +129,7 @@ export function NotificationItem({ item, position, index }: NotificationItemProp
 
     return (
         <motion.div
+            layout
             className='flex items-center overflow-hidden'
             style={{
                 display: 'flex',
@@ -145,7 +146,7 @@ export function NotificationItem({ item, position, index }: NotificationItemProp
                 opacity,
                 cursor: options.clickToDismiss === true ? 'pointer' : 'default',
                 marginBottom: stackOffset > 0 ? 8 : 0,
-                willChange: 'transform, opacity'
+                willChange: 'transform, opacity, width, height'
             }}
             initial={{
                 opacity: 0,
@@ -172,6 +173,7 @@ export function NotificationItem({ item, position, index }: NotificationItemProp
         >
             {/* Main content area */}
             <motion.div
+                layout
                 className='flex items-center'
                 style={{
                     display: 'flex',
@@ -207,6 +209,7 @@ export function NotificationItem({ item, position, index }: NotificationItemProp
             {/* Confirm buttons */}
             {isConfirm && (
                 <motion.div
+                    layout
                     initial={{ width: 0, opacity: 0 }}
                     animate={{ width: 'auto', opacity: 1 }}
                     exit={{ width: 0, opacity: 0 }}
@@ -242,6 +245,7 @@ export function NotificationItem({ item, position, index }: NotificationItemProp
             {/* Action button */}
             {hasAction && !isConfirm && (
                 <motion.div
+                    layout
                     initial={{ width: 0, opacity: 0 }}
                     animate={{ width: 'auto', opacity: 1 }}
                     exit={{ width: 0, opacity: 0 }}
@@ -270,6 +274,7 @@ export function NotificationItem({ item, position, index }: NotificationItemProp
             {/* Dismiss button */}
             {isDismissible && !isConfirm && (
                 <motion.div
+                    layout
                     initial={{ width: 0, opacity: 0 }}
                     animate={{ width: 'auto', opacity: 1 }}
                     exit={{ width: 0, opacity: 0 }}

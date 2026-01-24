@@ -4,13 +4,16 @@
 
 "use client"
 
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence } from "motion/react"
 import { Spinner } from "./spinner"
-import { NotifyStateType, AnimationConfig, Styles } from "../constants"
+import { NotifyStateType, AnimationConfig } from "../constants"
 import { useNotifyTheme } from "./theme-context"
 import type { NotifyState, IconProps } from "../types"
 import { isValidElement, type ReactNode, type ComponentType } from "react"
 import type { JSX } from "react/jsx-runtime"
+
+const ICON_SIZE = 20
+const ICON_BADGE_SIZE = 12
 
 /**
  * Props for the NotifyIcon component.
@@ -126,7 +129,7 @@ export function NotifyIcon({ state }: NotifyIconProps): JSX.Element {
   // Build icon props for custom icons
   const buildIconProps = (s: NotifyState): IconProps => ({
     state: s,
-    size: Styles.ICON_SIZE,
+    size: ICON_SIZE,
     colorMode: theme.iconColorMode,
     color: getStateColors(s as keyof typeof iconColors)?.icon ?? theme.textMuted,
   })
@@ -136,7 +139,7 @@ export function NotifyIcon({ state }: NotifyIconProps): JSX.Element {
     return (
       <div
         className="relative flex items-center justify-center"
-        style={{ width: Styles.ICON_SIZE, height: Styles.ICON_SIZE }}
+        style={{ width: ICON_SIZE, height: ICON_SIZE }}
       >
         <AnimatePresence mode="wait">
           <motion.div key={state} {...iconMotionProps} className="absolute">
@@ -151,7 +154,7 @@ export function NotifyIcon({ state }: NotifyIconProps): JSX.Element {
     return (
       <div
         className="relative flex items-center justify-center"
-        style={{ width: Styles.ICON_SIZE, height: Styles.ICON_SIZE }}
+        style={{ width: ICON_SIZE, height: ICON_SIZE }}
       >
         <AnimatePresence mode="wait">
           {state === NotifyStateType.LOADING && (
@@ -167,7 +170,7 @@ export function NotifyIcon({ state }: NotifyIconProps): JSX.Element {
   return (
     <div
       className="relative flex items-center justify-center"
-      style={{ width: Styles.ICON_SIZE, height: Styles.ICON_SIZE }}
+      style={{ width: ICON_SIZE, height: ICON_SIZE }}
     >
       <AnimatePresence mode="wait">
         {state === NotifyStateType.LOADING && (
@@ -182,15 +185,15 @@ export function NotifyIcon({ state }: NotifyIconProps): JSX.Element {
             {...iconMotionProps}
             className="absolute rounded-full flex items-center justify-center"
             style={{
-              width: Styles.ICON_SIZE,
-              height: Styles.ICON_SIZE,
+              width: ICON_SIZE,
+              height: ICON_SIZE,
               backgroundColor: iconColors.success.icon,
             }}
           >
             {icons?.success ? (
               renderCustomIcon(icons.success, buildIconProps(state))
             ) : (
-              <CheckIcon size={Styles.ICON_BADGE_SIZE} color={theme.colorMode === "light" ? "#fff" : "#000"} />
+              <CheckIcon size={ICON_BADGE_SIZE} color={theme.colorMode === "light" ? "#fff" : "#000"} />
             )}
           </motion.div>
         )}
@@ -201,15 +204,15 @@ export function NotifyIcon({ state }: NotifyIconProps): JSX.Element {
             {...iconMotionProps}
             className="absolute rounded-full flex items-center justify-center"
             style={{
-              width: Styles.ICON_SIZE,
-              height: Styles.ICON_SIZE,
+              width: ICON_SIZE,
+              height: ICON_SIZE,
               backgroundColor: iconColors.error.icon,
             }}
           >
             {icons?.error ? (
               renderCustomIcon(icons.error, buildIconProps(state))
             ) : (
-              <XIcon size={Styles.ICON_BADGE_SIZE} color={theme.colorMode === "light" ? "#fff" : "#000"} />
+              <XIcon size={ICON_BADGE_SIZE} color={theme.colorMode === "light" ? "#fff" : "#000"} />
             )}
           </motion.div>
         )}
@@ -219,7 +222,7 @@ export function NotifyIcon({ state }: NotifyIconProps): JSX.Element {
             {icons?.info ? (
               renderCustomIcon(icons.info, buildIconProps(state))
             ) : (
-              <InfoIcon size={Styles.ICON_SIZE} color={theme.textMuted} />
+              <InfoIcon size={ICON_SIZE} color={theme.textMuted} />
             )}
           </motion.div>
         )}
@@ -229,7 +232,7 @@ export function NotifyIcon({ state }: NotifyIconProps): JSX.Element {
             {icons?.confirm ? (
               renderCustomIcon(icons.confirm, buildIconProps(state))
             ) : (
-              <AlertIcon size={Styles.ICON_SIZE} color={iconColors.confirm.icon} />
+              <AlertIcon size={ICON_SIZE} color={iconColors.confirm.icon} />
             )}
           </motion.div>
         )}

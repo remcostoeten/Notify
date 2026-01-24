@@ -1,15 +1,7 @@
-"use client"
-
-/**
- * Chaining Example
- * Demonstrates how to chain state transitions on a single notification
- */
-
 import { notify } from "@remcostoeten/notifier"
 
 export function ChainingExamples() {
-  // Basic chaining
-  const saveData = async () => {
+  async function saveData() {
     const n = notify.loading("Saving changes...")
 
     try {
@@ -20,8 +12,7 @@ export function ChainingExamples() {
     }
   }
 
-  // Multi-step process
-  const multiStepProcess = async () => {
+  async function multiStepProcess() {
     const n = notify.loading("Step 1: Validating data...")
 
     await new Promise((resolve) => setTimeout(resolve, 1000))
@@ -34,8 +25,7 @@ export function ChainingExamples() {
     n.success("All steps completed!")
   }
 
-  // Update message and options
-  const updateNotification = async () => {
+  async function updateNotification() {
     const n = notify("Starting process...")
 
     await new Promise((resolve) => setTimeout(resolve, 1000))

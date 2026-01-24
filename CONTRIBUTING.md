@@ -5,9 +5,9 @@ Contributions are welcome. Please follow these guidelines.
 ## Development Setup
 
 1. Fork and clone the repository
-2. Install dependencies: `pnpm install`
-3. Run the demo: `pnpm dev`
-4. Run tests: `cd packages/notifier && pnpm test`
+2. Install dependencies: `bun install`
+3. Run the demo: `bun dev`
+4. Run tests: `cd packages/notifier && bun test`
 
 ## Pull Request Process
 

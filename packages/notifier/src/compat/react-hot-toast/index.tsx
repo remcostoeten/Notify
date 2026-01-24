@@ -3,7 +3,7 @@
 import React from 'react'
 import { createToastAdapter } from '../factory'
 import { Notifier } from '../../components/notification'
-import type { NotifierProps } from '../../components/notification'
+import type { NotifierProps, NotifyPositionType } from '../../components/notification'
 
 // Create adapter
 export const toast = createToastAdapter({
@@ -18,13 +18,7 @@ export { toast as default }
 
 // RHT Toaster
 export interface ToasterProps extends NotifierProps {
-    position?:
-        | 'top-left'
-        | 'top-center'
-        | 'top-right'
-        | 'bottom-left'
-        | 'bottom-center'
-        | 'bottom-right'
+    position?: NotifyPositionType
     reverseOrder?: boolean
     containerStyle?: React.CSSProperties
     toastOptions?: any

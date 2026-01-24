@@ -1,33 +1,41 @@
 # @remcostoeten/notifier
 
+<div align="center">
+  <img src="./assets/logo.png" alt="Notifier Logo" width="200" />
+  <br />
+</div>
+
 Enterprise-grade chainable notification system for React with smooth animations, confirmations, and promise tracking.
 
 ## Features
 
-- 🎯 **Chainable API** - `notify.loading("Saving...").success("Done!")`
-- ⚡ **Promise tracking** - Automatic loading → success/error transitions
-- 🤝 **Confirmations** - Built-in confirm/cancel dialogs with async/await
-- 🎨 **Fully themeable** - Dark/light modes, custom colors, borders, icons
-- 📍 **6 positions** - Top, bottom, corners
-- 👆 **Swipe to dismiss** - Smooth gesture-based dismissal
-- 🎭 **Smooth animations** - Powered by Framer Motion
-- 📦 **Zero config** - Works out of the box
-- 🎛️ **Highly configurable** - Every aspect is customizable
-- 🔧 **TypeScript** - Full type safety
+- **Chainable API** - `notify.loading("Saving...").success("Done!")`
+- **Promise tracking** - Automatic loading → success/error transitions
+- **Confirmations** - Built-in confirm/cancel dialogs with async/await
+- **Fully themeable** - Dark/light modes, custom colors, borders, icons
+- **6 positions** - Top, bottom, corners
+- **Swipe to dismiss** - Smooth gesture-based dismissal
+- **Smooth animations** - Powered by Motion
+- **Zero config** - Works out of the box
+- **Highly configurable** - Every aspect is customizable
+- **TypeScript** - Full type safety
 
 ## Installation
 
 ```bash
-npm install @remcostoeten/notifier framer-motion
+bun add @remcostoeten/notifier motion
 # or
-yarn add @remcostoeten/notifier framer-motion
-# or
-pnpm add @remcostoeten/notifier framer-motion
+npm install @remcostoeten/notifier motion
+# or iff you're a maniac in 2026 use
+yarn add @remcostoeten/notifier motion
+npm i @remcostoeten/notifier motion
 ```
 
 ## Quick Start
 
-### 1. Add Notifier to your app
+### 1. Add the mother notifier instance to your app
+
+_
 
 ```tsx
 import { Notifier } from '@remcostoeten/notifier'
@@ -57,6 +65,51 @@ function MyComponent() {
     </button>
   )
 }
+```
+
+## Migration from other notification libraries
+
+### Migration from Sonner
+
+The package provides a built-in compatibility layer that mimics the Sonner API.
+
+```tsx
+// 1. Change your imports
+// FROM: import { Toaster, toast } from 'sonner'
+// TO:
+import { Toaster, toast } from '@remcostoeten/notifier/compat/sonner'
+
+// 2. That's it! Most common props are supported:
+// <Toaster position="top-center" richColors closeButton />
+// toast.success('Event has been created')
+```
+
+### Migration from react-hot-toast
+
+Drop-in replacement for React Hot Toast is also available.
+
+```tsx
+// 1. Change your imports
+// FROM: import { Toaster, toast } from 'react-hot-toast'
+// TO:
+import { Toaster, toast } from '@remcostoeten/notifier/compat/react-hot-toast'
+
+// 2. Use as usual
+// <Toaster position="bottom-center" />
+// toast.success('Successfully saved!')
+```
+
+### Migration from shadcn/ui
+
+Replace your `use-toast.ts` hook or imports:
+
+```tsx
+import { useToast } from '@remcostoeten/notifier/compat/shadcn'
+import { Toaster } from '@remcostoeten/notifier/compat/shadcn'
+
+// Usage remains the same:
+// const { toast } = useToast()
+// <Toaster />
 ```
 
 ## Basic Usage
@@ -164,6 +217,7 @@ Configure global behavior via the `<Notifier />` component:
 Show an info notification.
 
 **Parameters:**
+
 - `message` (string) - The notification message
 - `options` (NotifyOptions) - Optional configuration
 
@@ -190,6 +244,7 @@ Dismiss a notification by ID, or all if no ID provided.
 Track a promise with automatic state transitions.
 
 **Options:**
+
 - `loading` (string) - Loading message
 - `success` (string | function) - Success message or function receiving result
 - `error` (string | function) - Error message or function receiving error
@@ -199,6 +254,7 @@ Track a promise with automatic state transitions.
 Show a confirmation dialog and await user response.
 
 **Options:**
+
 - `confirmLabel` (string) - Confirm button text (default: "Confirm")
 - `cancelLabel` (string) - Cancel button text (default: "Cancel")
 
@@ -222,17 +278,18 @@ n.dismiss()
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `position` | `NotifyPositionType` | `"top"` | Position: top, bottom, top-left, top-right, bottom-left, bottom-right |
-| `duration` | `number` | `4000` | Auto-dismiss duration in ms (0 = never) |
-| `maxVisible` | `number` | `3` | Maximum visible notifications |
+| `position` | `NotifyPositionType` | `"bottom"` | `top`, `bottom`, `top-left`, `top-right`, `bottom-left`, `bottom-right`, `top-center`, `bottom-center` |
+| `duration` | `number` | `3000` | Auto-dismiss duration in ms (0 = never) |
+| `maxVisible` | `number` | `5` | Maximum visible notifications |
 | `swipeToDismiss` | `boolean` | `true` | Enable swipe to dismiss |
 | `pauseOnHover` | `boolean` | `true` | Pause auto-dismiss on hover |
-| `clickToDismiss` | `boolean` | `false` | Dismiss on click anywhere |
-| `offset` | `number \| {x,y}` | `16` | Offset from screen edge |
+| `clickToDismiss` | `boolean` | `false` | Dismiss on click anywhere on the toast |
+| `dismissible` | `boolean` | `false` | Show a dismiss (X) button by default |
+| `offset` | `number \| string \| {x,y}` | `16` | Offset from screen edge (e.g. `16`, `"16px"`, `{x: 20, y: 40}`) |
 | `gap` | `number` | `8` | Gap between stacked notifications |
-| `colorMode` | `ColorMode` | `"dark"` | Theme: dark, light, auto |
-| `radius` | `RadiusVariant` | `"pill"` | Border radius: pill, rounded, squared |
-| `iconColor` | `IconColorMode` | `"colored"` | Icon style: colored, neutral, hidden |
+| `colorMode` | `ColorMode` | `"dark"` | Theme: `dark`, `light`, `auto` |
+| `radius` | `RadiusVariant` | `"pill"` | Border radius: `pill`, `rounded`, `squared` |
+| `iconColor` | `IconColorMode` | `"colored"` | Icon style: `colored`, `neutral`, `hidden` |
 | `border` | `boolean \| BorderConfig` | `false` | Border configuration |
 | `icons` | `IconConfig` | - | Custom icon overrides |
 
@@ -251,10 +308,15 @@ Options for individual notifications:
 | `swipeToDismiss` | `boolean` | Override swipe behavior |
 | `clickToDismiss` | `boolean` | Override click behavior |
 
-## License
-
-MIT © Remco Stoeten
-
 ## Contributing
 
-Contributions welcome! Please open an issue or PR.
+You do you, but can't promise anything.
+
+MIT
+
+xxx,
+Remco Stoeten
+
+[Remco Stoeten website](https://remcostoeten-nl.vercel.app)
+[@remcostoeten on GitHub](https://github.com/remcostoeten)
+[@yowremco on Twitter](https://twitter.com/yowremco)

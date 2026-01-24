@@ -3,7 +3,7 @@
 import React from 'react'
 import { createToastAdapter } from '../factory'
 import { Notifier } from '../../components/notification'
-import type { NotifierProps } from '../../components/notification'
+import type { NotifierProps, NotifyPositionType } from '../../components/notification'
 
 // Create the adapter instance
 export const toast = createToastAdapter({
@@ -18,13 +18,7 @@ export const toast = createToastAdapter({
 export interface ToasterProps extends NotifierProps {
     invert?: boolean
     theme?: 'light' | 'dark' | 'system'
-    position?:
-        | 'top-left'
-        | 'top-right'
-        | 'bottom-left'
-        | 'bottom-right'
-        | 'top-center'
-        | 'bottom-center'
+    position?: NotifyPositionType
     hotkey?: string[]
     richColors?: boolean
     expand?: boolean

@@ -1,15 +1,7 @@
-"use client"
-
-/**
- * Confirmation Dialog Example
- * Demonstrates confirmation dialogs with async/await
- */
-
 import { notify } from "@remcostoeten/notifier"
 
 export function ConfirmationExamples() {
-  // Basic confirmation
-  const deleteFile = async () => {
+  async function deleteFile() {
     const confirmed = await notify.confirm("Delete this file?")
 
     if (confirmed) {
@@ -19,8 +11,7 @@ export function ConfirmationExamples() {
     }
   }
 
-  // Custom labels
-  const deleteWithCustomLabels = async () => {
+  async function deleteWithCustomLabels() {
     const confirmed = await notify.confirm("Delete this file?", {
       confirmLabel: "Delete",
       cancelLabel: "Keep",
@@ -33,8 +24,7 @@ export function ConfirmationExamples() {
     }
   }
 
-  // Dangerous action
-  const dangerousAction = async () => {
+  async function dangerousAction() {
     const confirmed = await notify.confirm("This action cannot be undone!", {
       confirmLabel: "I understand, proceed",
       cancelLabel: "Cancel",
@@ -45,8 +35,7 @@ export function ConfirmationExamples() {
     }
   }
 
-  // Multiple confirmations
-  const multipleConfirmations = async () => {
+  async function multipleConfirmations() {
     const firstConfirm = await notify.confirm("Are you sure?")
 
     if (firstConfirm) {

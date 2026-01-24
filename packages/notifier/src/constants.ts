@@ -3,10 +3,6 @@
  * All magic strings and default values are centralized here.
  */
 
-// ============================================================================
-// NOTIFICATION STATES
-// ============================================================================
-
 /**
  * Enumeration of all possible notification states.
  * Used to determine icon display and behavior.
@@ -27,10 +23,6 @@ export const NotifyStateType = {
   CONFIRM: "confirm",
 } as const
 
-// ============================================================================
-// POSITIONS
-// ============================================================================
-
 /**
  * Enumeration of all available notification positions.
  * @constant
@@ -38,21 +30,21 @@ export const NotifyStateType = {
 export const NotifyPosition = {
   /** Top center of viewport */
   TOP: "top",
+  /** Top center of viewport (alias) */
+  TOP_CENTER: "top-center",
   /** Top left corner of viewport */
   TOP_LEFT: "top-left",
   /** Top right corner of viewport */
   TOP_RIGHT: "top-right",
   /** Bottom center of viewport */
   BOTTOM: "bottom",
+  /** Bottom center of viewport (alias) */
+  BOTTOM_CENTER: "bottom-center",
   /** Bottom left corner of viewport */
   BOTTOM_LEFT: "bottom-left",
   /** Bottom right corner of viewport */
   BOTTOM_RIGHT: "bottom-right",
 } as const
-
-// ============================================================================
-// DISMISS REASONS
-// ============================================================================
 
 /**
  * Enumeration of reasons a notification was dismissed.
@@ -71,10 +63,6 @@ export const DismissReason = {
   /** Replaced by a new notification (when limit reached) */
   REPLACED: "replaced",
 } as const
-
-// ============================================================================
-// DEFAULT VALUES
-// ============================================================================
 
 /**
  * Default configuration values for notifications.
@@ -102,10 +90,6 @@ export const Defaults = {
   },
 } as const
 
-// ============================================================================
-// ANIMATION CONFIGURATION
-// ============================================================================
-
 /**
  * Spring animation configuration for container transitions.
  * @constant
@@ -114,8 +98,8 @@ export const AnimationConfig = {
   /** Main container spring animation - tuned for smooth entry without overshoot */
   CONTAINER: {
     type: "spring" as const,
-    stiffness: 350,
-    damping: 35,
+    stiffness: 300,
+    damping: 30,
     mass: 0.5,
   },
   /** Icon transition spring animation */
@@ -136,10 +120,6 @@ export const AnimationConfig = {
     damping: 25,
   },
 } as const
-
-// ============================================================================
-// THEMING
-// ============================================================================
 
 /**
  * Border radius values for each variant.
@@ -179,10 +159,6 @@ export const ThemeColors = {
       "0px 32px 64px -16px rgba(0,0,0,0.16), 0px 16px 32px -8px rgba(0,0,0,0.14), 0px 8px 16px -4px rgba(0,0,0,0.12), 0px 4px 8px -2px rgba(0,0,0,0.10), 0px 0px 0px 1px rgba(10, 10, 11, 0.10), inset 0px 0px 0px 1px rgba(10, 10, 11, 0.06), inset 0px 1px 0px 0px rgba(255, 255, 255, 0.8)",
   },
 } as const
-
-// ============================================================================
-// ICON COLORS
-// ============================================================================
 
 /**
  * Icon colors for each state.
@@ -245,57 +221,22 @@ export const IconColors = {
   },
 } as const
 
-// ============================================================================
-// LEGACY STYLING (for backwards compatibility)
-// ============================================================================
 
-/**
- * CSS class names and styles used throughout the component.
- * @constant
- * @deprecated Use ThemeColors instead
- */
-export const Styles = {
-  /** Container shadow (complex multi-layer shadow) */
-  CONTAINER_SHADOW: ThemeColors.dark.shadow,
-  /** Container background color */
-  CONTAINER_BG: ThemeColors.dark.background,
-  /** Icon dimensions */
-  ICON_SIZE: 18,
-  /** Icon badge size (inner icon) */
-  ICON_BADGE_SIZE: 12,
-  /** Colors for different states */
-  COLORS: {
-    SUCCESS: {
-      bg: IconColors.colored.success.bg,
-      border: IconColors.colored.success.border,
-      text: IconColors.colored.success.icon,
-    },
-    ERROR: {
-      bg: IconColors.colored.error.bg,
-      border: IconColors.colored.error.border,
-      text: IconColors.colored.error.icon,
-    },
-    INFO: {
-      text: IconColors.colored.info.icon,
-    },
-    CONFIRM: {
-      bg: IconColors.colored.confirm.bg,
-      border: IconColors.colored.confirm.border,
-      text: IconColors.colored.confirm.icon,
-    },
-  },
-} as const
-
-// ============================================================================
-// POSITION STYLES
-// ============================================================================
 
 /**
  * CSS position styles for each notification position.
  * @constant
  */
+
 export const PositionStyles = {
   [NotifyPosition.TOP]: {
+    top: 24,
+    left: "50%",
+    right: "auto",
+    bottom: "auto",
+    transform: "translateX(-50%)",
+  },
+  [NotifyPosition.TOP_CENTER]: {
     top: 24,
     left: "50%",
     right: "auto",
@@ -323,6 +264,13 @@ export const PositionStyles = {
     bottom: 24,
     transform: "translateX(-50%)",
   },
+  [NotifyPosition.BOTTOM_CENTER]: {
+    top: "auto",
+    left: "50%",
+    right: "auto",
+    bottom: 24,
+    transform: "translateX(-50%)",
+  },
   [NotifyPosition.BOTTOM_LEFT]: {
     top: "auto",
     left: 24,
@@ -339,28 +287,24 @@ export const PositionStyles = {
   },
 } as const
 
-/**
- * Animation direction based on position (for enter/exit animations).
- * @constant
- */
 export const PositionAnimationDirection = {
   [NotifyPosition.TOP]: { enter: { y: -24 }, exit: { y: -24 } },
+  [NotifyPosition.TOP_CENTER]: { enter: { y: -24 }, exit: { y: -24 } },
   [NotifyPosition.TOP_LEFT]: { enter: { x: -24 }, exit: { x: -24 } },
   [NotifyPosition.TOP_RIGHT]: { enter: { x: 24 }, exit: { x: 24 } },
   [NotifyPosition.BOTTOM]: { enter: { y: 24 }, exit: { y: 24 } },
+  [NotifyPosition.BOTTOM_CENTER]: { enter: { y: 24 }, exit: { y: 24 } },
   [NotifyPosition.BOTTOM_LEFT]: { enter: { x: -24 }, exit: { x: -24 } },
   [NotifyPosition.BOTTOM_RIGHT]: { enter: { x: 24 }, exit: { x: 24 } },
 } as const
 
-/**
- * Swipe direction constraint based on position.
- * @constant
- */
 export const PositionSwipeDirection = {
   [NotifyPosition.TOP]: "y" as const,
+  [NotifyPosition.TOP_CENTER]: "y" as const,
   [NotifyPosition.TOP_LEFT]: "x" as const,
   [NotifyPosition.TOP_RIGHT]: "x" as const,
   [NotifyPosition.BOTTOM]: "y" as const,
+  [NotifyPosition.BOTTOM_CENTER]: "y" as const,
   [NotifyPosition.BOTTOM_LEFT]: "x" as const,
   [NotifyPosition.BOTTOM_RIGHT]: "x" as const,
 } as const

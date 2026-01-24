@@ -7,13 +7,9 @@
 
 import type React from "react"
 
-import { createContext, useContext, useMemo, useEffect, useState } from "react"
-import type { ThemeConfig, RadiusVariant, IconColorMode, BorderConfig, IconConfig } from "../types"
-import { ThemeColors, RadiusValues, IconColors } from "../constants"
-
-// ============================================================================
-// RESOLVED THEME TYPE
-// ============================================================================
+import { createContext, useContext, useEffect, useMemo, useState } from "react"
+import { IconColors, RadiusValues, ThemeColors } from "../constants"
+import type { BorderConfig, IconColorMode, IconConfig, RadiusVariant, ThemeConfig } from "../types"
 
 /**
  * Fully resolved theme with computed values.
@@ -51,10 +47,6 @@ export interface ResolvedTheme {
   borderConfig: Required<BorderConfig>
 }
 
-// ============================================================================
-// DEFAULT VALUES
-// ============================================================================
-
 const DEFAULT_BORDER_CONFIG: Required<BorderConfig> = {
   enabled: false,
   width: 1,
@@ -68,10 +60,6 @@ const DEFAULT_THEME: ThemeConfig = {
   iconColor: "colored",
   border: DEFAULT_BORDER_CONFIG,
 }
-
-// ============================================================================
-// CONTEXT
-// ============================================================================
 
 const ThemeContext = createContext<ResolvedTheme | null>(null)
 
@@ -87,10 +75,6 @@ export function useNotifyTheme(): ResolvedTheme {
   return theme
 }
 
-// ============================================================================
-// PROVIDER
-// ============================================================================
-
 interface ThemeProviderProps {
   theme?: ThemeConfig
   children: React.ReactNode
@@ -103,7 +87,6 @@ interface ThemeProviderProps {
 export function NotifyThemeProvider({ theme = DEFAULT_THEME, children }: ThemeProviderProps) {
   const [systemColorMode, setSystemColorMode] = useState<"light" | "dark">("dark")
 
-  // Listen for system color scheme changes
   useEffect(() => {
     if (typeof window === "undefined") return
 
@@ -119,7 +102,6 @@ export function NotifyThemeProvider({ theme = DEFAULT_THEME, children }: ThemePr
   }, [])
 
   const resolvedTheme = useMemo((): ResolvedTheme => {
-    // Resolve color mode
     const colorMode: "light" | "dark" = theme.colorMode === "auto" ? systemColorMode : (theme.colorMode ?? "dark")
 
     const colors = ThemeColors[colorMode]
@@ -128,7 +110,6 @@ export function NotifyThemeProvider({ theme = DEFAULT_THEME, children }: ThemePr
     const iconColors = IconColors[iconColorsKey]
     const radiusVariant = theme.radius ?? "pill"
 
-    // Resolve border config
     const borderConfig: Required<BorderConfig> = {
       enabled: theme.border?.enabled ?? false,
       width: theme.border?.width ?? 1,
@@ -138,14 +119,14 @@ export function NotifyThemeProvider({ theme = DEFAULT_THEME, children }: ThemePr
 
     return {
       colorMode,
-      background: theme.background ?? colors.background,
-      text: theme.textColor ?? colors.text,
-      textMuted: colors.textMuted,
-      textSubtle: colors.textSubtle,
-      border: colors.border,
-      borderHighlight: colors.borderHighlight,
-      buttonHover: colors.buttonHover,
-      shadow: theme.shadow === "none" ? "none" : (theme.shadow ?? colors.shadow),
+      background: theme.palette?.background ?? colors.background,
+      text: theme.palette?.text ?? colors.text,
+      textMuted: theme.palette?.textMuted ?? colors.textMuted,
+      textSubtle: theme.palette?.textSubtle ?? colors.textSubtle,
+      border: theme.palette?.border ?? colors.border,
+      borderHighlight: theme.palette?.borderHighlight ?? colors.borderHighlight,
+      buttonHover: theme.palette?.buttonHover ?? colors.buttonHover,
+      shadow: theme.palette?.shadow === "none" ? "none" : (theme.palette?.shadow ?? colors.shadow),
       radius: RadiusValues[radiusVariant],
       radiusVariant,
       iconColorMode,

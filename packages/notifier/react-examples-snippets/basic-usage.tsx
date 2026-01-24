@@ -1,40 +1,27 @@
-"use client"
-
-/**
- * Basic Usage Example
- * Demonstrates the most common notification patterns
- */
-
 import { notify } from "@remcostoeten/notifier"
 
 export function BasicUsageExamples() {
-  // Simple info notification
-  const showInfo = () => {
+  function showInfo() {
     notify("New message received")
   }
 
-  // Success notification
-  const showSuccess = () => {
+  function showSuccess() {
     notify.success("Changes saved successfully!")
   }
 
-  // Error notification
-  const showError = () => {
+  function showError() {
     notify.error("Failed to save changes")
   }
 
-  // Loading notification
-  const showLoading = () => {
+  function showLoading() {
     notify.loading("Processing your request...")
   }
 
-  // With custom duration
-  const showCustomDuration = () => {
+  function showCustomDuration() {
     notify("This stays for 10 seconds", { duration: 10000 })
   }
 
-  // Never auto-dismiss
-  const showPersistent = () => {
+  function showPersistent() {
     notify("This stays until manually dismissed", { duration: 0 })
   }
 

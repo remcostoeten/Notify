@@ -6,7 +6,7 @@
 "use client"
 
 import * as React from "react"
-import { AnimatePresence } from "framer-motion"
+import { AnimatePresence } from "motion/react"
 import { getNotifications, subscribe } from "../store"
 import { configure } from "../notify"
 import { PositionStyles, NotifyStateType, Defaults } from "../constants"
@@ -41,9 +41,8 @@ function groupByPosition(
  * notify() from anywhere in your application.
  *
  * @example Basic usage
- * \`\`\`tsx
- * // In your layout.tsx
- * import { Notifier } from "@/module/notify"
+ * ```tsx
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         * import { Notifier } from "@/module/notify"
  *
  * export default function Layout({ children }) {
  *   return (
@@ -55,10 +54,10 @@ function groupByPosition(
  *     </html>
  *   )
  * }
- * \`\`\`
+ * ```
  *
  * @example With configuration
- * \`\`\`tsx
+ * ```tsx
  * <Notifier
  *   position="top-right"
  *   maxVisible={5}
@@ -67,10 +66,9 @@ function groupByPosition(
  *   radius="rounded"
  *   border={{ enabled: true }}
  * />
- * \`\`\`
+ * ```
  */
 export function Notifier({
-  // Behavior
   position = Defaults.POSITION as NotifyPositionType,
   maxVisible = Defaults.MAX_VISIBLE,
   duration = Defaults.DURATION_MS,
@@ -85,6 +83,7 @@ export function Notifier({
   iconColor = "colored",
   border,
   icons,
+  theme,
 }: NotifierProps = {}): JSX.Element {
   const [items, setItems] = React.useState<NotifyItem[]>([])
 
@@ -103,9 +102,11 @@ export function Notifier({
   }, [position, maxVisible, duration, swipeToDismiss, pauseOnHover, clickToDismiss, offset, gap])
 
   React.useEffect(() => {
+    console.log("[Notifier] Component API Mounted")
     setItems(getNotifications())
 
     const unsubscribe = subscribe(() => {
+      console.log("[Notifier] Component Received Update")
       setItems(getNotifications())
     })
 
@@ -121,6 +122,7 @@ export function Notifier({
     iconColor,
     border,
     icons,
+    palette: theme,
   }
 
   // Filter out idle notifications and group by position
@@ -130,9 +132,23 @@ export function Notifier({
   // Get all positions that have notifications
   const positions = Array.from(grouped.keys())
 
-  // Calculate offset values
-  const offsetX = typeof offset === "number" ? offset : (offset?.x ?? 16)
-  const offsetY = typeof offset === "number" ? offset : (offset?.y ?? 16)
+  // Calculate offset values safely
+  let offsetX = 16
+  let offsetY = 16
+
+  if (typeof offset === "number") {
+    offsetX = offset
+    offsetY = offset
+  } else if (typeof offset === "string") {
+    const parsed = parseInt(offset, 10)
+    if (!isNaN(parsed)) {
+      offsetX = parsed
+      offsetY = parsed
+    }
+  } else if (offset) {
+    offsetX = offset.x ?? 16
+    offsetY = offset.y ?? 16
+  }
 
   return (
     <NotifyThemeProvider theme={themeConfig}>

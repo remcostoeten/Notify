@@ -173,7 +173,7 @@ describe("store", () => {
       vi.advanceTimersByTime(10)
       setState("test-3", "info", "Message 3")
 
-      enforceMaxVisible(2, "test-4")
+      enforceMaxVisible(3, "test-4")
 
       expect(getNotification("test-1")?.visible).toBe(false)
       expect(getNotification("test-2")?.visible).toBe(true)

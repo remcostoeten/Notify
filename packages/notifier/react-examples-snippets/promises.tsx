@@ -1,24 +1,17 @@
-"use client"
-
-/**
- * Promise Tracking Example
- * Demonstrates automatic promise state tracking
- */
-
 import { notify } from "@remcostoeten/notifier"
 
-// Simulated API calls
-const fetchUserData = () =>
-  new Promise((resolve) => setTimeout(() => resolve({ name: "John", email: "john@example.com" }), 2000))
+function fetchUserData() {
+  return new Promise((resolve) => setTimeout(() => resolve({ name: "John", email: "john@example.com" }), 2000))
+}
 
-const deleteUser = () =>
-  new Promise((resolve, reject) =>
-    setTimeout(() => (Math.random() > 0.5 ? resolve() : reject(new Error("Network error"))), 2000),
+function deleteUser() {
+  return new Promise((resolve, reject) =>
+    setTimeout(() => (Math.random() > 0.5 ? resolve(null) : reject(new Error("Network error"))), 2000),
   )
+}
 
 export function PromiseExamples() {
-  // Basic promise tracking
-  const loadUser = () => {
+  function loadUser() {
     notify.promise(fetchUserData(), {
       loading: "Loading user data...",
       success: "User data loaded!",
@@ -26,26 +19,23 @@ export function PromiseExamples() {
     })
   }
 
-  // Dynamic success message
-  const loadUserWithData = () => {
+  function loadUserWithData() {
     notify.promise(fetchUserData(), {
       loading: "Loading user...",
-      success: (data) => `Welcome back, ${data.name}!`,
+      success: "Welcome back, ${data.name}!",
       error: "Could not load user",
     })
   }
 
-  // Dynamic error message
-  const deleteUserWithError = () => {
+  function deleteUserWithError() {
     notify.promise(deleteUser(), {
       loading: "Deleting user...",
       success: "User deleted successfully",
-      error: (err) => `Error: ${err.message}`,
+      error: "Failed to delete user",
     })
   }
 
-  // With callbacks
-  const loadWithCallbacks = () => {
+  function loadWithCallbacks() {
     notify.promise(
       fetchUserData(),
       {

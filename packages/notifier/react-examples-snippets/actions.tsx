@@ -1,15 +1,7 @@
-"use client"
-
-/**
- * Action Buttons Example
- * Demonstrates notifications with interactive action buttons
- */
-
 import { notify } from "@remcostoeten/notifier"
 
 export function ActionExamples() {
-  // Basic action
-  const notifyWithAction = () => {
+  function notifyWithAction() {
     notify("File moved to trash", {
       duration: 5000,
       action: {
@@ -19,8 +11,7 @@ export function ActionExamples() {
     })
   }
 
-  // Action that updates the notification
-  const actionWithUpdate = () => {
+  function actionWithUpdate() {
     const n = notify("Ready to sync?", {
       duration: 0,
       action: {
@@ -34,8 +25,7 @@ export function ActionExamples() {
     })
   }
 
-  // Multiple actions pattern
-  const multipleActions = () => {
+  function multipleActions() {
     let timeoutId: NodeJS.Timeout
 
     notify("3 new messages", {
@@ -57,8 +47,7 @@ export function ActionExamples() {
     })
   }
 
-  // Delayed action
-  const delayedAction = () => {
+  function delayedAction() {
     let cancelled = false
 
     notify("Download starting in 5 seconds", {
