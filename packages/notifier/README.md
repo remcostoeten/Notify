@@ -3,6 +3,11 @@
 <div align="center">
   <img src="./assets/logo.png" alt="Notifier Logo" width="200" />
   <br />
+  
+  [![npm version](https://img.shields.io/npm/v/@remcostoeten/notifier.svg)](https://www.npmjs.com/package/@remcostoeten/notifier)
+  [![npm downloads](https://img.shields.io/npm/dm/@remcostoeten/notifier.svg)](https://www.npmjs.com/package/@remcostoeten/notifier)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+  [![Bundle Size](https://img.shields.io/bundlephobia/minzip/@remcostoeten/notifier?label=minzipped)](https://bundlephobia.com/package/@remcostoeten/notifier)
 </div>
 
 Enterprise-grade chainable notification system for React with smooth animations, confirmations, and promise tracking.
@@ -35,21 +40,21 @@ npm i @remcostoeten/notifier motion
 
 ### 1. Add the mother notifier instance to your app
 
-_
+\_
 
 ```tsx
 import { Notifier } from '@remcostoeten/notifier'
 import '@remcostoeten/notifier/styles'
 
 export default function RootLayout({ children }) {
-  return (
-    <html>
-      <body>
-        {children}
-        <Notifier />
-      </body>
-    </html>
-  )
+    return (
+        <html>
+            <body>
+                {children}
+                <Notifier />
+            </body>
+        </html>
+    )
 }
 ```
 
@@ -59,11 +64,7 @@ export default function RootLayout({ children }) {
 import { notify } from '@remcostoeten/notifier'
 
 function MyComponent() {
-  return (
-    <button onClick={() => notify('Hello!')}>
-      Show notification
-    </button>
-  )
+    return <button onClick={() => notify('Hello!')}>Show notification</button>
 }
 ```
 
@@ -125,11 +126,11 @@ notify.error('Something went wrong')
 
 // With options
 notify('Custom notification', {
-  duration: 5000,
-  action: {
-    label: 'Undo',
-    onClick: () => console.log('Undo clicked')
-  }
+    duration: 5000,
+    action: {
+        label: 'Undo',
+        onClick: () => console.log('Undo clicked')
+    }
 })
 ```
 
@@ -139,37 +140,34 @@ notify('Custom notification', {
 const n = notify.loading('Saving...')
 
 try {
-  await saveData()
-  n.success('Saved!')
+    await saveData()
+    n.success('Saved!')
 } catch (error) {
-  n.error('Failed to save')
+    n.error('Failed to save')
 }
 ```
 
 ## Promise Tracking
 
 ```tsx
-notify.promise(
-  fetchData(),
-  {
+notify.promise(fetchData(), {
     loading: 'Loading data...',
     success: 'Data loaded!',
     error: 'Failed to load data'
-  }
-)
+})
 ```
 
 ## Confirmations
 
 ```tsx
 const confirmed = await notify.confirm('Delete this file?', {
-  confirmLabel: 'Delete',
-  cancelLabel: 'Keep'
+    confirmLabel: 'Delete',
+    cancelLabel: 'Keep'
 })
 
 if (confirmed) {
-  // User clicked Delete
-  await deleteFile()
+    // User clicked Delete
+    await deleteFile()
 }
 ```
 
@@ -179,34 +177,30 @@ Configure global behavior via the `<Notifier />` component:
 
 ```tsx
 <Notifier
-  // Position
-  position="top-right"
-  
-  // Behavior
-  duration={4000}
-  maxVisible={5}
-  swipeToDismiss={true}
-  pauseOnHover={true}
-  clickToDismiss={false}
-  
-  // Theme
-  colorMode="dark"
-  radius="pill"
-  iconColor="colored"
-  
-  // Border
-  border={{
-    enabled: true,
-    width: 1,
-    color: 'rgba(255, 255, 255, 0.1)',
-    style: 'solid'
-  }}
-  
-  // Custom icons
-  icons={{
-    success: <CustomCheckIcon />,
-    error: <CustomErrorIcon />
-  }}
+    // Position
+    position='top-right'
+    // Behavior
+    duration={4000}
+    maxVisible={5}
+    swipeToDismiss={true}
+    pauseOnHover={true}
+    clickToDismiss={false}
+    // Theme
+    colorMode='dark'
+    radius='pill'
+    iconColor='colored'
+    // Border
+    border={{
+        enabled: true,
+        width: 1,
+        color: 'rgba(255, 255, 255, 0.1)',
+        style: 'solid'
+    }}
+    // Custom icons
+    icons={{
+        success: <CustomCheckIcon />,
+        error: <CustomErrorIcon />
+    }}
 />
 ```
 
@@ -276,37 +270,37 @@ n.dismiss()
 
 ## Notifier Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `position` | `NotifyPositionType` | `"bottom"` | `top`, `bottom`, `top-left`, `top-right`, `bottom-left`, `bottom-right`, `top-center`, `bottom-center` |
-| `duration` | `number` | `3000` | Auto-dismiss duration in ms (0 = never) |
-| `maxVisible` | `number` | `5` | Maximum visible notifications |
-| `swipeToDismiss` | `boolean` | `true` | Enable swipe to dismiss |
-| `pauseOnHover` | `boolean` | `true` | Pause auto-dismiss on hover |
-| `clickToDismiss` | `boolean` | `false` | Dismiss on click anywhere on the toast |
-| `dismissible` | `boolean` | `false` | Show a dismiss (X) button by default |
-| `offset` | `number \| string \| {x,y}` | `16` | Offset from screen edge (e.g. `16`, `"16px"`, `{x: 20, y: 40}`) |
-| `gap` | `number` | `8` | Gap between stacked notifications |
-| `colorMode` | `ColorMode` | `"dark"` | Theme: `dark`, `light`, `auto` |
-| `radius` | `RadiusVariant` | `"pill"` | Border radius: `pill`, `rounded`, `squared` |
-| `iconColor` | `IconColorMode` | `"colored"` | Icon style: `colored`, `neutral`, `hidden` |
-| `border` | `boolean \| BorderConfig` | `false` | Border configuration |
-| `icons` | `IconConfig` | - | Custom icon overrides |
+| Prop             | Type                        | Default     | Description                                                                                            |
+| ---------------- | --------------------------- | ----------- | ------------------------------------------------------------------------------------------------------ |
+| `position`       | `NotifyPositionType`        | `"bottom"`  | `top`, `bottom`, `top-left`, `top-right`, `bottom-left`, `bottom-right`, `top-center`, `bottom-center` |
+| `duration`       | `number`                    | `3000`      | Auto-dismiss duration in ms (0 = never)                                                                |
+| `maxVisible`     | `number`                    | `5`         | Maximum visible notifications                                                                          |
+| `swipeToDismiss` | `boolean`                   | `true`      | Enable swipe to dismiss                                                                                |
+| `pauseOnHover`   | `boolean`                   | `true`      | Pause auto-dismiss on hover                                                                            |
+| `clickToDismiss` | `boolean`                   | `false`     | Dismiss on click anywhere on the toast                                                                 |
+| `dismissible`    | `boolean`                   | `false`     | Show a dismiss (X) button by default                                                                   |
+| `offset`         | `number \| string \| {x,y}` | `16`        | Offset from screen edge (e.g. `16`, `"16px"`, `{x: 20, y: 40}`)                                        |
+| `gap`            | `number`                    | `8`         | Gap between stacked notifications                                                                      |
+| `colorMode`      | `ColorMode`                 | `"dark"`    | Theme: `dark`, `light`, `auto`                                                                         |
+| `radius`         | `RadiusVariant`             | `"pill"`    | Border radius: `pill`, `rounded`, `squared`                                                            |
+| `iconColor`      | `IconColorMode`             | `"colored"` | Icon style: `colored`, `neutral`, `hidden`                                                             |
+| `border`         | `boolean \| BorderConfig`   | `false`     | Border configuration                                                                                   |
+| `icons`          | `IconConfig`                | -           | Custom icon overrides                                                                                  |
 
 ## NotifyOptions
 
 Options for individual notifications:
 
-| Option | Type | Description |
-|--------|------|-------------|
-| `duration` | `number` | Override default duration |
-| `action` | `NotifyAction` | Add action button |
-| `onOpen` | `function` | Called when shown |
-| `onClose` | `function` | Called when hidden |
-| `onDismiss` | `function` | Called when dismissed with reason |
-| `onUpdate` | `function` | Called when state changes |
-| `swipeToDismiss` | `boolean` | Override swipe behavior |
-| `clickToDismiss` | `boolean` | Override click behavior |
+| Option           | Type           | Description                       |
+| ---------------- | -------------- | --------------------------------- |
+| `duration`       | `number`       | Override default duration         |
+| `action`         | `NotifyAction` | Add action button                 |
+| `onOpen`         | `function`     | Called when shown                 |
+| `onClose`        | `function`     | Called when hidden                |
+| `onDismiss`      | `function`     | Called when dismissed with reason |
+| `onUpdate`       | `function`     | Called when state changes         |
+| `swipeToDismiss` | `boolean`      | Override swipe behavior           |
+| `clickToDismiss` | `boolean`      | Override click behavior           |
 
 ## Contributing
 

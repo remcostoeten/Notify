@@ -65,6 +65,8 @@ export default [
       "no-console": ["warn", { allow: ["warn", "error"] }],
       "prefer-const": "error",
       "no-var": "error",
+      "no-undef": "off",
+      "no-unused-vars": "off",
     },
     settings: {
       react: {

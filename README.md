@@ -2,6 +2,21 @@
 
 A lightweight, chainable notification system for React with smooth animations, flexible theming, and a Sonner-like API.
 
+<p align="center">
+  <a href="https://www.npmjs.com/package/@remcostoeten/notifier">
+    <img src="https://img.shields.io/npm/v/@remcostoeten/notifier.svg" alt="npm version" />
+  </a>
+  <a href="https://www.npmjs.com/package/@remcostoeten/notifier">
+    <img src="https://img.shields.io/npm/dm/@remcostoeten/notifier.svg" alt="npm downloads" />
+  </a>
+  <a href="https://bundlephobia.com/package/@remcostoeten/notifier">
+    <img src="https://img.shields.io/bundlephobia/minzip/@remcostoeten/notifier" alt="bundle size" />
+  </a>
+  <a href="https://github.com/remcostoeten/toasti/blob/master/LICENSE">
+    <img src="https://img.shields.io/npm/l/@remcostoeten/notifier.svg" alt="license" />
+  </a>
+</p>
+
 <!-- Added preview image placeholder -->
 <p align="center">
   <img src="public/preview.gif" alt="Notifier Preview" width="600" />
@@ -9,29 +24,21 @@ A lightweight, chainable notification system for React with smooth animations, f
 
 ## Features
 
-- Chainable API for state transitions
-- Promise tracking with automatic state updates
-- Confirmation dialogs with async/await
-- Customizable positioning (6 positions)
-- Dark/light/auto color modes
-- Swipe to dismiss with direction awareness
-- Pause on hover
-- Multiple notifications with configurable stack limit
-- Full TypeScript support
+- **Chainable API**: State transitions made easy (`notify.loading().success()`)
+- **Promise Tracking**: Automatic state updates for async operations
+- **Confirmations**: Built-in async/await confirmation dialogs
+- **Highly Customizable**: 6 positions, 3 radius styles, and dark/light/auto modes
+- **Performance First**: Driven by Framer Motion for buttery smooth 60fps animations
+- **Swipe to Dismiss**: Natural touch and mouse gestures with direction awareness
+- **Lightweight**: Zero unnecessary dependencies, tree-shakable
+- **Typescript**: Core-first TS support with rich type definitions
 
 ## Installation
 
-<!-- Bun as primary, others as alternatives -->
 ```bash
 bun add @remcostoeten/notifier
-```
-
-Or with other package managers:
-
-```bash
-pnpm add @remcostoeten/notifier
+# or
 npm install @remcostoeten/notifier
-yarn add @remcostoeten/notifier
 ```
 
 ## Quick Start
@@ -42,35 +49,35 @@ yarn add @remcostoeten/notifier
 import { Notifier } from '@remcostoeten/notifier'
 
 export default function RootLayout({ children }) {
-  return (
-    <html>
-      <body>
-        {children}
-        <Notifier />
-      </body>
-    </html>
-  )
+    return (
+        <html>
+            <body>
+                {children}
+                <Notifier position='bottom-right' />
+            </body>
+        </html>
+    )
 }
 ```
 
-2. Call notify from anywhere:
+1. Call notify from anywhere:
 
 ```tsx
 import { notify } from '@remcostoeten/notifier'
 
 function MyComponent() {
-  const handleSave = async () => {
-    const n = notify.loading('Saving...')
-    
-    try {
-      await saveData()
-      n.success('Saved!')
-    } catch (err) {
-      n.error('Failed to save')
+    const handleSave = async () => {
+        const n = notify.loading('Saving...')
+
+        try {
+            await saveData()
+            n.success('Saved!')
+        } catch (err) {
+            n.error('Failed to save')
+        }
     }
-  }
-  
-  return <button onClick={handleSave}>Save</button>
+
+    return <button onClick={handleSave}>Save</button>
 }
 ```
 
@@ -79,12 +86,12 @@ function MyComponent() {
 ### Basic Methods
 
 ```tsx
-notify('Message')                    // Info notification
-notify.loading('Processing...')      // Loading state
-notify.success('Done!')              // Success state
-notify.error('Failed')               // Error state
-notify.dismiss()                     // Dismiss all
-notify.dismiss(id)                   // Dismiss by ID
+notify('Message') // Info notification
+notify.loading('Processing...') // Loading state
+notify.success('Done!') // Success state
+notify.error('Failed') // Error state
+notify.dismiss() // Dismiss all
+notify.dismiss(id) // Dismiss by ID
 ```
 
 ### Chaining
@@ -95,10 +102,10 @@ Each method returns an instance for state transitions:
 const n = notify.loading('Saving...')
 
 try {
-  await saveData()
-  n.success('Saved!')
+    await saveData()
+    n.success('Saved!')
 } catch (err) {
-  n.error(err.message)
+    n.error(err.message)
 }
 ```
 
@@ -106,9 +113,9 @@ try {
 
 ```tsx
 notify.promise(fetchData(), {
-  loading: 'Loading...',
-  success: 'Data loaded!',
-  error: (err) => `Error: ${err.message}`
+    loading: 'Loading...',
+    success: 'Data loaded!',
+    error: (err) => `Error: ${err.message}`
 })
 ```
 
@@ -116,93 +123,53 @@ notify.promise(fetchData(), {
 
 ```tsx
 const confirmed = await notify.confirm('Delete this item?', {
-  confirmLabel: 'Delete',
-  cancelLabel: 'Cancel'
+    confirmLabel: 'Delete',
+    cancelLabel: 'Cancel'
 })
 
 if (confirmed) {
-  await deleteItem()
+    await deleteItem()
 }
-```
-
-### Actions
-
-```tsx
-const n = notify('File moved to trash')
-n.update({
-  action: {
-    label: 'Undo',
-    onClick: () => n.success('File restored')
-  }
-})
 ```
 
 ## Notifier Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| position | `'top' \| 'top-left' \| 'top-right' \| 'bottom' \| 'bottom-left' \| 'bottom-right'` | `'bottom'` | Notification position |
-| duration | `number` | `3000` | Auto-dismiss duration in ms. Set to 0 to disable |
-| maxVisible | `number` | `5` | Maximum visible notifications |
-| colorMode | `'dark' \| 'light' \| 'auto'` | `'dark'` | Color theme |
-| radius | `'pill' \| 'rounded' \| 'squared'` | `'pill'` | Border radius style |
-| iconColor | `'colored' \| 'neutral' \| 'hidden'` | `'colored'` | Icon color mode |
-| swipeToDismiss | `boolean` | `true` | Enable swipe gestures |
-| pauseOnHover | `boolean` | `true` | Pause auto-dismiss on hover |
-| border | `BorderConfig` | `undefined` | Border configuration |
-
-## NotifyOptions
-
-Options for individual notifications:
-
-| Option | Type | Description |
-|--------|------|-------------|
-| message | `string` | Notification message |
-| duration | `number` | Override default duration |
-| action | `{ label: string, onClick: () => void }` | Action button |
-| onOpen | `(id) => void` | Called when notification appears |
-| onClose | `(id) => void` | Called when notification is removed |
-| onDismiss | `(id, reason) => void` | Called when dismissed with reason |
-| onUpdate | `(id, newState, prevState) => void` | Called on state change |
+| Prop           | Type                                                                                              | Default          | Description                                      |
+| -------------- | ------------------------------------------------------------------------------------------------- | ---------------- | ------------------------------------------------ |
+| position       | `'top-left' \| 'top-center' \| 'top-right' \| 'bottom-left' \| 'bottom-center' \| 'bottom-right'` | `'bottom-right'` | Notification position                            |
+| duration       | `number`                                                                                          | `3000`           | Auto-dismiss duration in ms. Set to 0 to disable |
+| maxVisible     | `number`                                                                                          | `5`              | Maximum visible notifications                    |
+| colorMode      | `'dark' \| 'light' \| 'auto'`                                                                     | `'dark'`         | Color theme                                      |
+| radius         | `'pill' \| 'rounded' \| 'squared'`                                                                | `'pill'`         | Border radius style                              |
+| iconColor      | `'colored' \| 'neutral' \| 'hidden'`                                                              | `'colored'`      | Icon color mode                                  |
+| swipeToDismiss | `boolean`                                                                                         | `true`           | Enable swipe gestures                            |
+| pauseOnHover   | `boolean`                                                                                         | `true`           | Pause auto-dismiss on hover                      |
+| gap            | `number`                                                                                          | `8`              | Gap between notifications (px)                   |
 
 ## Project Structure
 
 ```
-.
 ├── packages/
-│   ├── notifier/          # Main notification library
-│   └── release-cli/       # Release automation tool
-├── app/                   # Demo application (Next.js)
-├── module/                # Local module alias for demo
+│   ├── notifier/          # Core library (@remcostoeten/notifier)
+│   └── release-cli/       # Internal release automation tool
+├── apps/
+│   └── demo/              # Documentation & Showcase (Next.js)
 └── README.md
 ```
 
 ## Development
 
-<!-- Bun as primary package manager -->
 ```bash
 # Install dependencies
 bun install
 
-# Run demo app
+# Run documentation/showcase
 bun dev
 
-# Run tests
-cd packages/notifier && bun test
-
-# Build package
-cd packages/notifier && bun run build
+# Build the library
+bun run build:notifier
 ```
-
-## Creating a Preview GIF
-
-To create a preview GIF for the README:
-
-1. Run the demo: `bun dev`
-2. Use a screen recording tool (e.g., Kap, LICEcap, or OBS)
-3. Record the notification interactions
-4. Save as `public/preview.gif`
 
 ## License
 
-MIT
+MIT © [Remco Stoeten](https://github.com/remcostoeten)

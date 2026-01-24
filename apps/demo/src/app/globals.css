@@ -1,0 +1,99 @@
+@import 'tailwindcss';
+@source "../../node_modules/@remcostoeten/notifier";
+
+/* Enable class-based dark mode for Tailwind v4 */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+    --background: #f8f7f4;
+    --foreground: #1a1a1a;
+    --muted-foreground: #6b6b6b;
+    --border: #e7e5e4;
+    --input: #e7e5e4;
+    --ring: #1a1a1a;
+
+    --code-background: rgba(240, 238, 232, 0.9);
+    --code-header: rgba(235, 232, 225, 0.8);
+    --code-highlight: rgba(230, 227, 218, 0.6);
+    --code-highlight-border: #c9c5b8;
+    --code-highlight-border-search: #d4a017;
+}
+
+.dark {
+    --background: #09090b;
+    --foreground: #fafafa;
+    --muted-foreground: #71717a;
+    --border: #27272a;
+    --input: #27272a;
+    --ring: #d4d4d8;
+
+    --code-background: rgba(24, 24, 27, 0.8);
+    --code-header: rgba(24, 24, 27, 0.5);
+    --code-highlight: rgba(39, 39, 42, 0.5);
+    --code-highlight-border: #171717;
+    --code-highlight-border-search: #eab308;
+}
+
+@theme inline {
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --font-sans: var(--font-geist-sans);
+    --font-mono: var(--font-geist-mono);
+}
+
+body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+}
+
+.dark ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.dark ::-webkit-scrollbar-track {
+    background: #0b0b0b;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background: #2a2a2a;
+    border-radius: 999px;
+    border: 2px solid #0b0b0b;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: #3a3a3a;
+}
+
+.dark * {
+    scrollbar-width: thin;
+    scrollbar-color: #2a2a2a #0b0b0b;
+}
+
+.light ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.light ::-webkit-scrollbar-track {
+    background: #f2f2f2;
+}
+
+.light ::-webkit-scrollbar-thumb {
+    background: #c9c9c9;
+    border-radius: 999px;
+    border: 2px solid #f2f2f2;
+}
+
+.light ::-webkit-scrollbar-thumb:hover {
+    background: #b5b5b5;
+}
+
+.light * {
+    scrollbar-width: thin;
+    scrollbar-color: #c9c9c9 #f2f2f2;
+}
