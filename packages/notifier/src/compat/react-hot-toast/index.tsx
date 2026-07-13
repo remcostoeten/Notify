@@ -3,7 +3,7 @@
 import React from 'react'
 import { createToastAdapter } from '../factory'
 import { Notifier } from '../../components/notification'
-import type { NotifierProps, NotifyPositionType } from '../../components/notification'
+import type { NotifierProps, NotifyPositionType } from '../../types'
 
 // Create adapter
 export const toast = createToastAdapter({

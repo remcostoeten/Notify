@@ -140,7 +140,7 @@ if (confirmed) {
 | duration       | `number`                                                                                          | `3000`           | Auto-dismiss duration in ms. Set to 0 to disable |
 | maxVisible     | `number`                                                                                          | `5`              | Maximum visible notifications                    |
 | colorMode      | `'dark' \| 'light' \| 'auto'`                                                                     | `'dark'`         | Color theme                                      |
-| radius         | `'pill' \| 'rounded' \| 'squared'`                                                                | `'pill'`         | Border radius style                              |
+| radius         | `'pill' \| 'rounded' \| 'squared'`                                                                | `'squared'`      | Border radius style                              |
 | iconColor      | `'colored' \| 'neutral' \| 'hidden'`                                                              | `'colored'`      | Icon color mode                                  |
 | swipeToDismiss | `boolean`                                                                                         | `true`           | Enable swipe gestures                            |
 | pauseOnHover   | `boolean`                                                                                         | `true`           | Pause auto-dismiss on hover                      |
@@ -167,7 +167,7 @@ bun install
 bun dev
 
 # Build the library
-bun run build:notifier
+bun run build:packages
 ```
 
 ## License

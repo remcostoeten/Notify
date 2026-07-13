@@ -12,8 +12,7 @@ import type { NotifyState, IconProps } from '../types'
 import { isValidElement, type ReactNode, type ComponentType } from 'react'
 import type { JSX } from 'react/jsx-runtime'
 
-const ICON_SIZE = 20
-const ICON_BADGE_SIZE = 12
+const ICON_SIZE = 18
 
 /**
  * Props for the NotifyIcon component.
@@ -28,9 +27,14 @@ interface NotifyIconProps {
  * @internal
  */
 const iconMotionProps = {
-    initial: { opacity: 0, scale: 0.5, filter: 'blur(4px)' },
+    initial: { opacity: 0, scale: 0.94, filter: 'blur(2px)' },
     animate: { opacity: 1, scale: 1, filter: 'blur(0px)' },
-    exit: { opacity: 0, scale: 0.5, filter: 'blur(4px)' },
+    exit: {
+        opacity: 0,
+        scale: 0.94,
+        filter: 'blur(2px)',
+        transition: { duration: 0.12, ease: [0.23, 1, 0.32, 1] as [number, number, number, number] }
+    },
     transition: AnimationConfig.ICON
 }
 
@@ -49,34 +53,36 @@ function renderCustomIcon(icon: ComponentType<IconProps> | ReactNode, props: Ico
     return icon
 }
 
-const CheckIcon = ({ size, color }: { size: number; color: string }) => (
+const CircleCheckIcon = ({ size, color }: { size: number; color: string }) => (
     <svg
         width={size}
         height={size}
         viewBox='0 0 24 24'
         fill='none'
         stroke={color}
-        strokeWidth={3}
+        strokeWidth={2}
         strokeLinecap='round'
         strokeLinejoin='round'
     >
-        <path d='M20 6L9 17l-5-5' />
+        <circle cx='12' cy='12' r='10' />
+        <path d='m9 12 2 2 4-4' />
     </svg>
 )
 
-const XIcon = ({ size, color }: { size: number; color: string }) => (
+const CircleXIcon = ({ size, color }: { size: number; color: string }) => (
     <svg
         width={size}
         height={size}
         viewBox='0 0 24 24'
         fill='none'
         stroke={color}
-        strokeWidth={3}
+        strokeWidth={2}
         strokeLinecap='round'
         strokeLinejoin='round'
     >
-        <path d='M18 6 6 18' />
-        <path d='M6 6 18 18' />
+        <circle cx='12' cy='12' r='10' />
+        <path d='m15 9-6 6' />
+        <path d='m9 9 6 6' />
     </svg>
 )
 
@@ -188,45 +194,21 @@ export function NotifyIcon({ state }: NotifyIconProps): JSX.Element {
                 )}
 
                 {state === NotifyStateType.SUCCESS && (
-                    <motion.div
-                        key='success'
-                        {...iconMotionProps}
-                        className='absolute flex items-center justify-center rounded-full'
-                        style={{
-                            width: ICON_SIZE,
-                            height: ICON_SIZE,
-                            backgroundColor: iconColors.success.icon
-                        }}
-                    >
+                    <motion.div key='success' {...iconMotionProps} className='absolute'>
                         {icons?.success ? (
                             renderCustomIcon(icons.success, buildIconProps(state))
                         ) : (
-                            <CheckIcon
-                                size={ICON_BADGE_SIZE}
-                                color={theme.colorMode === 'light' ? '#fff' : '#000'}
-                            />
+                            <CircleCheckIcon size={ICON_SIZE} color={iconColors.success.icon} />
                         )}
                     </motion.div>
                 )}
 
                 {state === NotifyStateType.ERROR && (
-                    <motion.div
-                        key='error'
-                        {...iconMotionProps}
-                        className='absolute flex items-center justify-center rounded-full'
-                        style={{
-                            width: ICON_SIZE,
-                            height: ICON_SIZE,
-                            backgroundColor: iconColors.error.icon
-                        }}
-                    >
+                    <motion.div key='error' {...iconMotionProps} className='absolute'>
                         {icons?.error ? (
                             renderCustomIcon(icons.error, buildIconProps(state))
                         ) : (
-                            <XIcon
-                                size={ICON_BADGE_SIZE}
-                                color={theme.colorMode === 'light' ? '#fff' : '#000'}
-                            />
+                            <CircleXIcon size={ICON_SIZE} color={iconColors.error.icon} />
                         )}
                     </motion.div>
                 )}
@@ -237,6 +219,16 @@ export function NotifyIcon({ state }: NotifyIconProps): JSX.Element {
                             renderCustomIcon(icons.info, buildIconProps(state))
                         ) : (
                             <InfoIcon size={ICON_SIZE} color={theme.textMuted} />
+                        )}
+                    </motion.div>
+                )}
+
+                {state === NotifyStateType.WARNING && (
+                    <motion.div key='warning' {...iconMotionProps} className='absolute'>
+                        {icons?.warning ? (
+                            renderCustomIcon(icons.warning, buildIconProps(state))
+                        ) : (
+                            <AlertIcon size={ICON_SIZE} color={iconColors.warning.icon} />
                         )}
                     </motion.div>
                 )}

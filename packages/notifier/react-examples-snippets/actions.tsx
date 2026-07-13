@@ -1,78 +1,78 @@
-import { notify } from "@remcostoeten/notifier"
+import { notify } from '@remcostoeten/notifier'
 
 export function ActionExamples() {
-  function notifyWithAction() {
-    notify("File moved to trash", {
-      duration: 5000,
-      action: {
-        label: "Undo",
-        onClick: () => notify.success("File restored"),
-      },
-    })
-  }
+    function notifyWithAction() {
+        notify('File moved to trash', {
+            duration: 5000,
+            action: {
+                label: 'Undo',
+                onClick: () => notify.success('File restored')
+            }
+        })
+    }
 
-  function actionWithUpdate() {
-    const n = notify("Ready to sync?", {
-      duration: 0,
-      action: {
-        label: "Sync Now",
-        onClick: async () => {
-          n.loading("Syncing...")
-          await new Promise((resolve) => setTimeout(resolve, 2000))
-          n.success("Sync complete!")
-        },
-      },
-    })
-  }
+    function actionWithUpdate() {
+        const n = notify('Ready to sync?', {
+            duration: 0,
+            action: {
+                label: 'Sync Now',
+                onClick: async () => {
+                    n.loading('Syncing...')
+                    await new Promise((resolve) => setTimeout(resolve, 2000))
+                    n.success('Sync complete!')
+                }
+            }
+        })
+    }
 
-  function multipleActions() {
-    let timeoutId: NodeJS.Timeout
+    function multipleActions() {
+        let timeoutId: NodeJS.Timeout
 
-    notify("3 new messages", {
-      duration: 0,
-      action: {
-        label: "View",
-        onClick: () => {
-          clearTimeout(timeoutId)
-          notify.success("Opening messages...")
-        },
-      },
-      onDismiss: (reason) => {
-        if (reason === "manual") {
-          timeoutId = setTimeout(() => {
-            console.log("Mark as read")
-          }, 100)
-        }
-      },
-    })
-  }
+        notify('3 new messages', {
+            duration: 0,
+            action: {
+                label: 'View',
+                onClick: () => {
+                    clearTimeout(timeoutId)
+                    notify.success('Opening messages...')
+                }
+            },
+            onDismiss: (reason) => {
+                if (reason === 'manual') {
+                    timeoutId = setTimeout(() => {
+                        console.log('Mark as read')
+                    }, 100)
+                }
+            }
+        })
+    }
 
-  function delayedAction() {
-    let cancelled = false
+    function delayedAction() {
+        let cancelled = false
 
-    notify("Download starting in 5 seconds", {
-      duration: 5000,
-      action: {
-        label: "Cancel",
-        onClick: () => {
-          cancelled = true
-          notify("Download cancelled")
-        },
-      },
-      onDismiss: () => {
-        if (!cancelled) {
-          notify.loading("Downloading...")
-        }
-      },
-    })
-  }
+        notify('Download starting in 5 seconds', {
+            duration: 5000,
+            action: {
+                label: 'Cancel',
+                onClick: () => {
+                    cancelled = true
+                    notify('Download cancelled')
+                }
+            },
+            onDismiss: () => {
+                if (!cancelled) {
+                    notify.loading('Downloading...')
+                }
+            }
+        })
+    }
 
-  return (
-    <div className="space-y-2">
-      <button onClick={notifyWithAction}>Undo Action</button>
-      <button onClick={actionWithUpdate}>Action with Update</button>
-      <button onClick={multipleActions}>Multiple Actions</button>
-      <button onClick={delayedAction}>Delayed Action</button>
-    </div>
-  )
+    return (
+        <div className='space-y-2'>
+            <button onClick={notifyWithAction}>Undo Action</button>
+            <button onClick={actionWithUpdate}>Action with Update</button>
+            <button onClick={multipleActions}>Multiple Actions</button>
+            <button onClick={delayedAction}>Delayed Action</button>
+        </div>
+    )
 }

@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 /**
  * @fileoverview Type definitions for the @remcostoeten/notifier package.
  *
@@ -12,6 +11,17 @@
 import type React from 'react'
 
 /**
+ * Content that can be rendered inside a notification.
+ * Plain strings are the common case; any ReactNode is accepted for rich content.
+ *
+ * @example
+ * ```tsx
+ * notify.success(<strong>Saved!</strong>)
+ * ```
+ */
+export type NotifyMessage = React.ReactNode
+
+/**
  * Notification state representing the current visual and behavioral state of a notification.
  *
  * - `idle` - Initial state, notification is not visible
@@ -19,6 +29,7 @@ import type React from 'react'
  * - `success` - Shows a success icon, auto-dismisses after duration
  * - `error` - Shows an error icon, auto-dismisses after duration
  * - `info` - Shows an info icon, auto-dismisses after duration
+ * - `warning` - Shows a warning icon, auto-dismisses after duration
  * - `confirm` - Shows confirm/cancel buttons, waits for user response
  *
  * @example
@@ -26,7 +37,7 @@ import type React from 'react'
  * const state: NotifyState = "loading"
  * ```
  */
-export type NotifyState = 'idle' | 'loading' | 'success' | 'error' | 'info' | 'confirm'
+export type NotifyState = 'idle' | 'loading' | 'success' | 'error' | 'info' | 'warning' | 'confirm'
 
 /**
  * Screen position where notifications appear.
@@ -73,9 +84,9 @@ export type DismissReasonType = 'timeout' | 'swipe' | 'click' | 'manual' | 'repl
  *
  * - `pill` - Fully rounded corners (9999px), creates a pill/capsule shape
  * - `rounded` - Medium rounded corners (12px), modern card appearance
- * - `squared` - Minimal rounded corners (4px), more traditional look
+ * - `squared` - Minimal rounded corners (4px), clean squared look
  *
- * @default "pill"
+ * @default "squared"
  *
  * @example
  * ```tsx
@@ -258,6 +269,11 @@ export interface IconConfig {
     info?: React.ReactNode
 
     /**
+     * Custom icon for warning state.
+     */
+    warning?: React.ReactNode
+
+    /**
      * Custom icon for confirm state.
      */
     confirm?: React.ReactNode
@@ -404,20 +420,20 @@ export interface PromiseOptions<TData = unknown, TError = unknown> {
      * Message displayed during the loading/pending state.
      * @default "Loading..."
      */
-    loading?: string
+    loading?: NotifyMessage
 
     /**
      * Message displayed when the promise resolves successfully.
      * @default "Success"
      */
-    success?: string | ((data: TData) => string)
+    success?: NotifyMessage | ((data: TData) => NotifyMessage)
 
     /**
      * Message displayed when the promise rejects.
-     * Can be a static string or a function that extracts a message from the error.
+     * Can be a static message or a function that extracts a message from the error.
      * @default "Error"
      */
-    error?: string | ((error: TError) => string)
+    error?: NotifyMessage | ((error: TError) => NotifyMessage)
 }
 
 /**
@@ -439,9 +455,15 @@ export interface PromiseOptions<TData = unknown, TError = unknown> {
  */
 export interface NotifyOptions {
     /**
-     * Message text to display in the notification.
+     * Message to display in the notification.
+     * Accepts a plain string or any ReactNode for rich content.
      */
-    message?: string
+    message?: NotifyMessage
+
+    /**
+     * Secondary line rendered below the message in a smaller, muted style.
+     */
+    description?: NotifyMessage
 
     /**
      * Override position for this specific notification.
@@ -512,6 +534,12 @@ export interface NotifyOptions {
      * @default "Error"
      */
     errorMessage?: string
+
+    /**
+     * Default message for warning state when not explicitly provided.
+     * @default "Warning"
+     */
+    warningMessage?: string
 
     /**
      * Callback invoked when the notification first appears.
@@ -617,7 +645,7 @@ export interface NotifierProps {
 
     /**
      * Border radius style for notification containers.
-     * @default "pill"
+     * @default "squared"
      */
     radius?: RadiusVariant
 
@@ -655,6 +683,14 @@ export interface NotifierProps {
      * @default 8
      */
     gap?: number
+
+    /**
+     * Collapse notifications into an overlapping stack behind the newest one,
+     * with only a small peek of the older ones showing. Hovering the stack
+     * expands it to reveal every notification with the configured `gap`.
+     * @default false
+     */
+    stack?: boolean
 }
 
 /**
@@ -692,7 +728,7 @@ export interface NotifyInstance {
      * notify({}).loading("Processing...")
      * ```
      */
-    loading(message?: string): NotifyInstance
+    loading(message?: NotifyMessage): NotifyInstance
 
     /**
      * Transition the notification to success state.
@@ -706,7 +742,7 @@ export interface NotifyInstance {
      * notify.loading("Saving...").success("Saved!")
      * ```
      */
-    success(message?: string): NotifyInstance
+    success(message?: NotifyMessage): NotifyInstance
 
     /**
      * Transition the notification to error state.
@@ -720,7 +756,7 @@ export interface NotifyInstance {
      * notify.loading("Saving...").error("Failed to save")
      * ```
      */
-    error(message?: string): NotifyInstance
+    error(message?: NotifyMessage): NotifyInstance
 
     /**
      * Transition the notification to info state.
@@ -734,7 +770,21 @@ export interface NotifyInstance {
      * notify({}).info("New update available")
      * ```
      */
-    info(message?: string): NotifyInstance
+    info(message?: NotifyMessage): NotifyInstance
+
+    /**
+     * Transition the notification to warning state.
+     * Starts the auto-dismiss timer.
+     *
+     * @param message - Warning message to display
+     * @returns This instance for chaining
+     *
+     * @example
+     * ```typescript
+     * notify({}).warning("Storage almost full")
+     * ```
+     */
+    warning(message?: NotifyMessage): NotifyInstance
 
     /**
      * Dismiss this notification immediately.
@@ -788,7 +838,7 @@ export interface NotifyInstance {
      * })
      * ```
      */
-    promise<T>(promise: Promise<T>, options?: PromiseOptions): Promise<T>
+    promise<T>(promise: Promise<T>, options?: PromiseOptions<T>): Promise<T>
 
     /**
      * Show a confirmation dialog and wait for user response.
@@ -812,7 +862,7 @@ export interface NotifyInstance {
      * }
      * ```
      */
-    confirm(message: string, options?: ConfirmOptions): Promise<boolean>
+    confirm(message: NotifyMessage, options?: ConfirmOptions): Promise<boolean>
 }
 
 /**
@@ -838,27 +888,32 @@ export interface NotifyFunction {
      * @param options - Additional options when first param is a message string
      * @returns Chainable notification instance
      */
-    (messageOrOptions?: string | NotifyOptions, options?: NotifyOptions): NotifyInstance
+    (messageOrOptions?: NotifyMessage | NotifyOptions, options?: NotifyOptions): NotifyInstance
 
     /**
      * Show a loading notification with spinner.
      */
-    loading: (message?: string, options?: NotifyOptions) => NotifyInstance
+    loading: (message?: NotifyMessage, options?: NotifyOptions) => NotifyInstance
 
     /**
      * Show a success notification.
      */
-    success: (message?: string, options?: NotifyOptions) => NotifyInstance
+    success: (message?: NotifyMessage, options?: NotifyOptions) => NotifyInstance
 
     /**
      * Show an error notification.
      */
-    error: (message?: string, options?: NotifyOptions) => NotifyInstance
+    error: (message?: NotifyMessage, options?: NotifyOptions) => NotifyInstance
 
     /**
      * Show an info notification.
      */
-    info: (message?: string, options?: NotifyOptions) => NotifyInstance
+    info: (message?: NotifyMessage, options?: NotifyOptions) => NotifyInstance
+
+    /**
+     * Show a warning notification.
+     */
+    warning: (message?: NotifyMessage, options?: NotifyOptions) => NotifyInstance
 
     /**
      * Dismiss a specific notification by ID, or all notifications if no ID provided.
@@ -868,12 +923,12 @@ export interface NotifyFunction {
     /**
      * Track a promise with automatic loading/success/error transitions.
      */
-    promise: <T>(promise: Promise<T>, options?: PromiseOptions) => Promise<T>
+    promise: <T>(promise: Promise<T>, options?: PromiseOptions<T>) => Promise<T>
 
     /**
      * Show a confirmation dialog and wait for user response.
      */
-    confirm: (message: string, options?: ConfirmOptions) => Promise<boolean>
+    confirm: (message: NotifyMessage, options?: ConfirmOptions) => Promise<boolean>
 
     /**
      * Configure global defaults.
@@ -893,7 +948,7 @@ export interface NotifyFunction {
 export interface NotifyItem {
     id: string
     state: NotifyState
-    message: string
+    message: NotifyMessage
     options: NotifyOptions
     visible: boolean
     prevState: NotifyState

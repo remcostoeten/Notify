@@ -182,9 +182,9 @@ export const CodeBlock = ({
         return {
             style: {
                 display: 'block',
-                backgroundColor: shouldHighlight ? 'hsl(var(--code-highlight))' : undefined,
+                backgroundColor: shouldHighlight ? 'var(--code-highlight)' : undefined,
                 borderLeft: shouldHighlight
-                    ? `3px solid hsl(var(--code-highlight-border${isSearchMatch && !isHighlighted ? '-search' : ''}))`
+                    ? `3px solid var(--code-highlight-border${isSearchMatch && !isHighlighted ? '-search' : ''})`
                     : '3px solid transparent',
                 marginLeft: '-0.5rem',
                 paddingLeft: 'calc(0.5rem - 3px)',
@@ -212,11 +212,13 @@ export const CodeBlock = ({
             fontSize: inline ? '0.8125rem' : '0.875rem',
             background: 'var(--code-background)',
             color: 'var(--foreground)',
-            ...(inline && { display: 'inline', borderRadius: '0.25rem' })
+            borderRadius: 0,
+            boxShadow: 'none',
+            ...(inline && { display: 'inline' })
         },
         showLineNumbers: inline ? false : lineNumbersVisible,
         lineNumberStyle: {
-            color: 'hsl(var(--muted-foreground))',
+            color: 'var(--muted-foreground)',
             paddingRight: '1rem',
             minWidth: '2.5rem'
         },
@@ -231,10 +233,7 @@ export const CodeBlock = ({
     if (inline) {
         return (
             <code
-                className={cn(
-                    'inline-block rounded px-1.5 py-0.5 font-mono text-[0.8125rem]',
-                    className
-                )}
+                className={cn('inline-block px-1.5 py-0.5 font-mono text-[0.8125rem]', className)}
                 style={{ background: 'var(--code-background)' }}
             >
                 <SyntaxHighlighter
@@ -263,14 +262,14 @@ export const CodeBlock = ({
         <CodeBlockContext.Provider value={{ code }}>
             <div
                 className={cn(
-                    'bg-background text-foreground relative w-full overflow-hidden rounded-md border border-stone-200 dark:border-zinc-800',
+                    'bg-background text-foreground border-border relative w-full overflow-hidden border',
                     className
                 )}
                 {...props}
             >
                 {hasHeader && (
                     <div
-                        className='flex items-center gap-2 border-b border-stone-200 px-3 py-2 text-sm dark:border-zinc-800'
+                        className='border-border flex items-center gap-2 border-b px-3 py-2 text-sm'
                         style={{ background: 'var(--code-header)' }}
                     >
                         {collapsible && (
@@ -401,8 +400,7 @@ export const CodeBlock = ({
                         {/* Partial collapse fade overlay */}
                         {hasPartialCollapse && !isPartialExpanded && (
                             <div className='absolute bottom-0 left-0 right-0'>
-                                <div className='from-background via-background/80 h-20 bg-gradient-to-t to-transparent' />
-                                <div className='bg-background flex items-center justify-center px-4 pb-3 pt-1'>
+                                <div className='bg-background border-border flex items-center justify-center border-t px-4 pb-3 pt-1'>
                                     <Button
                                         variant='ghost'
                                         size='sm'
@@ -419,7 +417,7 @@ export const CodeBlock = ({
 
                         {/* Collapse button when expanded */}
                         {hasPartialCollapse && isPartialExpanded && (
-                            <div className='bg-background flex items-center justify-center border-t border-stone-200 px-4 py-2 dark:border-zinc-800'>
+                            <div className='bg-background border-border flex items-center justify-center border-t px-4 py-2'>
                                 <Button
                                     variant='ghost'
                                     size='sm'

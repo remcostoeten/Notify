@@ -71,32 +71,39 @@
  * ```
  */
 
-export { notify } from "./notify"
-export { Notifier, Notification, type NotifierProps } from "./components/notification"
+export { notify } from './notify'
+export { Notifier, Notification, type NotifierProps } from './components/notification'
 
 export type {
-  NotifyState,
-  NotifyPositionType,
-  DismissReasonType,
-  NotifyOptions,
-  NotifyInstance,
-  NotifyAction,
-  ConfirmOptions,
-  PromiseOptions,
-  OnOpenCallback,
-  OnCloseCallback,
-  OnDismissCallback,
-  OnUpdateCallback,
-  // Theming types
-  ThemeConfig,
-  RadiusVariant,
-  ColorMode,
-  IconColorMode,
-  BorderConfig,
-  IconConfig,
-  IconProps,
-} from "./types"
+    NotifyState,
+    NotifyMessage,
+    NotifyPositionType,
+    DismissReasonType,
+    NotifyOptions,
+    NotifyInstance,
+    NotifyAction,
+    ConfirmOptions,
+    PromiseOptions,
+    OnOpenCallback,
+    OnCloseCallback,
+    OnDismissCallback,
+    OnUpdateCallback,
+    // Theming types
+    ThemeConfig,
+    RadiusVariant,
+    ColorMode,
+    IconColorMode,
+    BorderConfig,
+    IconConfig,
+    IconProps
+} from './types'
 
-export { NotifyStateType, NotifyPosition, DismissReason, Defaults, AnimationConfig } from "./constants"
+export {
+    NotifyStateType,
+    NotifyPosition,
+    DismissReason,
+    Defaults,
+    AnimationConfig
+} from './constants'
 
-export { resetStore } from "./store"
+export { resetStore } from './store'

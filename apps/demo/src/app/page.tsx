@@ -1,12 +1,11 @@
 'use client'
 import { notify, Notifier } from '@remcostoeten/notifier'
 import type { NotifyPositionType, ColorMode, RadiusVariant } from '@remcostoeten/notifier'
-import { ThemeToggle } from '@/components/theme-toggle'
 import { useState } from 'react'
 import { CodeBlock, CodeBlockCopyButton } from '@/components/code-block'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { Bot } from 'lucide-react'
+import { Bot, Check, Copy } from 'lucide-react'
 import {
     Select,
     SelectContent,
@@ -15,7 +14,6 @@ import {
     SelectValue
 } from '@/components/ui/select'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { HoverButton } from './liquid-button'
 
 function Button({
     onClick,
@@ -29,9 +27,70 @@ function Button({
     return (
         <button
             onClick={onClick}
-            className={`rounded border border-stone-300 bg-stone-100 px-3 py-1.5 text-xs font-medium text-stone-700 transition-all hover:bg-stone-200 active:scale-95 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 ${className}`}
+            className={`border-border text-muted-foreground hover:border-border-strong hover:text-foreground focus-visible:outline-ring border bg-transparent px-3 py-1.5 font-mono text-xs transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 ${className}`}
         >
             {children}
+        </button>
+    )
+}
+
+function PrimaryButton({
+    onClick,
+    children,
+    className = ''
+}: {
+    onClick: () => void
+    children: React.ReactNode
+    className?: string
+}) {
+    return (
+        <button
+            onClick={onClick}
+            className={`bg-foreground text-background focus-visible:outline-ring h-10 px-5 text-sm font-medium transition-colors hover:bg-[#cccccc] focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 ${className}`}
+        >
+            {children}
+        </button>
+    )
+}
+
+function SectionHeading({ id, label, hint }: { id?: string; label: string; hint?: string }) {
+    return (
+        <div
+            id={id}
+            className='border-border flex scroll-mt-16 items-baseline justify-between border-b px-6 py-4'
+        >
+            <h2 className='text-muted-foreground font-mono text-[11px] font-medium uppercase tracking-[0.2em]'>
+                {label}
+            </h2>
+            {hint && <span className='text-faint hidden text-xs sm:block'>{hint}</span>}
+        </div>
+    )
+}
+
+function InstallCommand() {
+    const [copied, setCopied] = useState(false)
+
+    const copy = async () => {
+        await navigator.clipboard.writeText(SNIPPETS.install)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+    }
+
+    return (
+        <button
+            onClick={copy}
+            className='border-border text-muted-foreground hover:border-border-strong hover:text-foreground focus-visible:outline-ring group flex h-10 items-center gap-3 border px-4 font-mono text-[13px] transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2'
+        >
+            <span className='text-faint select-none'>$</span>
+            <span>{SNIPPETS.install}</span>
+            {copied ? (
+                <Check size={13} className='text-foreground' />
+            ) : (
+                <Copy
+                    size={13}
+                    className='text-faint group-hover:text-foreground transition-colors'
+                />
+            )}
         </button>
     )
 }
@@ -123,7 +182,7 @@ const PROPS_NOTIFIER = [
     {
         prop: 'radius',
         type: '"pill" | "rounded" | "squared"',
-        default: '"pill"',
+        default: '"squared"',
         desc: 'Border radius style'
     },
     {
@@ -142,6 +201,12 @@ const PROPS_NOTIFIER = [
     },
     { prop: 'dismissible', type: 'boolean', default: 'false', desc: 'Show dismiss button' },
     { prop: 'gap', type: 'number', default: '8', desc: 'Gap between stacked notifications (px)' },
+    {
+        prop: 'stack',
+        type: 'boolean',
+        default: 'false',
+        desc: 'Collapse into an overlapping stack, hover to expand'
+    },
     {
         prop: 'offset',
         type: 'number | { x?, y? }',
@@ -175,25 +240,42 @@ const PROPS_NOTIFY = [
     { prop: 'onDismiss', type: '(id, reason) => void', default: '-', desc: 'Called on dismiss' }
 ]
 
+const METHODS = [
+    { sig: 'notify(message, options?)', desc: 'Default info notification' },
+    { sig: 'notify.success(message, options?)', desc: 'Success state' },
+    { sig: 'notify.error(message, options?)', desc: 'Error state' },
+    { sig: 'notify.loading(message, options?)', desc: 'Loading spinner' },
+    { sig: 'notify.promise(promise, messages)', desc: 'Track async operations' },
+    { sig: 'notify.dismiss(id?)', desc: 'Dismiss by id or all' },
+    { sig: 'instance.confirm(message, options)', desc: 'Await user confirmation' }
+]
+
+const NAV_LINKS = [
+    { href: '#playground', label: 'Playground' },
+    { href: '#examples', label: 'Examples' },
+    { href: '#api-reference', label: 'API' },
+    { href: '#migration', label: 'Migration' }
+]
+
 function PropsTable({ title, data }: { title: string; data: typeof PROPS_NOTIFIER }) {
     return (
         <div className='overflow-x-auto'>
-            <h3 className='mb-3 text-sm font-semibold text-stone-700 dark:text-zinc-300'>
+            <h3 className='border-border text-foreground border-b px-6 py-3 font-mono text-xs'>
                 {title}
             </h3>
-            <table className='w-full border-collapse text-xs'>
+            <table className='w-full border-collapse text-[13px]'>
                 <thead>
-                    <tr className='border-b border-stone-200 dark:border-zinc-800'>
-                        <th className='px-3 py-2 text-left font-medium text-stone-500 dark:text-zinc-400'>
+                    <tr className='border-border border-b'>
+                        <th className='text-faint px-6 py-2.5 text-left font-mono text-[11px] font-medium uppercase tracking-wider'>
                             Prop
                         </th>
-                        <th className='px-3 py-2 text-left font-medium text-stone-500 dark:text-zinc-400'>
+                        <th className='text-faint px-3 py-2.5 text-left font-mono text-[11px] font-medium uppercase tracking-wider'>
                             Type
                         </th>
-                        <th className='px-3 py-2 text-left font-medium text-stone-500 dark:text-zinc-400'>
+                        <th className='text-faint px-3 py-2.5 text-left font-mono text-[11px] font-medium uppercase tracking-wider'>
                             Default
                         </th>
-                        <th className='px-3 py-2 text-left font-medium text-stone-500 dark:text-zinc-400'>
+                        <th className='text-faint px-3 py-2.5 text-left font-mono text-[11px] font-medium uppercase tracking-wider'>
                             Description
                         </th>
                     </tr>
@@ -202,20 +284,16 @@ function PropsTable({ title, data }: { title: string; data: typeof PROPS_NOTIFIE
                     {data.map((row) => (
                         <tr
                             key={row.prop}
-                            className='border-b border-stone-200/50 hover:bg-stone-100/50 dark:border-zinc-800/50 dark:hover:bg-zinc-800/30'
+                            className='border-border hover:bg-muted border-b transition-colors last:border-b-0'
                         >
-                            <td className='px-3 py-2 font-mono text-stone-800 dark:text-zinc-200'>
+                            <td className='text-foreground whitespace-nowrap px-6 py-2.5 font-mono'>
                                 {row.prop}
                             </td>
-                            <td className='px-3 py-2 font-mono text-stone-500 dark:text-zinc-400'>
+                            <td className='text-muted-foreground px-3 py-2.5 font-mono'>
                                 {row.type}
                             </td>
-                            <td className='px-3 py-2 font-mono text-stone-400 dark:text-zinc-500'>
-                                {row.default}
-                            </td>
-                            <td className='px-3 py-2 text-stone-500 dark:text-zinc-400'>
-                                {row.desc}
-                            </td>
+                            <td className='text-faint px-3 py-2.5 font-mono'>{row.default}</td>
+                            <td className='text-muted-foreground px-3 py-2.5'>{row.desc}</td>
                         </tr>
                     ))}
                 </tbody>
@@ -228,9 +306,8 @@ export default function Home() {
     const [activeCode, setActiveCode] = useState(SNIPPETS.usage)
     const [activeLang, setActiveLang] = useState('typescript')
 
-    // Tweaker State
     const [position, setPosition] = useState<NotifyPositionType>('bottom-right')
-    const [radius, setRadius] = useState<RadiusVariant>('pill')
+    const [radius, setRadius] = useState<RadiusVariant>('squared')
     const [colorMode, setColorMode] = useState<ColorMode>('dark')
     const [duration, setDuration] = useState(3000)
     const [maxVisible, setMaxVisible] = useState(5)
@@ -239,9 +316,9 @@ export default function Home() {
     const [pauseOnHover, setPauseOnHover] = useState(true)
     const [clickToDismiss, setClickToDismiss] = useState(false)
     const [dismissible, setDismissible] = useState(false)
+    const [stack, setStack] = useState(false)
     const [iconColor, setIconColor] = useState<'colored' | 'neutral' | 'hidden'>('colored')
 
-    // Generate dynamic code snippet
     const generatedCode = `<Notifier
   position="${position}"
   colorMode="${colorMode}"
@@ -249,6 +326,7 @@ export default function Home() {
   duration={${duration}}
   maxVisible={${maxVisible}}
   gap={${gap}}
+  stack={${stack}}
   swipeToDismiss={${swipeToDismiss}}
   pauseOnHover={${pauseOnHover}}
   clickToDismiss={${clickToDismiss}}
@@ -343,7 +421,7 @@ After this is done notify the user that the notifier is ready to be used.
 Instruct the user with some usage examples:
 - \`notify('Hello')\` - Basic notification
 - \`notify.success('Saved!')\` - Success state
-- \`notify.error('Failed')\` - Error state  
+- \`notify.error('Failed')\` - Error state
 - \`notify.loading('Working...')\` - Loading spinner
 - \`notify.promise(promise, { loading, success, error })\` - Track async ops
 
@@ -357,12 +435,20 @@ NPM: https://www.npmjs.com/package/@remcostoeten/notifier
 `
 
         await navigator.clipboard.writeText(prompt)
-        notify.success('LLM Prompt copied to clipboard!')
+        notify.success('LLM prompt copied to clipboard')
     }
 
     const setCode = (code: string, lang = 'typescript') => {
         setActiveCode(code)
         setActiveLang(lang)
+    }
+
+    function handleHeroChain() {
+        const n = notify.loading('Building your app...')
+        setTimeout(() => {
+            n.loading('Deploying to production...')
+            setTimeout(() => n.success('Shipped'), 1400)
+        }, 1400)
     }
 
     function handleChain() {
@@ -384,8 +470,8 @@ NPM: https://www.npmjs.com/package/@remcostoeten/notifier
         })
         notify.promise(promise, {
             loading: 'Fetching...',
-            success: (data: unknown) => `Success:${data} `,
-            error: (err: unknown) => `Error: ${err instanceof Error ? err.message : String(err)} `
+            success: (data: unknown) => `Success: ${data}`,
+            error: (err: unknown) => `Error: ${err instanceof Error ? err.message : String(err)}`
         })
     }
 
@@ -424,240 +510,230 @@ NPM: https://www.npmjs.com/package/@remcostoeten/notifier
     ]
 
     return (
-        <div className='min-h-screen bg-stone-50 font-mono text-stone-900 dark:bg-zinc-950 dark:text-zinc-100'>
-            <div className='mx-auto max-w-4xl space-y-12 px-6 py-12'>
-                <header className='space-y-4'>
-                    <div className='flex items-center justify-between'>
-                        <h1 className='text-2xl font-bold text-stone-900 dark:text-zinc-100'>
-                            @remcostoeten/notifier
-                        </h1>
-                        <div className='flex items-center gap-3'>
+        <div className='min-h-screen'>
+            <header className='border-border bg-background sticky top-0 z-40 border-b'>
+                <div className='border-border mx-auto flex h-14 max-w-5xl items-center justify-between border-x px-6'>
+                    <a href='#' className='flex items-center gap-2.5'>
+                        <span aria-hidden className='bg-foreground block h-2.5 w-2.5' />
+                        <span className='text-foreground font-mono text-sm font-medium'>
+                            notifier
+                        </span>
+                    </a>
+                    <nav className='hidden items-center gap-6 md:flex'>
+                        {NAV_LINKS.map((link) => (
                             <a
-                                href='https://github.com/remcostoeten/Notify'
-                                target='_blank'
-                                rel='noopener noreferrer'
-                                className='text-xs text-zinc-500 transition-colors hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'
+                                key={link.href}
+                                href={link.href}
+                                className='text-muted-foreground hover:text-foreground text-[13px] transition-colors'
                             >
-                                GitHub
+                                {link.label}
                             </a>
-                            <ThemeToggle />
-                        </div>
-                    </div>
-                    <p className='mt-2 text-sm text-zinc-500 dark:text-zinc-400'>
-                        The notification system that lets you{' '}
-                        <code className='rounded border border-stone-300 bg-stone-200 px-1.5 py-0.5 font-mono text-xs text-stone-800 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200'>{`notify.loading('Building').success('Shipped 🚀')`}</code>
-                    </p>
-                </header>
-
-                {/* Tweaker / Playground */}
-                <div className='rounded-lg border border-stone-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/50'>
-                    <div className='flex flex-col gap-6'>
-                        <div className='flex flex-wrap gap-6'>
-                            <div className='flex flex-col gap-2'>
-                                <Label>Position</Label>
-                                <Select
-                                    value={position}
-                                    onValueChange={(val) => setPosition(val as NotifyPositionType)}
-                                >
-                                    <SelectTrigger className='w-[140px]'>
-                                        <SelectValue placeholder='Position' />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value='top-left'>top-left</SelectItem>
-                                        <SelectItem value='top-center'>top-center</SelectItem>
-                                        <SelectItem value='top-right'>top-right</SelectItem>
-                                        <SelectItem value='bottom-left'>bottom-left</SelectItem>
-                                        <SelectItem value='bottom-center'>bottom-center</SelectItem>
-                                        <SelectItem value='bottom-right'>bottom-right</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className='flex flex-col gap-2'>
-                                <Label>Radius</Label>
-                                <Select
-                                    value={radius}
-                                    onValueChange={(val) => setRadius(val as RadiusVariant)}
-                                >
-                                    <SelectTrigger className='w-[120px]'>
-                                        <SelectValue placeholder='Radius' />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value='pill'>pill</SelectItem>
-                                        <SelectItem value='rounded'>rounded</SelectItem>
-                                        <SelectItem value='squared'>squared</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className='flex flex-col gap-2'>
-                                <Label>Theme</Label>
-                                <Select
-                                    value={colorMode}
-                                    onValueChange={(val) => setColorMode(val as ColorMode)}
-                                >
-                                    <SelectTrigger className='w-[120px]'>
-                                        <SelectValue placeholder='Theme' />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value='dark'>Dark</SelectItem>
-                                        <SelectItem value='light'>Light</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className='flex flex-col gap-2'>
-                                <Label>Duration</Label>
-                                <Select
-                                    value={String(duration)}
-                                    onValueChange={(val) => setDuration(Number(val))}
-                                >
-                                    <SelectTrigger className='w-[100px]'>
-                                        <SelectValue placeholder='3s' />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value='2000'>2s</SelectItem>
-                                        <SelectItem value='3000'>3s</SelectItem>
-                                        <SelectItem value='5000'>5s</SelectItem>
-                                        <SelectItem value='8000'>8s</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className='flex flex-col gap-2'>
-                                <Label>Max Visible</Label>
-                                <Select
-                                    value={String(maxVisible)}
-                                    onValueChange={(val) => setMaxVisible(Number(val))}
-                                >
-                                    <SelectTrigger className='w-[100px]'>
-                                        <SelectValue placeholder='5' />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value='1'>1</SelectItem>
-                                        <SelectItem value='3'>3</SelectItem>
-                                        <SelectItem value='5'>5</SelectItem>
-                                        <SelectItem value='10'>10</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className='flex flex-col gap-2'>
-                                <Label>Gap</Label>
-                                <Select
-                                    value={String(gap)}
-                                    onValueChange={(val) => setGap(Number(val))}
-                                >
-                                    <SelectTrigger className='w-[100px]'>
-                                        <SelectValue placeholder='8px' />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value='4'>4px</SelectItem>
-                                        <SelectItem value='8'>8px</SelectItem>
-                                        <SelectItem value='12'>12px</SelectItem>
-                                        <SelectItem value='16'>16px</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className='flex flex-col gap-2'>
-                                <Label>Icon Color</Label>
-                                <Select
-                                    value={iconColor}
-                                    onValueChange={(val) =>
-                                        setIconColor(val as 'colored' | 'neutral' | 'hidden')
-                                    }
-                                >
-                                    <SelectTrigger className='w-[120px]'>
-                                        <SelectValue placeholder='Colored' />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value='colored'>Colored</SelectItem>
-                                        <SelectItem value='neutral'>Neutral</SelectItem>
-                                        <SelectItem value='hidden'>Hidden</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-
-                        <div className='flex w-fit flex-1 flex-wrap items-center gap-8 rounded-lg border border-stone-100 bg-stone-50 p-4 dark:border-zinc-800 dark:bg-zinc-900/50'>
-                            <div className='flex items-center space-x-2'>
-                                <Switch
-                                    id='swipe'
-                                    checked={swipeToDismiss}
-                                    onCheckedChange={setSwipeToDismiss}
-                                />
-                                <Label htmlFor='swipe' className='cursor-pointer font-normal'>
-                                    Swipe to dismiss
-                                </Label>
-                            </div>
-
-                            <div className='flex items-center space-x-2'>
-                                <Switch
-                                    id='hover'
-                                    checked={pauseOnHover}
-                                    onCheckedChange={setPauseOnHover}
-                                />
-                                <Label htmlFor='hover' className='cursor-pointer font-normal'>
-                                    Pause on hover
-                                </Label>
-                            </div>
-
-                            <div className='flex items-center space-x-2'>
-                                <Switch
-                                    id='click'
-                                    checked={clickToDismiss}
-                                    onCheckedChange={setClickToDismiss}
-                                />
-                                <Label htmlFor='click' className='cursor-pointer font-normal'>
-                                    Click to dismiss
-                                </Label>
-                            </div>
-
-                            <div className='flex items-center space-x-2'>
-                                <Switch
-                                    id='dismissible'
-                                    checked={dismissible}
-                                    onCheckedChange={setDismissible}
-                                />
-                                <Label htmlFor='dismissible' className='cursor-pointer font-normal'>
-                                    Show dismiss button
-                                </Label>
-                            </div>
-                        </div>
-
-                        <HoverButton
-                            className='w-fit'
-                            onClick={() => notify.success('Changes applied!', { position })}
+                        ))}
+                    </nav>
+                    <div className='flex items-center gap-5'>
+                        <a
+                            href='https://www.npmjs.com/package/@remcostoeten/notifier'
+                            target='_blank'
+                            rel='noopener noreferrer'
+                            className='text-muted-foreground hover:text-foreground text-[13px] transition-colors'
                         >
-                            Test Notification
-                        </HoverButton>
+                            npm
+                        </a>
+                        <a
+                            href='https://github.com/remcostoeten/Notify'
+                            target='_blank'
+                            rel='noopener noreferrer'
+                            className='text-muted-foreground hover:text-foreground text-[13px] transition-colors'
+                        >
+                            GitHub
+                        </a>
+                    </div>
+                </div>
+            </header>
+
+            <main className='border-border mx-auto max-w-5xl border-x'>
+                <section className='border-border border-b px-6 py-20 md:py-28'>
+                    <p className='text-faint font-mono text-[11px] uppercase tracking-[0.25em]'>
+                        @remcostoeten/notifier
+                    </p>
+                    <h1 className='text-foreground mt-5 max-w-2xl text-4xl font-semibold leading-[1.1] tracking-tight md:text-6xl'>
+                        Notifications that chain.
+                    </h1>
+                    <p className='text-muted-foreground mt-5 max-w-xl text-base leading-relaxed'>
+                        A Motion-animated notification system for React with a Sonner-like API. One
+                        component in your layout, then{' '}
+                        <code className='text-foreground font-mono text-[14px]'>
+                            notify.loading().success()
+                        </code>{' '}
+                        anywhere.
+                    </p>
+                    <div className='mt-10 flex flex-wrap items-center gap-3'>
+                        <PrimaryButton onClick={handleHeroChain}>Run the chain</PrimaryButton>
+                        <InstallCommand />
+                    </div>
+                </section>
+
+                <section>
+                    <SectionHeading
+                        id='playground'
+                        label='Playground'
+                        hint='Every change fires through the live Notifier below'
+                    />
+                    <div className='grid grid-cols-2 md:grid-cols-4'>
+                        {(
+                            [
+                                {
+                                    label: 'Position',
+                                    value: position,
+                                    onChange: (val: string) =>
+                                        setPosition(val as NotifyPositionType),
+                                    options: positions.map((p) => [p, p])
+                                },
+                                {
+                                    label: 'Radius',
+                                    value: radius,
+                                    onChange: (val: string) => setRadius(val as RadiusVariant),
+                                    options: [
+                                        ['pill', 'pill'],
+                                        ['rounded', 'rounded'],
+                                        ['squared', 'squared']
+                                    ]
+                                },
+                                {
+                                    label: 'Theme',
+                                    value: colorMode,
+                                    onChange: (val: string) => setColorMode(val as ColorMode),
+                                    options: [
+                                        ['dark', 'dark'],
+                                        ['light', 'light']
+                                    ]
+                                },
+                                {
+                                    label: 'Icon color',
+                                    value: iconColor,
+                                    onChange: (val: string) =>
+                                        setIconColor(val as 'colored' | 'neutral' | 'hidden'),
+                                    options: [
+                                        ['colored', 'colored'],
+                                        ['neutral', 'neutral'],
+                                        ['hidden', 'hidden']
+                                    ]
+                                },
+                                {
+                                    label: 'Duration',
+                                    value: String(duration),
+                                    onChange: (val: string) => setDuration(Number(val)),
+                                    options: [
+                                        ['2000', '2s'],
+                                        ['3000', '3s'],
+                                        ['5000', '5s'],
+                                        ['8000', '8s']
+                                    ]
+                                },
+                                {
+                                    label: 'Max visible',
+                                    value: String(maxVisible),
+                                    onChange: (val: string) => setMaxVisible(Number(val)),
+                                    options: [
+                                        ['1', '1'],
+                                        ['3', '3'],
+                                        ['5', '5'],
+                                        ['10', '10']
+                                    ]
+                                },
+                                {
+                                    label: 'Gap',
+                                    value: String(gap),
+                                    onChange: (val: string) => setGap(Number(val)),
+                                    options: [
+                                        ['4', '4px'],
+                                        ['8', '8px'],
+                                        ['12', '12px'],
+                                        ['16', '16px']
+                                    ]
+                                }
+                            ] as const
+                        ).map((field) => (
+                            <div
+                                key={field.label}
+                                className='border-border flex flex-col gap-2 border-b border-r p-4'
+                            >
+                                <Label className='text-faint font-mono text-[11px] uppercase tracking-wider'>
+                                    {field.label}
+                                </Label>
+                                <Select value={field.value} onValueChange={field.onChange}>
+                                    <SelectTrigger className='h-8 text-[13px]'>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {field.options.map(([value, label]) => (
+                                            <SelectItem key={value} value={value}>
+                                                {label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        ))}
+                        <div className='border-border flex items-end border-b border-r p-4'>
+                            <PrimaryButton
+                                className='h-8 w-full px-3 text-[13px]'
+                                onClick={() => notify.success('Changes applied', { position })}
+                            >
+                                Test notification
+                            </PrimaryButton>
+                        </div>
                     </div>
 
-                    <div className='mt-6 border-t border-stone-200 pt-4 dark:border-zinc-800'>
-                        <div className='mb-2 flex items-center justify-between'>
-                            <div className='text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-zinc-500'>
-                                Generated Configuration
+                    <div className='grid grid-cols-2 md:grid-cols-4'>
+                        {(
+                            [
+                                ['swipe', 'Swipe to dismiss', swipeToDismiss, setSwipeToDismiss],
+                                ['hover', 'Pause on hover', pauseOnHover, setPauseOnHover],
+                                ['click', 'Click to dismiss', clickToDismiss, setClickToDismiss],
+                                ['dismissible', 'Dismiss button', dismissible, setDismissible],
+                                ['stack', 'Stacked (hover to expand)', stack, setStack]
+                            ] as const
+                        ).map(([id, label, checked, onChange]) => (
+                            <div
+                                key={id}
+                                className='border-border flex items-center gap-3 border-b border-r p-4'
+                            >
+                                <Switch id={id} checked={checked} onCheckedChange={onChange} />
+                                <Label
+                                    htmlFor={id}
+                                    className='text-muted-foreground cursor-pointer text-[13px] font-normal'
+                                >
+                                    {label}
+                                </Label>
                             </div>
+                        ))}
+                    </div>
+
+                    <div className='border-border border-b'>
+                        <div className='flex items-center justify-between px-6 py-3'>
+                            <span className='text-faint font-mono text-[11px] uppercase tracking-[0.2em]'>
+                                Generated configuration
+                            </span>
                         </div>
                         <CodeBlock
                             code={generatedCode}
                             language='tsx'
                             showLineNumbers={false}
-                            className='!bg-stone-50 text-xs dark:!bg-zinc-950/50'
+                            className='border-0 border-t text-xs'
                         >
-                            <div className='flex gap-2'>
+                            <div className='flex gap-1'>
                                 <TooltipProvider>
                                     <Tooltip>
                                         <TooltipTrigger asChild>
                                             <button
                                                 onClick={copyPrompt}
-                                                className='rounded p-2 text-stone-500 transition-colors hover:bg-stone-200 dark:text-zinc-400 dark:hover:bg-zinc-800'
+                                                className='text-muted-foreground hover:text-foreground p-2 transition-colors'
                                             >
                                                 <Bot size={14} />
                                             </button>
                                         </TooltipTrigger>
-                                        <TooltipContent className='max-w-[280px] bg-stone-900 text-center text-stone-100 dark:bg-zinc-100 dark:text-zinc-900'>
+                                        <TooltipContent className='max-w-[280px] text-center'>
                                             <p>
                                                 Copy LLM instructions to install Notifier with these
                                                 exact settings in your project
@@ -669,7 +745,7 @@ NPM: https://www.npmjs.com/package/@remcostoeten/notifier
                             </div>
                         </CodeBlock>
                     </div>
-                </div>
+                </section>
 
                 <Notifier
                     position={position}
@@ -678,6 +754,7 @@ NPM: https://www.npmjs.com/package/@remcostoeten/notifier
                     duration={duration}
                     maxVisible={maxVisible}
                     gap={gap}
+                    stack={stack}
                     swipeToDismiss={swipeToDismiss}
                     pauseOnHover={pauseOnHover}
                     clickToDismiss={clickToDismiss}
@@ -685,25 +762,15 @@ NPM: https://www.npmjs.com/package/@remcostoeten/notifier
                     iconColor={iconColor}
                 />
 
-                <section className='space-y-4'>
-                    <h2 className='text-sm font-semibold uppercase tracking-wider text-stone-700 dark:text-zinc-300'>
-                        Installation
-                    </h2>
-                    <CodeBlock code={SNIPPETS.install} language='bash' showLineNumbers={false}>
-                        <CodeBlockCopyButton />
-                    </CodeBlock>
-                </section>
-
-                <section className='space-y-4'>
-                    <h2 className='text-sm font-semibold uppercase tracking-wider text-stone-700 dark:text-zinc-300'>
-                        Docs().Examples().Basic{' '}
-                    </h2>
-
-                    <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
-                        <div className='space-y-3 rounded-lg border border-stone-200 bg-stone-100/50 p-4 dark:border-zinc-800 dark:bg-zinc-900/50'>
-                            <h3 className='text-xs font-semibold text-stone-500 dark:text-zinc-400'>
-                                Basic
-                            </h3>
+                <section>
+                    <SectionHeading
+                        id='examples'
+                        label='Examples'
+                        hint='Click a button — the snippet that ran it appears below'
+                    />
+                    <div className='grid grid-cols-1 md:grid-cols-2'>
+                        <div className='border-border space-y-3 border-b p-6 md:border-r'>
+                            <h3 className='text-foreground font-mono text-xs'>Basic</h3>
                             <div className='flex flex-wrap gap-2'>
                                 <Button
                                     onClick={() => {
@@ -711,7 +778,7 @@ NPM: https://www.npmjs.com/package/@remcostoeten/notifier
                                         notify('Default notification')
                                     }}
                                 >
-                                    Basic Info
+                                    info
                                 </Button>
                                 <Button
                                     onClick={() => {
@@ -719,7 +786,7 @@ NPM: https://www.npmjs.com/package/@remcostoeten/notifier
                                         notify.success('Saved')
                                     }}
                                 >
-                                    Basic Success
+                                    success
                                 </Button>
                                 <Button
                                     onClick={() => {
@@ -727,7 +794,7 @@ NPM: https://www.npmjs.com/package/@remcostoeten/notifier
                                         notify.error('Failed')
                                     }}
                                 >
-                                    Basic Error
+                                    error
                                 </Button>
                                 <Button
                                     onClick={() => {
@@ -735,42 +802,36 @@ NPM: https://www.npmjs.com/package/@remcostoeten/notifier
                                         notify.loading('Loading...')
                                     }}
                                 >
-                                    Basic Loading
+                                    loading
                                 </Button>
                             </div>
                         </div>
 
-                        <div className='space-y-3 rounded-lg border border-stone-200 bg-stone-100/50 p-4 dark:border-zinc-800 dark:bg-zinc-900/50'>
-                            <h3 className='text-xs font-semibold text-stone-500 dark:text-zinc-400'>
-                                Chaining
-                            </h3>
+                        <div className='border-border space-y-3 border-b p-6'>
+                            <h3 className='text-foreground font-mono text-xs'>Chaining</h3>
                             <div className='flex flex-wrap gap-2'>
-                                <Button onClick={handleChain}>State Chain</Button>
-                                <Button onClick={handlePromise}>Promise</Button>
+                                <Button onClick={handleChain}>state chain</Button>
+                                <Button onClick={handlePromise}>promise</Button>
                             </div>
                         </div>
 
-                        <div className='space-y-3 rounded-lg border border-stone-200 bg-stone-100/50 p-4 dark:border-zinc-800 dark:bg-zinc-900/50'>
-                            <h3 className='text-xs font-semibold text-stone-500 dark:text-zinc-400'>
-                                Interactive
-                            </h3>
+                        <div className='border-border space-y-3 border-b p-6 md:border-r'>
+                            <h3 className='text-foreground font-mono text-xs'>Interactive</h3>
                             <div className='flex flex-wrap gap-2'>
-                                <Button onClick={handleConfirm}>Confirm Dialog</Button>
-                                <Button onClick={handleAction}>Action Button</Button>
+                                <Button onClick={handleConfirm}>confirm dialog</Button>
+                                <Button onClick={handleAction}>action button</Button>
                             </div>
                         </div>
 
-                        <div className='space-y-3 rounded-lg border border-stone-200 bg-stone-100/50 p-4 dark:border-zinc-800 dark:bg-zinc-900/50'>
-                            <h3 className='text-xs font-semibold text-stone-500 dark:text-zinc-400'>
-                                Positions
-                            </h3>
+                        <div className='border-border space-y-3 border-b p-6'>
+                            <h3 className='text-foreground font-mono text-xs'>Positions</h3>
                             <div className='flex flex-wrap gap-2'>
                                 {positions.map((pos) => (
                                     <Button
                                         key={pos}
                                         onClick={() => {
                                             setCode(SNIPPETS.position(pos))
-                                            notify(`${pos} `, { position: pos })
+                                            notify(pos, { position: pos })
                                         }}
                                     >
                                         {pos}
@@ -779,88 +840,105 @@ NPM: https://www.npmjs.com/package/@remcostoeten/notifier
                             </div>
                         </div>
                     </div>
-                </section>
 
-                <section className='space-y-4'>
-                    <h2 className='text-sm font-semibold uppercase tracking-wider text-stone-700 dark:text-zinc-300'>
-                        Setup
-                    </h2>
-                    <p className='text-sm text-stone-600 dark:text-zinc-400'>
-                        Place the{' '}
-                        <code className='rounded bg-stone-200 px-1 text-xs dark:bg-zinc-800'>
-                            {'<Notifier />'}
-                        </code>{' '}
-                        in your root layout.{' '}
-                        <a
-                            href='#api-reference'
-                            className='text-stone-800 underline hover:no-underline dark:text-zinc-200'
+                    <div className='border-border border-b'>
+                        <div className='px-6 py-3'>
+                            <span className='text-faint font-mono text-[11px] uppercase tracking-[0.2em]'>
+                                Last snippet
+                            </span>
+                        </div>
+                        <CodeBlock
+                            code={activeCode}
+                            language={activeLang}
+                            showLineNumbers={true}
+                            className='border-0 border-t'
                         >
-                            View all options →
-                        </a>
-                    </p>
-                    <div className='mt-2 space-y-1 text-xs text-stone-500 dark:text-zinc-400'>
-                        <div className='font-medium text-stone-700 dark:text-zinc-300'>
-                            Default options:
-                        </div>
-                        <div className='grid grid-cols-2 gap-x-4 gap-y-1 font-mono md:grid-cols-3'>
-                            <span>
-                                <code>position</code>: &quot;bottom&quot;
-                            </span>
-                            <span>
-                                <code>duration</code>: 3000
-                            </span>
-                            <span>
-                                <code>colorMode</code>: &quot;dark&quot;
-                            </span>
-                            <span>
-                                <code>radius</code>: &quot;pill&quot;
-                            </span>
-                            <span>
-                                <code>maxVisible</code>: 5
-                            </span>
-                            <span>
-                                <code>swipeToDismiss</code>: true
-                            </span>
-                        </div>
+                            <CodeBlockCopyButton />
+                        </CodeBlock>
                     </div>
-                    <CodeBlock
-                        code={SNIPPETS.setup}
-                        language='tsx'
-                        showLineNumbers={true}
-                        fileName='app/layout.tsx'
-                    >
-                        <CodeBlockCopyButton />
-                    </CodeBlock>
                 </section>
 
-                <section className='space-y-4'>
-                    <h2 className='text-sm font-semibold uppercase tracking-wider text-stone-700 dark:text-zinc-300'>
-                        Usage
-                    </h2>
-                    <CodeBlock code={activeCode} language={activeLang} showLineNumbers={true}>
-                        <CodeBlockCopyButton />
-                    </CodeBlock>
+                <section>
+                    <SectionHeading id='setup' label='Setup' />
+                    <div className='space-y-4 p-6'>
+                        <p className='text-muted-foreground text-sm'>
+                            Place{' '}
+                            <code className='text-foreground font-mono text-[13px]'>
+                                {'<Notifier />'}
+                            </code>{' '}
+                            once in your root layout.{' '}
+                            <a
+                                href='#api-reference'
+                                className='text-link hover:text-foreground transition-colors'
+                            >
+                                View all options →
+                            </a>
+                        </p>
+                        <div className='text-muted-foreground grid grid-cols-2 gap-x-6 gap-y-1.5 font-mono text-xs md:grid-cols-3'>
+                            <span>
+                                <span className='text-foreground'>position</span>:
+                                &quot;bottom&quot;
+                            </span>
+                            <span>
+                                <span className='text-foreground'>duration</span>: 3000
+                            </span>
+                            <span>
+                                <span className='text-foreground'>colorMode</span>: &quot;dark&quot;
+                            </span>
+                            <span>
+                                <span className='text-foreground'>radius</span>: &quot;squared&quot;
+                            </span>
+                            <span>
+                                <span className='text-foreground'>maxVisible</span>: 5
+                            </span>
+                            <span>
+                                <span className='text-foreground'>swipeToDismiss</span>: true
+                            </span>
+                        </div>
+                        <CodeBlock
+                            code={SNIPPETS.setup}
+                            language='tsx'
+                            showLineNumbers={true}
+                            fileName='app/layout.tsx'
+                        >
+                            <CodeBlockCopyButton />
+                        </CodeBlock>
+                    </div>
                 </section>
 
-                <section id='api-reference' className='space-y-6'>
-                    <h2 className='text-sm font-semibold uppercase tracking-wider text-stone-700 dark:text-zinc-300'>
-                        API Reference
-                    </h2>
-                    <PropsTable title='<Notifier /> Props' data={PROPS_NOTIFIER} />
-                    <PropsTable title='notify() Options' data={PROPS_NOTIFY} />
+                <section>
+                    <SectionHeading id='api-reference' label='API reference' />
+                    <div className='border-border border-b'>
+                        <PropsTable title='<Notifier /> props' data={PROPS_NOTIFIER} />
+                    </div>
+                    <div className='border-border border-b'>
+                        <PropsTable title='notify() options' data={PROPS_NOTIFY} />
+                    </div>
                 </section>
 
-                <section className='space-y-6'>
-                    <h2 className='text-sm font-semibold uppercase tracking-wider text-stone-700 dark:text-zinc-300'>
-                        Migration Guide
-                    </h2>
+                <section>
+                    <SectionHeading id='methods' label='Methods' />
+                    <div className='border-border border-b'>
+                        {METHODS.map((method) => (
+                            <div
+                                key={method.sig}
+                                className='border-border flex flex-col gap-1 border-b px-6 py-3 font-mono text-xs last:border-b-0 md:flex-row md:items-baseline md:gap-4'
+                            >
+                                <span className='text-foreground'>{method.sig}</span>
+                                <span className='text-faint'>{method.desc}</span>
+                            </div>
+                        ))}
+                    </div>
+                </section>
 
-                    <div className='grid grid-cols-1 gap-8 md:grid-cols-2'>
-                        <div className='space-y-3'>
-                            <h3 className='text-sm font-medium text-stone-900 dark:text-zinc-100'>
+                <section>
+                    <SectionHeading id='migration' label='Migration' />
+                    <div className='border-border grid grid-cols-1 border-b md:grid-cols-2'>
+                        <div className='md:border-border space-y-3 p-6 md:border-r'>
+                            <h3 className='text-foreground text-sm font-medium'>
                                 From shadcn/ui (Sonner/Toast)
                             </h3>
-                            <p className='text-xs text-stone-600 dark:text-zinc-400'>
+                            <p className='text-muted-foreground text-xs leading-relaxed'>
                                 Notifier is lighter and built for the same modern aesthetic. Replace
                                 the Toaster component in your layout.
                             </p>
@@ -874,11 +952,11 @@ NPM: https://www.npmjs.com/package/@remcostoeten/notifier
                             </CodeBlock>
                         </div>
 
-                        <div className='space-y-3'>
-                            <h3 className='text-sm font-medium text-stone-900 dark:text-zinc-100'>
+                        <div className='border-border space-y-3 border-t p-6 md:border-t-0'>
+                            <h3 className='text-foreground text-sm font-medium'>
                                 From react-hot-toast
                             </h3>
-                            <p className='text-xs text-stone-600 dark:text-zinc-400'>
+                            <p className='text-muted-foreground text-xs leading-relaxed'>
                                 API compatible for basic methods. Switch imports and you&apos;re
                                 mostly done.
                             </p>
@@ -894,60 +972,28 @@ NPM: https://www.npmjs.com/package/@remcostoeten/notifier
                     </div>
                 </section>
 
-                <section className='space-y-4'>
-                    <h2 className='text-sm font-semibold uppercase tracking-wider text-stone-700 dark:text-zinc-300'>
-                        Methods
-                    </h2>
-                    <div className='space-y-2 font-mono text-xs text-stone-500 dark:text-zinc-400'>
-                        <div>
-                            <span className='text-stone-800 dark:text-zinc-200'>
-                                notify(message, options?)
-                            </span>{' '}
-                            — Default info notification
-                        </div>
-                        <div>
-                            <span className='text-stone-800 dark:text-zinc-200'>
-                                notify.success(message, options?)
-                            </span>{' '}
-                            — Success state
-                        </div>
-                        <div>
-                            <span className='text-stone-800 dark:text-zinc-200'>
-                                notify.error(message, options?)
-                            </span>{' '}
-                            — Error state
-                        </div>
-                        <div>
-                            <span className='text-stone-800 dark:text-zinc-200'>
-                                notify.loading(message, options?)
-                            </span>{' '}
-                            — Loading spinner
-                        </div>
-                        <div>
-                            <span className='text-stone-800 dark:text-zinc-200'>
-                                notify.promise(promise, messages)
-                            </span>{' '}
-                            — Track async operations
-                        </div>
-                        <div>
-                            <span className='text-stone-800 dark:text-zinc-200'>
-                                notify.dismiss(id?)
-                            </span>{' '}
-                            — Dismiss by id or all
-                        </div>
-                        <div>
-                            <span className='text-stone-800 dark:text-zinc-200'>
-                                instance.confirm(message, options)
-                            </span>{' '}
-                            — Await user confirmation
-                        </div>
+                <footer className='flex flex-wrap items-center justify-between gap-4 px-6 py-8'>
+                    <span className='text-faint font-mono text-xs'>MIT License</span>
+                    <div className='flex items-center gap-5'>
+                        <a
+                            href='https://github.com/remcostoeten/Notify'
+                            target='_blank'
+                            rel='noopener noreferrer'
+                            className='text-muted-foreground hover:text-foreground text-xs transition-colors'
+                        >
+                            GitHub
+                        </a>
+                        <a
+                            href='https://www.npmjs.com/package/@remcostoeten/notifier'
+                            target='_blank'
+                            rel='noopener noreferrer'
+                            className='text-muted-foreground hover:text-foreground text-xs transition-colors'
+                        >
+                            npm
+                        </a>
                     </div>
-                </section>
-
-                <footer className='border-t border-stone-200 pt-8 text-xs text-stone-400 dark:border-zinc-800 dark:text-zinc-600'>
-                    MIT License
                 </footer>
-            </div>
+            </main>
         </div>
     )
 }

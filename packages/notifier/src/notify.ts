@@ -12,10 +12,12 @@ import {
     enforceMaxVisible,
     updateOptions
 } from './store'
-import { getErrorMessage, generateId } from './utils'
+import { getErrorMessage, generateId, isReactElement } from './utils'
 import type {
     NotifyInstance,
+    NotifyMessage,
     NotifyOptions,
+    NotifyPositionType,
     ConfirmOptions,
     PromiseOptions,
     NotifyContainerConfig
@@ -45,10 +47,40 @@ export function configure(config: NotifyContainerConfig): void {
 
 /**
  * Returns the current global configuration.
- * @returns Current configuration
+ * @returns Copy of the current configuration
  */
 export function getConfig(): NotifyContainerConfig {
-    return globalConfig
+    return { ...globalConfig }
+}
+
+/**
+ * Returns notification options derived from the global configuration.
+ * @internal
+ */
+function getDefaultOptions(): NotifyOptions {
+    return {
+        position: globalConfig.position,
+        duration: globalConfig.defaultDuration,
+        swipeToDismiss: globalConfig.swipeToDismiss,
+        pauseOnHover: globalConfig.pauseOnHover,
+        clickToDismiss: globalConfig.clickToDismiss
+    }
+}
+
+/**
+ * Resolves the position a new notification will occupy.
+ * @internal
+ */
+function resolvePosition(options?: NotifyOptions): NotifyPositionType | undefined {
+    return options?.position ?? globalConfig.position
+}
+
+/**
+ * Applies the global maxVisible limit for the position a new notification targets.
+ * @internal
+ */
+function enforceLimit(id: string, options?: NotifyOptions): void {
+    enforceMaxVisible(globalConfig.maxVisible ?? Defaults.MAX_VISIBLE, id, resolvePosition(options))
 }
 
 // ============================================================================
@@ -64,18 +96,14 @@ export function getConfig(): NotifyContainerConfig {
  */
 function createNotifyInstance(id: string, baseOptions: NotifyOptions = {}): NotifyInstance {
     const mergedOptions: NotifyOptions = {
-        position: globalConfig.position,
-        duration: globalConfig.defaultDuration,
-        swipeToDismiss: globalConfig.swipeToDismiss,
-        pauseOnHover: globalConfig.pauseOnHover,
-        clickToDismiss: globalConfig.clickToDismiss,
+        ...getDefaultOptions(),
         ...baseOptions
     }
 
     const instance: NotifyInstance = {
         id,
 
-        loading(message?: string) {
+        loading(message?: NotifyMessage) {
             setState(
                 id,
                 'loading',
@@ -85,7 +113,7 @@ function createNotifyInstance(id: string, baseOptions: NotifyOptions = {}): Noti
             return instance
         },
 
-        success(message?: string) {
+        success(message?: NotifyMessage) {
             setState(
                 id,
                 'success',
@@ -95,7 +123,7 @@ function createNotifyInstance(id: string, baseOptions: NotifyOptions = {}): Noti
             return instance
         },
 
-        error(message?: string) {
+        error(message?: NotifyMessage) {
             setState(
                 id,
                 'error',
@@ -105,8 +133,18 @@ function createNotifyInstance(id: string, baseOptions: NotifyOptions = {}): Noti
             return instance
         },
 
-        info(message?: string) {
-            setState(id, 'info', message ?? Defaults.MESSAGES.LOADING, mergedOptions)
+        info(message?: NotifyMessage) {
+            setState(id, 'info', message ?? Defaults.MESSAGES.INFO, mergedOptions)
+            return instance
+        },
+
+        warning(message?: NotifyMessage) {
+            setState(
+                id,
+                'warning',
+                message ?? mergedOptions.warningMessage ?? Defaults.MESSAGES.WARNING,
+                mergedOptions
+            )
             return instance
         },
 
@@ -144,7 +182,7 @@ function createNotifyInstance(id: string, baseOptions: NotifyOptions = {}): Noti
             }
         },
 
-        confirm(message: string, options?: ConfirmOptions): Promise<boolean> {
+        confirm(message: NotifyMessage, options?: ConfirmOptions): Promise<boolean> {
             return new Promise((resolve) => {
                 setConfirmState(id, message, { ...mergedOptions, confirm: options }, resolve)
             })
@@ -165,29 +203,24 @@ function createNotifyInstance(id: string, baseOptions: NotifyOptions = {}): Noti
  * @returns Chainable NotifyInstance for state transitions
  */
 export function notify(
-    messageOrOptions?: string | NotifyOptions,
+    messageOrOptions?: NotifyMessage | NotifyOptions,
     options?: NotifyOptions
 ): NotifyInstance {
-    // Handle both notify("msg", opts) and notify({ message, ...opts })
-    const resolvedOptions: NotifyOptions =
-        typeof messageOrOptions === 'string'
-            ? { ...options, message: messageOrOptions }
-            : (messageOrOptions ?? {})
+    // Handle both notify("msg" | <jsx/>, opts) and notify({ message, ...opts })
+    const isMessage = typeof messageOrOptions === 'string' || isReactElement(messageOrOptions)
+    const resolvedOptions: NotifyOptions = isMessage
+        ? { ...options, message: messageOrOptions as NotifyMessage }
+        : ((messageOrOptions as NotifyOptions) ?? {})
 
     const id = generateId()
 
-    // Enforce max visible limit
-    enforceMaxVisible(globalConfig.maxVisible ?? Defaults.MAX_VISIBLE, id)
+    enforceLimit(id, resolvedOptions)
 
     const instance = createNotifyInstance(id, resolvedOptions)
 
     if (resolvedOptions.message) {
         setState(id, 'info', resolvedOptions.message, {
-            position: globalConfig.position,
-            duration: globalConfig.defaultDuration,
-            swipeToDismiss: globalConfig.swipeToDismiss,
-            pauseOnHover: globalConfig.pauseOnHover,
-            clickToDismiss: globalConfig.clickToDismiss,
+            ...getDefaultOptions(),
             ...resolvedOptions
         })
     }
@@ -205,9 +238,9 @@ export function notify(
  * @param options - Additional options
  * @returns Chainable NotifyInstance
  */
-notify.loading = (message?: string, options?: NotifyOptions): NotifyInstance => {
+notify.loading = (message?: NotifyMessage, options?: NotifyOptions): NotifyInstance => {
     const id = generateId()
-    enforceMaxVisible(globalConfig.maxVisible ?? Defaults.MAX_VISIBLE, id)
+    enforceLimit(id, options)
     const instance = createNotifyInstance(id, options)
     return instance.loading(message)
 }
@@ -218,9 +251,9 @@ notify.loading = (message?: string, options?: NotifyOptions): NotifyInstance => 
  * @param options - Additional options
  * @returns Chainable NotifyInstance
  */
-notify.success = (message?: string, options?: NotifyOptions): NotifyInstance => {
+notify.success = (message?: NotifyMessage, options?: NotifyOptions): NotifyInstance => {
     const id = generateId()
-    enforceMaxVisible(globalConfig.maxVisible ?? Defaults.MAX_VISIBLE, id)
+    enforceLimit(id, options)
     const instance = createNotifyInstance(id, options)
     return instance.success(message)
 }
@@ -231,23 +264,32 @@ notify.success = (message?: string, options?: NotifyOptions): NotifyInstance => 
  * @param options - Additional options
  * @returns Chainable NotifyInstance
  */
-notify.error = (message?: string, options?: NotifyOptions): NotifyInstance => {
+notify.error = (message?: NotifyMessage, options?: NotifyOptions): NotifyInstance => {
     const id = generateId()
-    enforceMaxVisible(globalConfig.maxVisible ?? Defaults.MAX_VISIBLE, id)
+    enforceLimit(id, options)
     const instance = createNotifyInstance(id, options)
     return instance.error(message)
 }
 
-notify.info = (message?: string, options?: NotifyOptions): NotifyInstance => {
+/**
+ * Shows a warning notification.
+ * @param message - Warning message
+ * @param options - Additional options
+ * @returns Chainable NotifyInstance
+ */
+notify.warning = (message?: NotifyMessage, options?: NotifyOptions): NotifyInstance => {
     const id = generateId()
-    enforceMaxVisible(globalConfig.maxVisible ?? Defaults.MAX_VISIBLE, id)
+    enforceLimit(id, options)
     const instance = createNotifyInstance(id, options)
-    setState(id, 'info', message ?? Defaults.MESSAGES.LOADING, {
-        position: globalConfig.position,
-        duration: globalConfig.defaultDuration,
-        swipeToDismiss: globalConfig.swipeToDismiss,
-        pauseOnHover: globalConfig.pauseOnHover,
-        clickToDismiss: globalConfig.clickToDismiss,
+    return instance.warning(message)
+}
+
+notify.info = (message?: NotifyMessage, options?: NotifyOptions): NotifyInstance => {
+    const id = generateId()
+    enforceLimit(id, options)
+    const instance = createNotifyInstance(id, options)
+    setState(id, 'info', message ?? Defaults.MESSAGES.INFO, {
+        ...getDefaultOptions(),
         ...options
     })
     return instance
@@ -272,9 +314,9 @@ notify.dismiss = (id?: string): void => {
  * @returns The original promise result
  * @throws Re-throws any error from the promise
  */
-notify.promise = <T>(promise: Promise<T>, options?: PromiseOptions): Promise<T> => {
+notify.promise = <T>(promise: Promise<T>, options?: PromiseOptions<T>): Promise<T> => {
     const id = generateId()
-    enforceMaxVisible(globalConfig.maxVisible ?? Defaults.MAX_VISIBLE, id)
+    enforceLimit(id)
     return createNotifyInstance(id).promise(promise, options)
 }
 
@@ -284,9 +326,9 @@ notify.promise = <T>(promise: Promise<T>, options?: PromiseOptions): Promise<T> 
  * @param options - Button label customization
  * @returns Promise resolving to true on confirm, false on cancel
  */
-notify.confirm = (message: string, options?: ConfirmOptions): Promise<boolean> => {
+notify.confirm = (message: NotifyMessage, options?: ConfirmOptions): Promise<boolean> => {
     const id = generateId()
-    enforceMaxVisible(globalConfig.maxVisible ?? Defaults.MAX_VISIBLE, id)
+    enforceLimit(id)
     return createNotifyInstance(id).confirm(message, options)
 }
 

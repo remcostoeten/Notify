@@ -53,6 +53,7 @@ npm version major
 ```
 
 This will:
+
 - Update version in package.json
 - Create a git tag
 - Commit the changes
@@ -86,23 +87,24 @@ git push --tags
 Follow [Semantic Versioning](https://semver.org/):
 
 - **MAJOR** (x.0.0): Breaking changes
-  - API changes that break existing code
-  - Removing features
-  - Changing behavior significantly
+    - API changes that break existing code
+    - Removing features
+    - Changing behavior significantly
 
 - **MINOR** (0.x.0): New features, backwards compatible
-  - Adding new features
-  - Deprecating features (but not removing)
-  - Performance improvements
+    - Adding new features
+    - Deprecating features (but not removing)
+    - Performance improvements
 
 - **PATCH** (0.0.x): Bug fixes, backwards compatible
-  - Bug fixes
-  - Documentation updates
-  - Internal changes
+    - Bug fixes
+    - Documentation updates
+    - Internal changes
 
 ## CI/CD (Future)
 
 Consider setting up GitHub Actions for:
+
 - Automated testing
 - Automated publishing
 - Version management
@@ -111,23 +113,28 @@ Consider setting up GitHub Actions for:
 ## Troubleshooting
 
 ### "You need to authenticate"
+
 ```bash
 npm login
 # Follow prompts
 ```
 
 ### "Package already exists"
+
 - Check if version is already published
 - Bump version number
 - Verify package name is correct
 
 ### "Access denied"
+
 - Verify you have publish access
 - Check package scope (@remcostoeten)
 - Ensure `--access public` flag is used
 
 ### Build errors
+
 ```bash
 # Clean and rebuild
 rm -rf dist
 bun run build
+```

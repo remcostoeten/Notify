@@ -4,9 +4,16 @@
 
 'use client'
 
-import type * as React from 'react'
-import { motion, useMotionValue, useTransform, type PanInfo } from "motion/react"
-import { dismiss, resolveConfirm, pauseTimer, resumeTimer } from '../store'
+import * as React from 'react'
+import {
+    AnimatePresence,
+    motion,
+    useMotionValue,
+    useReducedMotion,
+    useTransform,
+    type PanInfo
+} from 'motion/react'
+import { dismiss, resolveConfirm, pauseAllTimers, resumeAllTimers } from '../store'
 import {
     NotifyStateType,
     AnimationConfig,
@@ -53,13 +60,53 @@ type Props = {
  * Handles swipe gestures, hover pause, click dismiss, and all interactions.
  */
 export function NotificationItem({ item, position, index }: Props): JSX.Element {
-    const { id, state, message, visible, options } = item
+    const { id, state, message, visible, options, stateStartedAt } = item
     const theme = useNotifyTheme()
+    const shouldReduceMotion = useReducedMotion()
 
     const hasAction = !!options.action
     const isDismissible = options.dismissible === true
     const isConfirm = state === NotifyStateType.CONFIRM
     const confirmOptions = options.confirm
+    const isAssertive = state === NotifyStateType.ERROR || state === NotifyStateType.WARNING
+    const visualState = state === NotifyStateType.IDLE ? NotifyStateType.INFO : state
+    const stateColors = theme.iconColors[visualState as keyof typeof theme.iconColors]
+    const showIcon = !(theme.iconColorMode === 'hidden' && item.state !== NotifyStateType.LOADING)
+
+    const cancelButtonRef = React.useRef<HTMLButtonElement>(null)
+    const contentRef = React.useRef<HTMLDivElement>(null)
+    const [size, setSize] = React.useState<{ width: number; height: number } | null>(null)
+
+    React.useLayoutEffect(() => {
+        const maybeNode = contentRef.current
+        if (!maybeNode) return
+        const node: HTMLDivElement = maybeNode
+
+        function measure() {
+            setSize({ width: node.offsetWidth, height: node.offsetHeight })
+        }
+
+        measure()
+        if (typeof ResizeObserver === 'undefined') return
+        const observer = new ResizeObserver(() => measure())
+        observer.observe(node)
+        return () => observer.disconnect()
+    }, [])
+
+    React.useEffect(() => {
+        if (!isConfirm || !visible) return
+
+        cancelButtonRef.current?.focus()
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                resolveConfirm(id, false)
+            }
+        }
+
+        document.addEventListener('keydown', handleKeyDown)
+        return () => document.removeEventListener('keydown', handleKeyDown)
+    }, [isConfirm, visible, id])
 
     const swipeEnabled = options.swipeToDismiss !== false
     const swipeDirection = PositionSwipeDirection[position]
@@ -101,18 +148,18 @@ export function NotificationItem({ item, position, index }: Props): JSX.Element 
 
     const handleMouseEnter = () => {
         if (options.pauseOnHover !== false) {
-            pauseTimer(id)
+            pauseAllTimers()
         }
     }
 
     const handleMouseLeave = () => {
         if (options.pauseOnHover !== false) {
-            resumeTimer(id)
+            resumeAllTimers()
         }
     }
 
     const handleClick = (e: React.MouseEvent) => {
-        if ((e.target as any).closest('button')) return
+        if ((e.target as HTMLElement).closest('button')) return
 
         if (options.clickToDismiss === true) {
             dismiss(id, DismissReason.CLICK)
@@ -129,14 +176,15 @@ export function NotificationItem({ item, position, index }: Props): JSX.Element 
 
     return (
         <motion.div
-            layout
+            layout='position'
             className='flex items-center overflow-hidden'
             style={{
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                width: 'auto',
+                position: 'relative',
+                isolation: 'isolate',
                 maxWidth: 'calc(100vw - 32px)',
+                overflow: 'hidden',
                 backgroundColor: theme.background,
                 boxShadow: theme.shadow,
                 borderRadius: theme.radius,
@@ -150,17 +198,36 @@ export function NotificationItem({ item, position, index }: Props): JSX.Element 
             }}
             initial={{
                 opacity: 0,
-                scale: 0.95,
-                ...animationDir.enter
+                scale: shouldReduceMotion ? 1 : 0.98,
+                ...(shouldReduceMotion ? {} : animationDir.enter)
             }}
             animate={{
                 opacity: visible ? 1 : 0,
-                scale: visible ? 1 : 0.95,
-                x: visible ? 0 : 'x' in animationDir.exit ? animationDir.exit.x : 0,
-                y: visible ? 0 : 'y' in animationDir.exit ? animationDir.exit.y : 0,
+                scale: visible || shouldReduceMotion ? 1 : 0.98,
+                ...(size ? { width: size.width, height: size.height } : {}),
+                x:
+                    visible || shouldReduceMotion
+                        ? 0
+                        : 'x' in animationDir.exit
+                          ? animationDir.exit.x
+                          : 0,
+                y:
+                    visible || shouldReduceMotion
+                        ? 0
+                        : 'y' in animationDir.exit
+                          ? animationDir.exit.y
+                          : 0,
                 pointerEvents: visible ? 'auto' : 'none'
             }}
-            transition={AnimationConfig.CONTAINER}
+            transition={
+                visible
+                    ? {
+                          ...AnimationConfig.CONTAINER,
+                          width: AnimationConfig.RESIZE,
+                          height: AnimationConfig.RESIZE
+                      }
+                    : AnimationConfig.EXIT
+            }
             drag={swipeEnabled ? swipeDirection : false}
             dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
             dragElastic={0.5}
@@ -168,138 +235,209 @@ export function NotificationItem({ item, position, index }: Props): JSX.Element 
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
             onClick={handleClick}
-            role='alert'
-            aria-live='polite'
+            role={isConfirm ? 'alertdialog' : isAssertive ? 'alert' : 'status'}
+            aria-live={isAssertive ? 'assertive' : 'polite'}
         >
-            {/* Main content area */}
-            <motion.div
-                layout
-                className='flex items-center'
+            <div
+                ref={contentRef}
                 style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '10px',
-                    height: '40px',
-                    paddingLeft: '14px',
-                    paddingRight: hasAction || isDismissible || isConfirm ? '0' : '14px'
+                    position: 'relative',
+                    zIndex: 1,
+                    width: 'max-content',
+                    maxWidth: 'min(360px, calc(100vw - 32px))',
+                    flexShrink: 0
                 }}
-                transition={AnimationConfig.CONTAINER}
             >
-                {!(theme.iconColorMode === 'hidden' && item.state !== NotifyStateType.LOADING) && (
-                    <NotifyIcon state={state} />
-                )}
-
-                <motion.span
-                    key={message}
-                    initial={{ opacity: 0, y: 8, filter: 'blur(4px)' }}
-                    animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                    transition={AnimationConfig.TEXT}
+                {/* Main content area */}
+                <div
+                    className='flex items-center'
                     style={{
-                        fontSize: '13px',
-                        fontWeight: 500,
-                        lineHeight: 1,
-                        whiteSpace: 'nowrap',
-                        color: theme.text
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        minHeight: '40px',
+                        paddingTop: '8px',
+                        paddingBottom: '8px',
+                        paddingLeft: '14px',
+                        paddingRight: hasAction || isDismissible || isConfirm ? '0' : '14px'
                     }}
                 >
-                    {message}
-                </motion.span>
-            </motion.div>
+                    {showIcon && (
+                        <motion.div
+                            aria-hidden='true'
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: 28,
+                                height: 28,
+                                flexShrink: 0,
+                                borderRadius: '9px',
+                                color: stateColors.icon,
+                                backgroundColor: theme.buttonHover
+                            }}
+                            animate={{
+                                color: stateColors.icon
+                            }}
+                            transition={AnimationConfig.TEXT}
+                        >
+                            <NotifyIcon state={state} />
+                        </motion.div>
+                    )}
 
-            {/* Confirm buttons */}
-            {isConfirm && (
-                <motion.div
-                    layout
-                    initial={{ width: 0, opacity: 0 }}
-                    animate={{ width: 'auto', opacity: 1 }}
-                    exit={{ width: 0, opacity: 0 }}
-                    transition={AnimationConfig.CONTAINER}
-                    className='flex h-10 items-center overflow-hidden'
-                >
-                    <div
-                        className='mx-1 h-4'
-                        style={{ width: '1px', backgroundColor: theme.border }}
-                    />
-                    <motion.button
-                        onClick={() => resolveConfirm(id, false)}
-                        className='h-10 whitespace-nowrap px-3 text-[13px] font-medium transition-colors'
-                        style={{ color: theme.textMuted }}
-                        whileHover={{ backgroundColor: theme.buttonHover, color: theme.text }}
-                        whileTap={{ scale: 0.98 }}
-                    >
-                        {confirmOptions?.cancelLabel ?? Defaults.LABELS.CANCEL}
-                    </motion.button>
-                    <div className='h-4' style={{ width: '1px', backgroundColor: theme.border }} />
-                    <motion.button
-                        onClick={() => resolveConfirm(id, true)}
-                        className='h-10 whitespace-nowrap px-3 text-[13px] font-medium transition-colors'
-                        style={{ color: theme.text }}
-                        whileHover={{ backgroundColor: theme.buttonHover }}
-                        whileTap={{ scale: 0.98 }}
-                    >
-                        {confirmOptions?.confirmLabel ?? Defaults.LABELS.CONFIRM}
-                    </motion.button>
-                </motion.div>
-            )}
+                    <AnimatePresence initial={false} mode='wait'>
+                        <motion.div
+                            key={`${state}:${stateStartedAt}`}
+                            initial={{
+                                opacity: 0,
+                                transform: shouldReduceMotion ? 'translateY(0)' : 'translateY(6px)',
+                                filter: shouldReduceMotion ? 'blur(0px)' : 'blur(3px)'
+                            }}
+                            animate={{
+                                opacity: 1,
+                                transform: 'translateY(0)',
+                                filter: 'blur(0px)'
+                            }}
+                            exit={{
+                                opacity: 0,
+                                transform: shouldReduceMotion
+                                    ? 'translateY(0)'
+                                    : 'translateY(-4px)',
+                                filter: shouldReduceMotion ? 'blur(0px)' : 'blur(2px)',
+                                transition: { duration: shouldReduceMotion ? 0.1 : 0.14 }
+                            }}
+                            transition={
+                                shouldReduceMotion ? { duration: 0.12 } : AnimationConfig.TEXT
+                            }
+                            style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '2px',
+                                minWidth: 0
+                            }}
+                        >
+                            <span
+                                style={{
+                                    fontSize: '13px',
+                                    fontWeight: 550,
+                                    lineHeight: 1.4,
+                                    letterSpacing: '-0.01em',
+                                    overflowWrap: 'break-word',
+                                    color: theme.text
+                                }}
+                            >
+                                {message}
+                            </span>
+                            {options.description != null && (
+                                <span
+                                    style={{
+                                        fontSize: '12px',
+                                        fontWeight: 400,
+                                        lineHeight: 1.4,
+                                        overflowWrap: 'break-word',
+                                        color: theme.textMuted
+                                    }}
+                                >
+                                    {options.description}
+                                </span>
+                            )}
+                        </motion.div>
+                    </AnimatePresence>
+                </div>
 
-            {/* Action button */}
-            {hasAction && !isConfirm && (
-                <motion.div
-                    layout
-                    initial={{ width: 0, opacity: 0 }}
-                    animate={{ width: 'auto', opacity: 1 }}
-                    exit={{ width: 0, opacity: 0 }}
-                    transition={AnimationConfig.CONTAINER}
-                    className='flex h-10 items-center overflow-hidden'
-                >
-                    <div
-                        className='mx-1 h-4'
-                        style={{ width: '1px', backgroundColor: theme.border }}
-                    />
-                    <motion.button
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            options.action?.onClick()
-                        }}
-                        className='h-10 whitespace-nowrap px-3 text-[13px] font-medium transition-colors'
-                        style={{ color: theme.textMuted }}
-                        whileHover={{ backgroundColor: theme.buttonHover, color: theme.text }}
-                        whileTap={{ scale: 0.98 }}
+                {/* Confirm buttons */}
+                {isConfirm && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={AnimationConfig.TEXT}
+                        className='mr-1 flex h-10 items-center gap-0.5'
                     >
-                        {options.action?.label}
-                    </motion.button>
-                </motion.div>
-            )}
+                        <motion.button
+                            ref={cancelButtonRef}
+                            onClick={() => resolveConfirm(id, false)}
+                            className='h-8 whitespace-nowrap rounded-lg px-2.5 text-[13px] font-medium transition-colors'
+                            style={{ color: theme.textMuted }}
+                            whileHover={{ backgroundColor: theme.buttonHover, color: theme.text }}
+                            whileTap={{ scale: 0.97 }}
+                        >
+                            {confirmOptions?.cancelLabel ?? Defaults.LABELS.CANCEL}
+                        </motion.button>
+                        <motion.button
+                            onClick={() => resolveConfirm(id, true)}
+                            className='h-8 whitespace-nowrap rounded-lg px-2.5 text-[13px] font-medium transition-colors'
+                            style={{
+                                color: theme.text,
+                                backgroundColor: theme.buttonHover,
+                                boxShadow: `inset 0 0 0 1px ${theme.border}`
+                            }}
+                            whileHover={{ boxShadow: `inset 0 0 0 1px ${theme.borderHighlight}` }}
+                            whileTap={{ scale: 0.97 }}
+                        >
+                            {confirmOptions?.confirmLabel ?? Defaults.LABELS.CONFIRM}
+                        </motion.button>
+                    </motion.div>
+                )}
 
-            {/* Dismiss button */}
-            {isDismissible && !isConfirm && (
-                <motion.div
-                    layout
-                    initial={{ width: 0, opacity: 0 }}
-                    animate={{ width: 'auto', opacity: 1 }}
-                    exit={{ width: 0, opacity: 0 }}
-                    transition={AnimationConfig.CONTAINER}
-                    className='flex h-10 items-center overflow-hidden'
-                >
-                    <div
-                        className='mx-1 h-4'
-                        style={{ width: '1px', backgroundColor: theme.border }}
-                    />
-                    <motion.button
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            dismiss(id, DismissReason.MANUAL)
-                        }}
-                        className='h-10 px-2 transition-colors'
-                        style={{ color: theme.textSubtle }}
-                        whileHover={{ backgroundColor: theme.buttonHover, color: theme.textMuted }}
-                        whileTap={{ scale: 0.98 }}
-                        aria-label='Dismiss notification'
+                {/* Action button */}
+                {hasAction && !isConfirm && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={AnimationConfig.TEXT}
+                        className='mr-1 flex h-10 items-center'
                     >
-                        <XIcon className='h-4 w-4' />
-                    </motion.button>
-                </motion.div>
-            )}
+                        <motion.button
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                options.action?.onClick()
+                            }}
+                            className='h-8 whitespace-nowrap rounded-lg px-2.5 text-[13px] font-medium transition-colors'
+                            style={{
+                                color: theme.text,
+                                backgroundColor: theme.buttonHover,
+                                boxShadow: `inset 0 0 0 1px ${theme.border}`
+                            }}
+                            whileHover={{
+                                backgroundColor: theme.buttonHover,
+                                boxShadow: `inset 0 0 0 1px ${theme.borderHighlight}`
+                            }}
+                            whileTap={{ scale: 0.97 }}
+                        >
+                            {options.action?.label}
+                        </motion.button>
+                    </motion.div>
+                )}
+
+                {/* Dismiss button */}
+                {isDismissible && !isConfirm && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={AnimationConfig.TEXT}
+                        className='mr-1 flex h-10 items-center'
+                    >
+                        <motion.button
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                dismiss(id, DismissReason.MANUAL)
+                            }}
+                            className='flex h-8 w-8 items-center justify-center rounded-lg transition-colors'
+                            style={{ color: theme.textSubtle }}
+                            whileHover={{
+                                backgroundColor: theme.buttonHover,
+                                color: theme.textMuted
+                            }}
+                            whileTap={{ scale: 0.97 }}
+                            aria-label='Dismiss notification'
+                        >
+                            <XIcon className='h-4 w-4' />
+                        </motion.button>
+                    </motion.div>
+                )}
+            </div>
         </motion.div>
     )
 }

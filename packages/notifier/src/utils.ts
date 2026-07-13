@@ -3,17 +3,24 @@
  * Contains helper functions used across the module.
  */
 
+let idCounter = 0
+
 /**
  * Generates a unique identifier for notifications.
+ *
+ * Combines a timestamp with a monotonically increasing counter so that ids
+ * created within the same millisecond never collide.
+ *
  * @returns A unique string identifier
  *
  * @example
  * ```ts
- * const id = generateId() // "notify_1234567890_abc"
+ * const id = generateId() // "notify_1234567890_0"
  * ```
  */
 export function generateId(): string {
-  return `notify_${Date.now()}_${Math.random().toString(36).slice(2, 5)}`
+    idCounter += 1
+    return `notify_${Date.now()}_${idCounter}`
 }
 
 /**
@@ -33,13 +40,13 @@ export function generateId(): string {
  * ```
  */
 export function getErrorMessage(error: unknown, fallback: string): string {
-  if (error instanceof Error) {
-    return error.message
-  }
-  if (typeof error === "string") {
-    return error
-  }
-  return fallback
+    if (error instanceof Error) {
+        return error.message
+    }
+    if (typeof error === 'string') {
+        return error
+    }
+    return fallback
 }
 
 /**
@@ -53,7 +60,7 @@ export function getErrorMessage(error: unknown, fallback: string): string {
  * ```
  */
 export function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
+    return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 /**
@@ -62,7 +69,17 @@ export function delay(ms: number): Promise<void> {
  * @returns True if value is a non-null object
  */
 export function isObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null
+    return typeof value === 'object' && value !== null
+}
+
+/**
+ * Type guard to check if a value is a React element without importing React.
+ * Elements are branded with a `$$typeof` symbol by the JSX runtime.
+ * @param value - Value to check
+ * @returns True if value looks like a React element
+ */
+export function isReactElement(value: unknown): boolean {
+    return isObject(value) && '$$typeof' in value
 }
 
 /**
@@ -76,5 +93,5 @@ export function isObject(value: unknown): value is Record<string, unknown> {
  * ```
  */
 export function cn(...classes: (string | boolean | undefined | null)[]): string {
-  return classes.filter(Boolean).join(" ")
+    return classes.filter(Boolean).join(' ')
 }

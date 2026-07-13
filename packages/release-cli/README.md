@@ -89,17 +89,17 @@ Create `.release-cli.json` in your project root:
 
 ```json
 {
-  "branch": "main",
-  "remote": "origin",
-  "access": "public",
-  "changelog": true,
-  "tag": true,
-  "push": true,
-  "publish": true,
-  "llm": {
-    "provider": "anthropic",
-    "model": "claude-sonnet-4-20250514"
-  }
+    "branch": "main",
+    "remote": "origin",
+    "access": "public",
+    "changelog": true,
+    "tag": true,
+    "push": true,
+    "publish": true,
+    "llm": {
+        "provider": "anthropic",
+        "model": "claude-sonnet-4-20250514"
+    }
 }
 ```
 
@@ -107,45 +107,50 @@ Or add to `package.json`:
 
 ```json
 {
-  "release-cli": {
-    "branch": "main",
-    "llm": {
-      "provider": "openai",
-      "model": "gpt-4o"
+    "release-cli": {
+        "branch": "main",
+        "llm": {
+            "provider": "openai",
+            "model": "gpt-4o"
+        }
     }
-  }
 }
 ```
 
 ## Environment Variables
 
-| Variable | Description |
-|----------|-------------|
-| `ANTHROPIC_API_KEY` | Anthropic API key for Claude |
-| `OPENAI_API_KEY` | OpenAI API key for GPT |
-| `OPENROUTER_API_KEY` | OpenRouter API key |
-| `LLM_PROVIDER` | Override default provider |
-| `LLM_BASE_URL` | Custom API endpoint |
+| Variable             | Description                  |
+| -------------------- | ---------------------------- |
+| `ANTHROPIC_API_KEY`  | Anthropic API key for Claude |
+| `OPENAI_API_KEY`     | OpenAI API key for GPT       |
+| `OPENROUTER_API_KEY` | OpenRouter API key           |
+| `LLM_PROVIDER`       | Override default provider    |
+| `LLM_BASE_URL`       | Custom API endpoint          |
 
 ## LLM Providers
 
 ### Anthropic (Claude)
+
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...
 ```
 
 ### OpenAI
+
 ```bash
 export OPENAI_API_KEY=sk-...
 ```
 
 ### OpenRouter
+
 ```bash
 export OPENROUTER_API_KEY=sk-or-...
 ```
 
 ### Ollama (Local)
+
 No API key needed. Make sure Ollama is running:
+
 ```bash
 ollama serve
 ollama pull llama3.2
@@ -154,22 +159,17 @@ ollama pull llama3.2
 ## Programmatic Usage
 
 ```typescript
-import { runRelease, loadConfig, generateChangelog } from '@remcostoeten/release-cli';
+import { runRelease, loadConfig, generateChangelog } from '@remcostoeten/release-cli'
 
 // Run release programmatically
-const config = await loadConfig();
+const config = await loadConfig()
 const result = await runRelease(config, {
-  bump: 'patch',
-  dryRun: true,
-});
+    bump: 'patch',
+    dryRun: true
+})
 
 // Generate changelog only
-const entry = await generateChangelog(
-  config.llm,
-  commits,
-  '1.2.0',
-  'my-package'
-);
+const entry = await generateChangelog(config.llm, commits, '1.2.0', 'my-package')
 ```
 
 ## License

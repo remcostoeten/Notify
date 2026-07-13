@@ -2,7 +2,7 @@
 
 import { notify } from '../../notify'
 import { Notifier } from '../../components/notification'
-import type { NotifierProps } from '../../components/notification'
+import type { NotifierProps } from '../../types'
 
 /**
  * Shadcn UI 'use-toast' hook compatibility.
@@ -16,18 +16,16 @@ export function useToast() {
     const toast = ({ title, description, variant, action, ...props }: any) => {
         // Map 'destructive' variant to 'error' state
         if (variant === 'destructive') {
-            return notify.error(String(title), {
+            return notify.error(title, {
+                description,
                 action: action ? { label: 'Action', onClick: () => {} } : undefined, // Partial support
                 ...props
             })
         }
 
-        // Default toast
-        // If description exists, append it? Or use it as message?
-        // Notifier currently supports single message.
-        const message = description ? `${title} - ${description}` : String(title)
-
-        return notify(message, {
+        return notify({
+            message: title,
+            description,
             action: action ? { label: 'Action', onClick: () => {} } : undefined,
             ...props
         })

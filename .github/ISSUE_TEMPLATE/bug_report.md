@@ -12,9 +12,9 @@ A clear description of the bug.
 
 ## Steps to Reproduce
 
-1. 
-2. 
-3. 
+1.
+2.
+3.
 
 ## Expected Behavior
 
@@ -26,10 +26,10 @@ What actually happens.
 
 ## Environment
 
-- OS: 
-- Node version: 
-- Browser: 
-- Package version: 
+- OS:
+- Node version:
+- Browser:
+- Package version:
 
 ## Additional Context
 

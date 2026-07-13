@@ -12,22 +12,26 @@ Complete guide for setting up the notifier monorepo locally.
 ## Initial Setup
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/remcostoeten/notifier.git
 cd notifier
 ```
 
 2. Install all dependencies:
+
 ```bash
 bun install
 ```
 
 3. Setup git hooks (Husky):
+
 ```bash
 bun run prepare
 ```
 
 4. Build all packages:
+
 ```bash
 bun run build
 ```
@@ -39,9 +43,8 @@ bun run build
 ├── packages/
 │   ├── notifier/          # Main notification library
 │   └── release-cli/       # Release automation tool
-├── app/                   # Demo/documentation site
-├── components/            # Demo UI components
-└── module/               # Local package alias for demo
+└── apps/
+    └── demo/              # Demo/documentation site (Next.js)
 ```
 
 ## Development Workflow
@@ -76,7 +79,7 @@ bun run typecheck
 
 ### Testing Local Changes in Demo
 
-The demo automatically uses the local notifier package via the `module/notify` alias. Changes to `packages/notifier/src` require a rebuild:
+The demo imports the library through the workspace dependency `@remcostoeten/notifier`, which resolves to the package's built `dist/`. Changes to `packages/notifier/src` require a rebuild (or run `bun run dev` / `tsup --watch` inside `packages/notifier`):
 
 ```bash
 cd packages/notifier
@@ -90,6 +93,7 @@ cd ../..
 ### First Time Setup
 
 1. Login to npm:
+
 ```bash
 npm login
 ```
@@ -139,11 +143,13 @@ release init
 ```
 
 You'll be prompted to select:
+
 - **Provider**: gemini (free), anthropic, openai, openrouter, or ollama
 - **API Key**: Your provider's API key
 - **Model**: Recommended defaults are provided
 
 For Gemini (free tier):
+
 1. Get API key from https://aistudio.google.com/apikey
 2. Select "gemini" as provider
 3. Use default model: `gemini-2.0-flash`
@@ -167,6 +173,7 @@ release run
 ```
 
 This will:
+
 1. Analyze git commits since last version
 2. Generate changelog using AI
 3. Determine version bump (major/minor/patch)
@@ -248,13 +255,14 @@ bun run lint:fix    # Auto-fix issues
 ### Formatting Code
 
 ```bash
-bun run format      # Check formatting
-bun run format:fix  # Auto-fix formatting
+bun run format        # Auto-fix formatting (prettier --write)
+bun run format:check  # Check formatting without writing
 ```
 
 ### Pre-commit Hooks
 
 Husky automatically runs on `git commit`:
+
 - ESLint on staged files
 - Prettier formatting
 - Type checking

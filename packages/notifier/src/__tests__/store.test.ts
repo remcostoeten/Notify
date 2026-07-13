@@ -3,194 +3,251 @@
  * Consolidated redundant tests, focused on behavior over implementation
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest"
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import {
-  getNotifications,
-  getNotification,
-  subscribe,
-  setState,
-  setConfirmState,
-  resolveConfirm,
-  pauseTimer,
-  resumeTimer,
-  dismiss,
-  dismissAll,
-  enforceMaxVisible,
-  updateOptions,
-} from "../store"
-import { DismissReason } from "../constants"
+    getNotifications,
+    getNotification,
+    subscribe,
+    setState,
+    setConfirmState,
+    resolveConfirm,
+    pauseTimer,
+    resumeTimer,
+    dismiss,
+    dismissAll,
+    enforceMaxVisible,
+    updateOptions
+} from '../store'
+import { DismissReason } from '../constants'
 
-describe("store", () => {
-  beforeEach(() => {
-    dismissAll()
-    vi.advanceTimersByTime(500)
-  })
-
-  describe("setState", () => {
-    it("creates and updates notifications with proper state tracking", () => {
-      setState("test-1", "loading", "Loading...")
-
-      const initial = getNotification("test-1")
-      expect(initial?.state).toBe("loading")
-      expect(initial?.visible).toBe(true)
-
-      setState("test-1", "success", "Done!")
-
-      const updated = getNotification("test-1")
-      expect(updated?.state).toBe("success")
-      expect(updated?.prevState).toBe("loading")
+describe('store', () => {
+    beforeEach(() => {
+        dismissAll()
+        vi.advanceTimersByTime(500)
     })
 
-    it("preserves options and actions through state changes", () => {
-      const action = { label: "Undo", onClick: vi.fn() }
-      setState("test-1", "info", "Message", { duration: 5000, action })
-      setState("test-1", "success", "Done!")
+    describe('setState', () => {
+        it('creates and updates notifications with proper state tracking', () => {
+            setState('test-1', 'loading', 'Loading...')
 
-      const notification = getNotification("test-1")
-      expect(notification?.options.duration).toBe(5000)
-      expect(notification?.options.action).toEqual(action)
+            const initial = getNotification('test-1')
+            expect(initial?.state).toBe('loading')
+            expect(initial?.visible).toBe(true)
+
+            setState('test-1', 'success', 'Done!')
+
+            const updated = getNotification('test-1')
+            expect(updated?.state).toBe('success')
+            expect(updated?.prevState).toBe('loading')
+        })
+
+        it('preserves options and actions through state changes', () => {
+            const action = { label: 'Undo', onClick: vi.fn() }
+            setState('test-1', 'info', 'Message', { duration: 5000, action })
+            setState('test-1', 'success', 'Done!')
+
+            const notification = getNotification('test-1')
+            expect(notification?.options.duration).toBe(5000)
+            expect(notification?.options.action).toEqual(action)
+        })
+
+        it('triggers lifecycle callbacks correctly', () => {
+            const onOpen = vi.fn()
+            const onUpdate = vi.fn()
+
+            setState('test-1', 'loading', 'Loading...', { onOpen, onUpdate })
+            expect(onOpen).toHaveBeenCalledWith('test-1')
+
+            setState('test-1', 'success', 'Done!')
+            expect(onUpdate).toHaveBeenCalledWith('test-1', 'success', 'loading')
+        })
+
+        it('handles auto-dismiss for terminal states', () => {
+            setState('test-1', 'success', 'Done!', { duration: 3000 })
+            expect(getNotification('test-1')?.visible).toBe(true)
+
+            vi.advanceTimersByTime(3000)
+            expect(getNotification('test-1')?.visible).toBe(false)
+        })
+
+        it('respects duration: 0 to prevent auto-dismiss', () => {
+            setState('test-1', 'success', 'Done!', { duration: 0 })
+            vi.advanceTimersByTime(10000)
+            expect(getNotification('test-1')?.visible).toBe(true)
+        })
+
+        it('does not auto-dismiss loading state', () => {
+            setState('test-1', 'loading', 'Loading...')
+            vi.advanceTimersByTime(10000)
+            expect(getNotification('test-1')?.visible).toBe(true)
+        })
     })
 
-    it("triggers lifecycle callbacks correctly", () => {
-      const onOpen = vi.fn()
-      const onUpdate = vi.fn()
+    describe('subscribe', () => {
+        it('manages listeners correctly', () => {
+            const listener = vi.fn()
+            const unsubscribe = subscribe(listener)
 
-      setState("test-1", "loading", "Loading...", { onOpen, onUpdate })
-      expect(onOpen).toHaveBeenCalledWith("test-1")
+            setState('test-1', 'info', 'Message')
+            expect(listener).toHaveBeenCalled()
 
-      setState("test-1", "success", "Done!")
-      expect(onUpdate).toHaveBeenCalledWith("test-1", "success", "loading")
+            listener.mockClear()
+            unsubscribe()
+
+            setState('test-2', 'info', 'Message')
+            expect(listener).not.toHaveBeenCalled()
+        })
     })
 
-    it("handles auto-dismiss for terminal states", () => {
-      setState("test-1", "success", "Done!", { duration: 3000 })
-      expect(getNotification("test-1")?.visible).toBe(true)
+    describe('confirm flow', () => {
+        it('handles full confirm lifecycle', () => {
+            const resolver = vi.fn()
+            setConfirmState('test-1', 'Delete?', {}, resolver)
 
-      vi.advanceTimersByTime(3000)
-      expect(getNotification("test-1")?.visible).toBe(false)
+            expect(getNotification('test-1')?.state).toBe('confirm')
+
+            resolveConfirm('test-1', true)
+            expect(resolver).toHaveBeenCalledWith(true)
+            expect(getNotification('test-1')?.confirmResolver).toBeNull()
+        })
+
+        it('auto-resolves as false on dismiss', () => {
+            const resolver = vi.fn()
+            setConfirmState('test-1', 'Delete?', {}, resolver)
+
+            dismiss('test-1')
+            expect(resolver).toHaveBeenCalledWith(false)
+        })
     })
 
-    it("respects duration: 0 to prevent auto-dismiss", () => {
-      setState("test-1", "success", "Done!", { duration: 0 })
-      vi.advanceTimersByTime(10000)
-      expect(getNotification("test-1")?.visible).toBe(true)
+    describe('pause/resume timer', () => {
+        it('pauses and resumes auto-dismiss timer', () => {
+            setState('test-1', 'success', 'Done!', { duration: 3000 })
+
+            vi.advanceTimersByTime(1000)
+            pauseTimer('test-1')
+
+            expect(getNotification('test-1')?.paused).toBe(true)
+
+            vi.advanceTimersByTime(5000)
+            expect(getNotification('test-1')?.visible).toBe(true)
+
+            resumeTimer('test-1')
+            expect(getNotification('test-1')?.paused).toBe(false)
+        })
     })
 
-    it("does not auto-dismiss loading state", () => {
-      setState("test-1", "loading", "Loading...")
-      vi.advanceTimersByTime(10000)
-      expect(getNotification("test-1")?.visible).toBe(true)
-    })
-  })
+    describe('dismiss', () => {
+        it('handles full dismiss lifecycle with callbacks', () => {
+            const onDismiss = vi.fn()
+            const onClose = vi.fn()
+            setState('test-1', 'info', 'Message', { onDismiss, onClose })
 
-  describe("subscribe", () => {
-    it("manages listeners correctly", () => {
-      const listener = vi.fn()
-      const unsubscribe = subscribe(listener)
+            dismiss('test-1', DismissReason.MANUAL)
 
-      setState("test-1", "info", "Message")
-      expect(listener).toHaveBeenCalled()
+            expect(getNotification('test-1')?.visible).toBe(false)
+            expect(onDismiss).toHaveBeenCalledWith('test-1', DismissReason.MANUAL)
 
-      listener.mockClear()
-      unsubscribe()
+            vi.advanceTimersByTime(300)
+            expect(getNotification('test-1')).toBeUndefined()
+            expect(onClose).toHaveBeenCalledWith('test-1')
+        })
 
-      setState("test-2", "info", "Message")
-      expect(listener).not.toHaveBeenCalled()
-    })
-  })
+        it('keeps a notification that is re-shown during the exit animation window', () => {
+            setState('test-1', 'info', 'Message')
+            dismiss('test-1', DismissReason.MANUAL)
 
-  describe("confirm flow", () => {
-    it("handles full confirm lifecycle", () => {
-      const resolver = vi.fn()
-      setConfirmState("test-1", "Delete?", {}, resolver)
+            vi.advanceTimersByTime(100)
+            setState('test-1', 'success', 'Back again', { duration: 0 })
 
-      expect(getNotification("test-1")?.state).toBe("confirm")
-
-      resolveConfirm("test-1", true)
-      expect(resolver).toHaveBeenCalledWith(true)
-      expect(getNotification("test-1")?.confirmResolver).toBeNull()
+            vi.advanceTimersByTime(300)
+            expect(getNotification('test-1')?.visible).toBe(true)
+            expect(getNotification('test-1')?.message).toBe('Back again')
+        })
     })
 
-    it("auto-resolves as false on dismiss", () => {
-      const resolver = vi.fn()
-      setConfirmState("test-1", "Delete?", {}, resolver)
+    describe('dismissAll', () => {
+        it('dismisses all notifications', () => {
+            setState('test-1', 'info', 'Message 1')
+            setState('test-2', 'info', 'Message 2')
 
-      dismiss("test-1")
-      expect(resolver).toHaveBeenCalledWith(false)
+            dismissAll()
+
+            expect(getNotifications().every((n) => !n.visible)).toBe(true)
+        })
     })
-  })
 
-  describe("pause/resume timer", () => {
-    it("pauses and resumes auto-dismiss timer", () => {
-      setState("test-1", "success", "Done!", { duration: 3000 })
+    describe('enforceMaxVisible', () => {
+        it('removes oldest when exceeding max', () => {
+            setState('test-1', 'info', 'Message 1')
+            vi.advanceTimersByTime(10)
+            setState('test-2', 'info', 'Message 2')
+            vi.advanceTimersByTime(10)
+            setState('test-3', 'info', 'Message 3')
 
-      vi.advanceTimersByTime(1000)
-      pauseTimer("test-1")
+            enforceMaxVisible(3, 'test-4')
 
-      expect(getNotification("test-1")?.paused).toBe(true)
+            expect(getNotification('test-1')?.visible).toBe(false)
+            expect(getNotification('test-2')?.visible).toBe(true)
+            expect(getNotification('test-3')?.visible).toBe(true)
+        })
 
-      vi.advanceTimersByTime(5000)
-      expect(getNotification("test-1")?.visible).toBe(true)
+        it('only counts notifications in the same position', () => {
+            setState('test-1', 'info', 'Top left', { position: 'top-left', duration: 0 })
+            vi.advanceTimersByTime(10)
+            setState('test-2', 'info', 'Bottom 1', { position: 'bottom', duration: 0 })
+            vi.advanceTimersByTime(10)
+            setState('test-3', 'info', 'Bottom 2', { position: 'bottom', duration: 0 })
 
-      resumeTimer("test-1")
-      expect(getNotification("test-1")?.paused).toBe(false)
+            enforceMaxVisible(2, 'test-4', 'bottom')
+
+            expect(getNotification('test-1')?.visible).toBe(true)
+            expect(getNotification('test-2')?.visible).toBe(false)
+            expect(getNotification('test-3')?.visible).toBe(true)
+        })
     })
-  })
 
-  describe("dismiss", () => {
-    it("handles full dismiss lifecycle with callbacks", () => {
-      const onDismiss = vi.fn()
-      const onClose = vi.fn()
-      setState("test-1", "info", "Message", { onDismiss, onClose })
+    describe('warning state', () => {
+        it('auto-dismisses after the duration', () => {
+            setState('test-1', 'warning', 'Careful', { duration: 1000 })
 
-      dismiss("test-1", DismissReason.MANUAL)
-
-      expect(getNotification("test-1")?.visible).toBe(false)
-      expect(onDismiss).toHaveBeenCalledWith("test-1", DismissReason.MANUAL)
-
-      vi.advanceTimersByTime(300)
-      expect(getNotification("test-1")).toBeUndefined()
-      expect(onClose).toHaveBeenCalledWith("test-1")
+            vi.advanceTimersByTime(1000)
+            expect(getNotification('test-1')?.visible).toBe(false)
+        })
     })
-  })
 
-  describe("dismissAll", () => {
-    it("dismisses all notifications", () => {
-      setState("test-1", "info", "Message 1")
-      setState("test-2", "info", "Message 2")
+    describe('updateOptions', () => {
+        it('updates and adds notification options', () => {
+            setState('test-1', 'info', 'Message', { duration: 3000 })
 
-      dismissAll()
+            const action = { label: 'Undo', onClick: vi.fn() }
+            updateOptions('test-1', { duration: 5000, action })
 
-      expect(getNotifications().every((n) => !n.visible)).toBe(true)
+            const notification = getNotification('test-1')
+            expect(notification?.options.duration).toBe(5000)
+            expect(notification?.options.action).toEqual(action)
+        })
+
+        it('reschedules the auto-dismiss timer when duration changes', () => {
+            setState('test-1', 'success', 'Message', { duration: 1000 })
+
+            vi.advanceTimersByTime(500)
+            updateOptions('test-1', { duration: 5000 })
+
+            vi.advanceTimersByTime(1000)
+            expect(getNotification('test-1')?.visible).toBe(true)
+
+            vi.advanceTimersByTime(4000)
+            expect(getNotification('test-1')?.visible).toBe(false)
+        })
+
+        it('cancels the auto-dismiss timer when duration is set to 0', () => {
+            setState('test-1', 'success', 'Message', { duration: 1000 })
+
+            updateOptions('test-1', { duration: 0 })
+
+            vi.advanceTimersByTime(5000)
+            expect(getNotification('test-1')?.visible).toBe(true)
+        })
     })
-  })
-
-  describe("enforceMaxVisible", () => {
-    it("removes oldest when exceeding max", () => {
-      setState("test-1", "info", "Message 1")
-      vi.advanceTimersByTime(10)
-      setState("test-2", "info", "Message 2")
-      vi.advanceTimersByTime(10)
-      setState("test-3", "info", "Message 3")
-
-      enforceMaxVisible(3, "test-4")
-
-      expect(getNotification("test-1")?.visible).toBe(false)
-      expect(getNotification("test-2")?.visible).toBe(true)
-      expect(getNotification("test-3")?.visible).toBe(true)
-    })
-  })
-
-  describe("updateOptions", () => {
-    it("updates and adds notification options", () => {
-      setState("test-1", "info", "Message", { duration: 3000 })
-
-      const action = { label: "Undo", onClick: vi.fn() }
-      updateOptions("test-1", { duration: 5000, action })
-
-      const notification = getNotification("test-1")
-      expect(notification?.options.duration).toBe(5000)
-      expect(notification?.options.action).toEqual(action)
-    })
-  })
 })

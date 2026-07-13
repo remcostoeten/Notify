@@ -2,10 +2,10 @@
 
 ## Supported Versions
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 1.x.x   | Yes                |
-| < 1.0   | No                 |
+| Version | Supported |
+| ------- | --------- |
+| 1.x.x   | Yes       |
+| < 1.0   | No        |
 
 ## Reporting a Vulnerability
 
@@ -21,6 +21,7 @@ We take security seriously and will address valid reports promptly.
 ## Security Best Practices
 
 This library:
+
 - Has no external API calls
 - Does not store or transmit user data
 - Has no server-side dependencies in the core package

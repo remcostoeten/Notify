@@ -3,14 +3,20 @@
  * Supports multiple notifications with position-based stacking.
  */
 
-import { NotifyStateType, Defaults, DismissReason } from "./constants"
-import type { NotifyState, NotifyOptions, NotifyItem, StoreListener, DismissReasonType } from "./types"
+import { NotifyStateType, Defaults, DismissReason } from './constants'
+import type {
+    NotifyState,
+    NotifyMessage,
+    NotifyOptions,
+    NotifyItem,
+    NotifyPositionType,
+    StoreListener,
+    DismissReasonType
+} from './types'
 
 // ============================================================================
 // STORE STATE
 // ============================================================================
-
-console.log("[Notifier] Store Module Initialized")
 
 /** Map of notification items by ID */
 const notifications = new Map<string, NotifyItem>()
@@ -21,6 +27,9 @@ const listeners = new Set<StoreListener>()
 /** Map of dismiss timeouts by notification ID */
 const dismissTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 
+/** Map of pending post-animation delete timeouts by notification ID */
+const deleteTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
+
 // ============================================================================
 // INTERNAL HELPERS
 // ============================================================================
@@ -30,8 +39,7 @@ const dismissTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
  * @internal
  */
 function emit(): void {
-  console.log("[Notifier] Emitting to listeners:", listeners.size)
-  listeners.forEach((listener) => listener())
+    listeners.forEach((listener) => listener())
 }
 
 /**
@@ -39,11 +47,23 @@ function emit(): void {
  * @internal
  */
 function clearDismissTimeout(id: string): void {
-  const timeout = dismissTimeouts.get(id)
-  if (timeout) {
-    clearTimeout(timeout)
-    dismissTimeouts.delete(id)
-  }
+    const timeout = dismissTimeouts.get(id)
+    if (timeout) {
+        clearTimeout(timeout)
+        dismissTimeouts.delete(id)
+    }
+}
+
+/**
+ * Clears any pending post-animation delete timeout for a notification.
+ * @internal
+ */
+function clearDeleteTimeout(id: string): void {
+    const timeout = deleteTimeouts.get(id)
+    if (timeout) {
+        clearTimeout(timeout)
+        deleteTimeouts.delete(id)
+    }
 }
 
 /**
@@ -51,7 +71,12 @@ function clearDismissTimeout(id: string): void {
  * @internal
  */
 function shouldAutoDismiss(state: NotifyState): boolean {
-  return state === NotifyStateType.SUCCESS || state === NotifyStateType.ERROR || state === NotifyStateType.INFO
+    return (
+        state === NotifyStateType.SUCCESS ||
+        state === NotifyStateType.ERROR ||
+        state === NotifyStateType.INFO ||
+        state === NotifyStateType.WARNING
+    )
 }
 
 /**
@@ -59,13 +84,13 @@ function shouldAutoDismiss(state: NotifyState): boolean {
  * @internal
  */
 function setupAutoDismiss(id: string, duration: number): void {
-  clearDismissTimeout(id)
-  dismissTimeouts.set(
-    id,
-    setTimeout(() => {
-      dismiss(id, DismissReason.TIMEOUT)
-    }, duration),
-  )
+    clearDismissTimeout(id)
+    dismissTimeouts.set(
+        id,
+        setTimeout(() => {
+            dismiss(id, DismissReason.TIMEOUT)
+        }, duration)
+    )
 }
 
 // ============================================================================
@@ -77,14 +102,16 @@ function setupAutoDismiss(id: string, duration: number): void {
  * @returns Array of notification items
  */
 export function getNotifications(): NotifyItem[] {
-  return Array.from(notifications.values()).sort((a, b) => a.createdAt - b.createdAt)
+    return Array.from(notifications.values()).sort((a, b) => a.createdAt - b.createdAt)
 }
 
 export function resetStore(): void {
-  dismissTimeouts.forEach(clearTimeout)
-  notifications.clear()
-  listeners.clear()
-  dismissTimeouts.clear()
+    dismissTimeouts.forEach(clearTimeout)
+    deleteTimeouts.forEach(clearTimeout)
+    notifications.clear()
+    listeners.clear()
+    dismissTimeouts.clear()
+    deleteTimeouts.clear()
 }
 
 /**
@@ -93,7 +120,7 @@ export function resetStore(): void {
  * @returns The notification item or undefined
  */
 export function getNotification(id: string): NotifyItem | undefined {
-  return notifications.get(id)
+    return notifications.get(id)
 }
 
 /**
@@ -102,8 +129,8 @@ export function getNotification(id: string): NotifyItem | undefined {
  * @returns Unsubscribe function
  */
 export function subscribe(listener: StoreListener): () => void {
-  listeners.add(listener)
-  return () => listeners.delete(listener)
+    listeners.add(listener)
+    return () => listeners.delete(listener)
 }
 
 /**
@@ -113,56 +140,61 @@ export function subscribe(listener: StoreListener): () => void {
  * @param message - Message to display
  * @param options - Additional options
  */
-export function setState(id: string, state: NotifyState, message: string, options: NotifyOptions = {}): void {
-  console.log(`[Notifier] setState: ${id} -> ${state}`, message)
-  clearDismissTimeout(id)
+export function setState(
+    id: string,
+    state: NotifyState,
+    message: NotifyMessage,
+    options: NotifyOptions = {}
+): void {
+    clearDismissTimeout(id)
+    clearDeleteTimeout(id)
 
-  const existing = notifications.get(id)
-  const prevState = existing?.state ?? NotifyStateType.IDLE
+    const existing = notifications.get(id)
+    const prevState = existing?.state ?? NotifyStateType.IDLE
 
-  const mergedOptions: NotifyOptions = {
-    ...(existing?.options ?? {}),
-    ...options,
-    // Preserve action if it exists in either
-    action: options.action ?? existing?.options?.action,
-  }
+    const mergedOptions: NotifyOptions = {
+        ...(existing?.options ?? {}),
+        ...options,
+        // Preserve action if it exists in either
+        action: options.action ?? existing?.options?.action
+    }
 
-  // Call onUpdate callback if state changed
-  if (existing && state !== prevState && mergedOptions.onUpdate) {
-    mergedOptions.onUpdate(id, state, prevState)
-  }
+    // Call onUpdate callback if state changed
+    if (existing && state !== prevState && mergedOptions.onUpdate) {
+        mergedOptions.onUpdate(id, state, prevState)
+    }
 
-  const now = Date.now()
-  const isStateChange = existing && state !== prevState
+    const now = Date.now()
+    const isStateChange = existing && state !== prevState
 
-  const item: NotifyItem = {
-    id,
-    state,
-    message,
-    options: mergedOptions,
-    visible: true,
-    prevState,
-    confirmResolver: existing?.confirmResolver ?? null,
-    createdAt: existing?.createdAt ?? now,
-    stateStartedAt: isStateChange ? now : (existing?.stateStartedAt ?? now),
-    paused: false,
-    remainingTime: null,
-  }
+    const item: NotifyItem = {
+        id,
+        state,
+        message,
+        options: mergedOptions,
+        visible: true,
+        prevState,
+        confirmResolver: existing?.confirmResolver ?? null,
+        createdAt: existing?.createdAt ?? now,
+        stateStartedAt: isStateChange ? now : (existing?.stateStartedAt ?? now),
+        paused: false,
+        remainingTime: null
+    }
 
-  notifications.set(id, item)
+    notifications.set(id, item)
 
-  // Call onOpen for new notifications
-  if (!existing && mergedOptions.onOpen) {
-    mergedOptions.onOpen(id)
-  }
+    // Call onOpen for new notifications
+    if (!existing && mergedOptions.onOpen) {
+        mergedOptions.onOpen(id)
+    }
 
-  emit()
+    emit()
 
-  // Auto-dismiss for terminal states
-  if (shouldAutoDismiss(state) && mergedOptions.duration !== 0) {
-    const duration = mergedOptions.duration ?? Defaults.DURATION_MS
-    setupAutoDismiss(id, duration)
-  }
+    // Auto-dismiss for terminal states
+    if (shouldAutoDismiss(state) && mergedOptions.duration !== 0) {
+        const duration = mergedOptions.duration ?? Defaults.DURATION_MS
+        setupAutoDismiss(id, duration)
+    }
 }
 
 /**
@@ -174,41 +206,42 @@ export function setState(id: string, state: NotifyState, message: string, option
  * @internal
  */
 export function setConfirmState(
-  id: string,
-  message: string,
-  options: NotifyOptions,
-  resolver: (confirmed: boolean) => void,
+    id: string,
+    message: NotifyMessage,
+    options: NotifyOptions,
+    resolver: (confirmed: boolean) => void
 ): void {
-  clearDismissTimeout(id)
+    clearDismissTimeout(id)
+    clearDeleteTimeout(id)
 
-  const existing = notifications.get(id)
-  const prevState = existing?.state ?? NotifyStateType.IDLE
+    const existing = notifications.get(id)
+    const prevState = existing?.state ?? NotifyStateType.IDLE
 
-  const mergedOptions = existing ? { ...existing.options, ...options } : options
+    const mergedOptions = existing ? { ...existing.options, ...options } : options
 
-  const now = Date.now()
+    const now = Date.now()
 
-  const item: NotifyItem = {
-    id,
-    state: NotifyStateType.CONFIRM,
-    message,
-    options: mergedOptions,
-    visible: true,
-    prevState,
-    confirmResolver: resolver,
-    createdAt: existing?.createdAt ?? now,
-    stateStartedAt: now,
-    paused: false,
-    remainingTime: null,
-  }
+    const item: NotifyItem = {
+        id,
+        state: NotifyStateType.CONFIRM,
+        message,
+        options: mergedOptions,
+        visible: true,
+        prevState,
+        confirmResolver: resolver,
+        createdAt: existing?.createdAt ?? now,
+        stateStartedAt: now,
+        paused: false,
+        remainingTime: null
+    }
 
-  notifications.set(id, item)
+    notifications.set(id, item)
 
-  if (!existing && mergedOptions.onOpen) {
-    mergedOptions.onOpen(id)
-  }
+    if (!existing && mergedOptions.onOpen) {
+        mergedOptions.onOpen(id)
+    }
 
-  emit()
+    emit()
 }
 
 /**
@@ -219,12 +252,13 @@ export function setConfirmState(
  * @internal
  */
 export function resolveConfirm(id: string, confirmed: boolean): void {
-  const item = notifications.get(id)
-  if (item?.confirmResolver) {
-    const resolver = item.confirmResolver
-    notifications.set(id, { ...item, confirmResolver: null })
-    resolver(confirmed)
-  }
+    const item = notifications.get(id)
+    if (item?.confirmResolver) {
+        const resolver = item.confirmResolver
+        notifications.set(id, { ...item, confirmResolver: null })
+        emit()
+        resolver(confirmed)
+    }
 }
 
 /**
@@ -232,34 +266,49 @@ export function resolveConfirm(id: string, confirmed: boolean): void {
  * @param id - Notification ID
  */
 export function pauseTimer(id: string): void {
-  const item = notifications.get(id)
-  if (!item || item.paused) return
+    const item = notifications.get(id)
+    if (!item || item.paused) return
 
-  const timeout = dismissTimeouts.get(id)
-  if (timeout) {
-    clearDismissTimeout(id)
-    const elapsed = Date.now() - item.stateStartedAt
-    const duration = item.options.duration ?? Defaults.DURATION_MS
-    const remaining = Math.max(0, duration - elapsed)
+    const timeout = dismissTimeouts.get(id)
+    if (timeout) {
+        clearDismissTimeout(id)
+        const elapsed = Date.now() - item.stateStartedAt
+        const duration = item.options.duration ?? Defaults.DURATION_MS
+        const remaining = Math.max(0, duration - elapsed)
 
-    notifications.set(id, { ...item, paused: true, remainingTime: remaining })
-    emit()
-  }
+        notifications.set(id, { ...item, paused: true, remainingTime: remaining })
+        emit()
+    }
 }
 
 export function resumeTimer(id: string): void {
-  const item = notifications.get(id)
-  if (!item || !item.paused) return
+    const item = notifications.get(id)
+    if (!item || !item.paused) return
 
-  const remaining = item.remainingTime ?? Defaults.DURATION_MS
-  const now = Date.now()
-  notifications.set(id, { ...item, paused: false, remainingTime: null, stateStartedAt: now })
+    const remaining = item.remainingTime ?? Defaults.DURATION_MS
+    const now = Date.now()
+    notifications.set(id, { ...item, paused: false, remainingTime: null, stateStartedAt: now })
 
-  if (shouldAutoDismiss(item.state)) {
-    setupAutoDismiss(id, remaining)
-  }
+    if (shouldAutoDismiss(item.state)) {
+        setupAutoDismiss(id, remaining)
+    }
 
-  emit()
+    emit()
+}
+
+/**
+ * Pauses the auto-dismiss timer of every notification.
+ * Used for stack-wide hover pause and background-tab pause.
+ */
+export function pauseAllTimers(): void {
+    notifications.forEach((_, id) => pauseTimer(id))
+}
+
+/**
+ * Resumes the auto-dismiss timer of every paused notification.
+ */
+export function resumeAllTimers(): void {
+    notifications.forEach((_, id) => resumeTimer(id))
 }
 
 /**
@@ -268,32 +317,36 @@ export function resumeTimer(id: string): void {
  * @param reason - Reason for dismissal
  */
 export function dismiss(id: string, reason: DismissReasonType = DismissReason.MANUAL): void {
-  const item = notifications.get(id)
-  if (!item) return
+    const item = notifications.get(id)
+    if (!item) return
 
-  clearDismissTimeout(id)
+    clearDismissTimeout(id)
 
-  // Auto-resolve pending confirms as false
-  if (item.confirmResolver) {
-    item.confirmResolver(false)
-  }
-
-  // Call onDismiss callback
-  if (item.options.onDismiss) {
-    item.options.onDismiss(id, reason)
-  }
-
-  notifications.set(id, { ...item, visible: false, confirmResolver: null })
-  emit()
-
-  // Remove from store after animation completes
-  setTimeout(() => {
-    notifications.delete(id)
-    if (item.options.onClose) {
-      item.options.onClose(id)
+    // Auto-resolve pending confirms as false
+    if (item.confirmResolver) {
+        item.confirmResolver(false)
     }
+
+    // Call onDismiss callback
+    if (item.options.onDismiss) {
+        item.options.onDismiss(id, reason)
+    }
+
+    notifications.set(id, { ...item, visible: false, confirmResolver: null })
     emit()
-  }, 300)
+
+    clearDeleteTimeout(id)
+    deleteTimeouts.set(
+        id,
+        setTimeout(() => {
+            deleteTimeouts.delete(id)
+            notifications.delete(id)
+            if (item.options.onClose) {
+                item.options.onClose(id)
+            }
+            emit()
+        }, Defaults.EXIT_ANIMATION_MS)
+    )
 }
 
 /**
@@ -301,22 +354,33 @@ export function dismiss(id: string, reason: DismissReasonType = DismissReason.MA
  * @param reason - Reason for dismissal
  */
 export function dismissAll(reason: DismissReasonType = DismissReason.MANUAL): void {
-  notifications.forEach((_, id) => dismiss(id, reason))
+    notifications.forEach((_, id) => dismiss(id, reason))
 }
 
 /**
  * Enforces maximum visible notifications limit.
+ * When a position is given, only notifications in that position count toward the limit.
  * @param maxVisible - Maximum number to keep
  * @param excludeId - ID to exclude from removal
+ * @param position - Position the new notification will occupy
  */
-export function enforceMaxVisible(maxVisible: number, excludeId?: string): void {
-  const items = getNotifications()
-  const visibleItems = items.filter((item) => item.visible && item.id !== excludeId)
+export function enforceMaxVisible(
+    maxVisible: number,
+    excludeId?: string,
+    position?: NotifyPositionType
+): void {
+    const items = getNotifications()
+    const visibleItems = items.filter(
+        (item) =>
+            item.visible &&
+            item.id !== excludeId &&
+            (position === undefined || (item.options.position ?? position) === position)
+    )
 
-  if (visibleItems.length >= maxVisible) {
-    const toRemove = visibleItems.slice(0, visibleItems.length - maxVisible + 1)
-    toRemove.forEach((item) => dismiss(item.id, DismissReason.REPLACED))
-  }
+    if (visibleItems.length >= maxVisible) {
+        const toRemove = visibleItems.slice(0, visibleItems.length - maxVisible + 1)
+        toRemove.forEach((item) => dismiss(item.id, DismissReason.REPLACED))
+    }
 }
 
 /**
@@ -325,16 +389,31 @@ export function enforceMaxVisible(maxVisible: number, excludeId?: string): void 
  * @param options - Options to merge
  */
 export function updateOptions(id: string, options: Partial<NotifyOptions>): void {
-  const item = notifications.get(id)
-  if (!item) return
+    const item = notifications.get(id)
+    if (!item) return
 
-  notifications.set(id, {
-    ...item,
-    options: {
-      ...item.options,
-      ...options,
-    },
-  })
+    const updated: NotifyItem = {
+        ...item,
+        options: {
+            ...item.options,
+            ...options
+        }
+    }
 
-  emit()
+    if (
+        options.duration !== undefined &&
+        shouldAutoDismiss(item.state) &&
+        item.visible &&
+        !item.paused
+    ) {
+        if (options.duration === 0) {
+            clearDismissTimeout(id)
+        } else {
+            updated.stateStartedAt = Date.now()
+            setupAutoDismiss(id, options.duration)
+        }
+    }
+
+    notifications.set(id, updated)
+    emit()
 }

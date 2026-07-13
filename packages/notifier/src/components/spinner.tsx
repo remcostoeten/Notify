@@ -2,9 +2,9 @@
  * @fileoverview iOS-style spinner component for loading states.
  */
 
-"use client"
-import type { JSX } from "react"
-import "../styles/spinner.css"
+'use client'
+import type { JSX } from 'react'
+import '../styles/spinner.css'
 
 /**
  * Number of blades in the spinner.
@@ -22,11 +22,11 @@ const BLADE_COUNT = 12
  * ```
  */
 export function Spinner(): JSX.Element {
-  return (
-    <div className="notify-spinner" role="status" aria-label="Loading">
-      {Array.from({ length: BLADE_COUNT }, (_, i) => (
-        <div key={i} className="notify-spinner-blade" />
-      ))}
-    </div>
-  )
+    return (
+        <div className='notify-spinner' role='status' aria-label='Loading'>
+            {Array.from({ length: BLADE_COUNT }, (_, i) => (
+                <div key={i} className='notify-spinner-blade' />
+            ))}
+        </div>
+    )
 }

@@ -3,7 +3,7 @@
 import React from 'react'
 import { createToastAdapter } from '../factory'
 import { Notifier } from '../../components/notification'
-import type { NotifierProps, NotifyPositionType } from '../../components/notification'
+import type { NotifierProps, NotifyPositionType } from '../../types'
 
 // Create the adapter instance
 export const toast = createToastAdapter({
@@ -15,7 +15,7 @@ export const toast = createToastAdapter({
 
 // Sonner Toaster component compatibility
 // Maps Sonner props to Notifier props where applicable
-export interface ToasterProps extends NotifierProps {
+export interface ToasterProps extends Omit<NotifierProps, 'theme'> {
     invert?: boolean
     theme?: 'light' | 'dark' | 'system'
     position?: NotifyPositionType
