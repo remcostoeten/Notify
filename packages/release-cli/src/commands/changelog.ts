@@ -4,11 +4,13 @@
 
 import chalk from 'chalk'
 import ora from 'ora'
-import { prompt } from 'enquirer'
+import enquirer from 'enquirer'
 import type { ReleaseConfig } from '../types.js'
 import { createGit, getCommitsSinceTag, getLatestTag } from '../utils/git.js'
 import { generateChangelog, formatChangelogEntry, prependToChangelog } from '../utils/llm.js'
 import { resolve } from 'path'
+
+const { prompt } = enquirer
 
 export interface ChangelogOptions {
     version?: string

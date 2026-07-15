@@ -100,7 +100,7 @@ program
     .command('init')
     .description('Initialize release configuration')
     .action(async () => {
-        const { prompt } = await import('enquirer')
+        const { prompt } = (await import('enquirer')).default
 
         console.log('')
         console.log(chalk.bold('  🚀 Release CLI Setup'))

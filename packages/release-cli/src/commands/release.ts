@@ -5,7 +5,7 @@
 import chalk from 'chalk'
 import ora from 'ora'
 import * as semver from 'semver'
-import { prompt } from 'enquirer'
+import enquirer from 'enquirer'
 import type { ReleaseConfig, ReleaseResult, VersionBump, GitCommit } from '../types.js'
 import {
     createGit,
@@ -20,6 +20,8 @@ import { npmPublish, npmRunScript } from '../utils/npm.js'
 import { generateChangelog, formatChangelogEntry, prependToChangelog } from '../utils/llm.js'
 import { updatePackageVersion } from '../utils/config.js'
 import { resolve } from 'path'
+
+const { prompt } = enquirer
 
 export interface ReleaseOptions {
     bump?: VersionBump
