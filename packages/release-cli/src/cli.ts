@@ -19,7 +19,7 @@ loadEnv()
 
 const program = new Command()
 
-program.name('release').description('AI-powered release automation CLI').version('1.0.0')
+program.name('release').description('AI-powered release automation CLI').version('1.0.2')
 
 // Main release command
 program

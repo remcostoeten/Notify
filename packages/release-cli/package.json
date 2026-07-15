@@ -1,6 +1,6 @@
 {
     "name": "@remcostoeten/release-cli",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "AI-powered release automation CLI with LLM changelog generation",
     "bin": {
         "release": "dist/cli.js",
