@@ -1,92 +1,389 @@
-# @remcostoeten/notifier - LLM Instructions
+# @remcostoeten/notifier - AI integration guide
 
-This is a modern, chainable notification system for React applications.
+Use this file as the source of truth when installing or using `@remcostoeten/notifier`.
+It is a client-side React notification library with chainable state transitions, promise
+tracking, confirmations, actions, theming, and adapters for Sonner, react-hot-toast,
+and shadcn/ui.
 
-## Core Features
-1. **Single Component Setup**: Place `<Notifier />` once in your app layout.
-2. **Chainable API**: `notify.loading("Checking").success("Done")`.
-3. **Themes**: Built-in Dark/Light modes + Full Custom Palette support.
-4. **Performance**: Zero-dependency (lightweight wrapper around minimal state).
+## Requirements and installation
 
-## Installation
+- React and React DOM 18 or newer
+- `motion` 12 or newer (the package uses `motion/react`; do not install
+  `framer-motion` for this integration)
+- TypeScript is supported but not required
+
+Use the package manager already used by the consumer project:
 
 ```bash
-bun add @remcostoeten/notifier framer-motion
-# or npm install / yarn add / pnpm add
+bun add @remcostoeten/notifier motion
+npm install @remcostoeten/notifier motion
+pnpm add @remcostoeten/notifier motion
+yarn add @remcostoeten/notifier motion
 ```
 
-## Setup (Root Layout)
+## Required setup
+
+Import the stylesheet once and mount exactly one `<Notifier />` near the application
+root. In Next.js App Router, the stylesheet can be imported from `app/layout.tsx`.
+Calls to `notify` must run in client-side code, such as a Client Component or event
+handler.
 
 ```tsx
 // app/layout.tsx
 import { Notifier } from '@remcostoeten/notifier'
+import '@remcostoeten/notifier/styles'
 
-export default function RootLayout({ children }) {
-  return (
-    <html>
-      <body>
-        {children}
-        <Notifier
-          position="bottom-right"
-          colorMode="dark"
-        />
-      </body>
-    </html>
-  )
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+    return (
+        <html lang='en'>
+            <body>
+                {children}
+                <Notifier />
+            </body>
+        </html>
+    )
 }
 ```
 
-## Component API: `<Notifier />`
+Do not mount a `<Notifier />` on every page or component. Multiple mounted instances
+render duplicate notifications.
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `position` | `NotifyPositionType` | `"bottom"` | `top-left`, `top-center`, `top-right`, `bottom-left`, `bottom-center`, `bottom-right` |
-| `maxVisible` | `number` | `5` | Max notifications on screen |
-| `duration` | `number` | `3000` | Auto-dismiss time in ms |
-| `colorMode` | `"dark" \| "light" \| "auto"` | `"dark"` | Base theme |
-| `radius` | `"pill" \| "rounded" \| "squared"` | `"pill"` | Corner style |
-| `theme` | `ThemePalette` | `undefined` | Custom color overrides (bg, text, border, etc.) |
-| `iconColor` | `"colored" \| "neutral" \| "hidden"` | `"colored"` | Icon styling |
-| `swipeToDismiss` | `boolean` | `true` | Enable swipe gestures |
-| `pauseOnHover` | `boolean` | `true` | Pause timer on hover |
+## Basic usage
 
-### Custom Theme Example
+```tsx
+'use client'
+
+import { notify } from '@remcostoeten/notifier'
+
+export function SaveButton() {
+    return (
+        <button onClick={() => notify.success('Saved!')}>
+            Save
+        </button>
+    )
+}
+```
+
+Available notification states:
+
+```tsx
+notify('New message')             // info notification
+notify.info('New message')
+notify.success('Saved')
+notify.error('Could not save')
+notify.warning('Storage is low')
+notify.loading('Saving')          // persistent until transitioned or dismissed
+```
+
+Messages accept React content:
+
+```tsx
+notify.success(<span>Saved <strong>successfully</strong></span>)
+notify({
+    message: 'Upload complete',
+    description: 'report.pdf is ready to share'
+})
+```
+
+## Chainable instances
+
+Every notification creation method returns a `NotifyInstance`. State methods mutate
+the same notification and return the same instance.
+
+```tsx
+const notification = notify.loading('Uploading...')
+
+try {
+    await uploadFile()
+    notification.success('Uploaded')
+} catch (error) {
+    notification.error(error instanceof Error ? error.message : 'Upload failed')
+}
+```
+
+Instance API:
+
+```ts
+interface NotifyInstance {
+    readonly id: string
+    loading(message?: React.ReactNode): NotifyInstance
+    success(message?: React.ReactNode): NotifyInstance
+    error(message?: React.ReactNode): NotifyInstance
+    info(message?: React.ReactNode): NotifyInstance
+    warning(message?: React.ReactNode): NotifyInstance
+    update(options: Partial<NotifyOptions>): NotifyInstance
+    promise<T>(promise: Promise<T>, options?: PromiseOptions<T>): Promise<T>
+    confirm(message: React.ReactNode, options?: ConfirmOptions): Promise<boolean>
+    dismiss(): void
+}
+```
+
+Use `update` to change options without creating another notification:
+
+```tsx
+const notification = notify('Item deleted', { duration: 0 })
+
+notification.update({
+    description: 'The item can still be restored',
+    action: {
+        label: 'Undo',
+        onClick: () => {
+            restoreItem()
+            notification.success('Restored')
+        }
+    }
+})
+```
+
+## Promise tracking
+
+`notify.promise` returns the original resolved value and rethrows a rejection after
+showing the error state. Always `await` or otherwise handle the returned promise.
+Success and error messages may be functions of the resolved data or rejection.
+
+```tsx
+try {
+    const user = await notify.promise(loadUser(), {
+        loading: 'Loading user...',
+        success: (data) => `Welcome, ${data.name}`,
+        error: (error) => error instanceof Error ? error.message : 'Could not load user'
+    })
+
+    useUser(user)
+} catch (error) {
+    // The error notification is already visible; handle the rejection as needed.
+}
+```
+
+To reuse an existing instance, call `notification.promise(promise, options)`.
+
+## Confirmations
+
+```tsx
+const confirmed = await notify.confirm('Delete this file?', {
+    confirmLabel: 'Delete',
+    cancelLabel: 'Keep'
+})
+
+if (confirmed) {
+    await deleteFile()
+    notify.success('File deleted')
+}
+```
+
+The static `notify.confirm` creates a dedicated confirmation. An instance-level
+confirmation remains available for a later transition or manual dismissal:
+
+```tsx
+const notification = notify()
+const confirmed = await notification.confirm('Publish now?')
+
+if (confirmed) notification.loading('Publishing...')
+else notification.dismiss()
+```
+
+## Actions, dismissal, and callbacks
+
+```tsx
+const notification = notify('File moved to trash', {
+    duration: 5000,
+    dismissible: true,
+    action: {
+        label: 'Undo',
+        onClick: () => notification.success('File restored')
+    },
+    onOpen: (id) => console.log('opened', id),
+    onUpdate: (id, nextState, previousState) => {
+        console.log(id, previousState, '->', nextState)
+    },
+    onDismiss: (id, reason) => console.log('dismissed', id, reason),
+    onClose: (id) => console.log('closed', id)
+})
+```
+
+Action clicks do not dismiss automatically. Call the instance's `dismiss()` method
+or transition it when appropriate.
+
+```tsx
+notification.dismiss()           // dismiss this notification
+notify.dismiss(notification.id)  // dismiss by ID
+notify.dismiss()                  // dismiss all notifications
+```
+
+Dismiss reasons are `timeout`, `swipe`, `click`, `manual`, and `replaced`.
+
+## Per-notification options
+
+```ts
+interface NotifyOptions {
+    message?: React.ReactNode
+    description?: React.ReactNode
+    position?: NotifyPositionType
+    duration?: number
+    dismissible?: boolean
+    pauseOnHover?: boolean
+    swipeToDismiss?: boolean
+    clickToDismiss?: boolean
+    action?: { label: string; onClick: () => void }
+    loadingMessage?: string
+    successMessage?: string
+    errorMessage?: string
+    warningMessage?: string
+    onOpen?: (id: string) => void
+    onClose?: (id: string) => void
+    onDismiss?: (id: string, reason: DismissReasonType) => void
+    onUpdate?: (id: string, next: NotifyState, previous: NotifyState) => void
+}
+```
+
+`duration: 0` makes info, success, warning, and error notifications persistent.
+Loading and confirmation states do not auto-dismiss. Per-notification options override
+the defaults configured by `<Notifier />`.
+
+## `<Notifier />` API
+
+```ts
+interface NotifierProps {
+    position?: 'top' | 'top-left' | 'top-center' | 'top-right' |
+        'bottom' | 'bottom-left' | 'bottom-center' | 'bottom-right'
+    maxVisible?: number
+    duration?: number
+    swipeToDismiss?: boolean
+    pauseOnHover?: boolean
+    clickToDismiss?: boolean
+    dismissible?: boolean
+    offset?: number | string | { x?: number; y?: number }
+    gap?: number
+    stack?: boolean
+    colorMode?: 'dark' | 'light' | 'auto'
+    radius?: 'pill' | 'rounded' | 'squared'
+    iconColor?: 'colored' | 'neutral' | 'hidden'
+    border?: BorderConfig
+    icons?: IconConfig
+    theme?: ThemePalette
+}
+```
+
+Runtime defaults:
+
+| Prop | Default | Notes |
+| --- | --- | --- |
+| `position` | `'bottom'` | `top`/`bottom` are centered aliases |
+| `maxVisible` | `5` | Oldest item is replaced when exceeded |
+| `duration` | `3000` | Milliseconds; `0` disables auto-dismiss |
+| `swipeToDismiss` | `true` | Gesture direction follows position |
+| `pauseOnHover` | `true` | Pauses active timers |
+| `clickToDismiss` | `false` | Buttons do not trigger click dismissal |
+| `dismissible` | `false` | Prefer per-notification `dismissible` when needed |
+| `offset` | `16` | Number, CSS length, or `{ x, y }` |
+| `gap` | `8` | Pixels between notifications |
+| `stack` | `false` | Collapses items until hover |
+| `colorMode` | `'dark'` | `'auto'` follows system preference |
+| `radius` | `'squared'` | Also supports `'rounded'` and `'pill'` |
+| `iconColor` | `'colored'` | `'hidden'` still shows the loading spinner |
+
+Full configuration example:
 
 ```tsx
 <Notifier
-  colorMode="dark"
-  theme={{
-    background: "#000000",
-    text: "#ffffff",
-    border: "#333333",
-    buttonHover: "#222222"
-  }}
+    position='top-right'
+    maxVisible={4}
+    duration={4000}
+    offset={{ x: 20, y: 24 }}
+    gap={10}
+    stack
+    swipeToDismiss
+    pauseOnHover
+    clickToDismiss={false}
+    colorMode='auto'
+    radius='rounded'
+    iconColor='colored'
+    border={{
+        enabled: true,
+        width: 1,
+        color: 'rgba(128, 128, 128, 0.25)',
+        style: 'solid'
+    }}
+    theme={{
+        background: '#111',
+        text: '#fff',
+        textMuted: '#bbb',
+        textSubtle: '#888',
+        border: '#333',
+        borderHighlight: '#555',
+        buttonHover: '#222',
+        shadow: '0 12px 36px rgba(0, 0, 0, 0.3)'
+    }}
 />
 ```
 
-## Usage API: `notify`
+Custom icons can be supplied for `loading`, `success`, `error`, `info`, `warning`,
+and `confirm`, or with one render function:
 
 ```tsx
-import { notify } from '@remcostoeten/notifier'
+<Notifier
+    icons={{
+        success: <CheckIcon />,
+        render: ({ state, colorMode, size, color }) => (
+            <AppIcon state={state} size={size} color={color} />
+        )
+    }}
+/>
+```
 
-// Basic
-notify('Default message')
-notify.success('Saved!')
-notify.error('Failed')
-notify.loading('Working...')
+## Global configuration helpers
 
-// Async/Promise
-const data = await notify.promise(fetch('/api'), {
-  loading: 'Fetching...',
-  success: 'Done',
-  error: 'Failed'
+Normally `<Notifier />` synchronizes global behavior. For imperative configuration:
+
+```tsx
+notify.configure({
+    position: 'bottom-right',
+    maxVisible: 3,
+    defaultDuration: 4000,
+    swipeToDismiss: true,
+    pauseOnHover: true,
+    clickToDismiss: false,
+    offset: 16,
+    gap: 8
 })
 
-// Interactive
-await notify.confirm('Are you sure?') ? deleteItem() : null
-
-// Chaining
-const n = notify.loading('Uploading...')
-await upload()
-n.success('Uploaded!')
+const config = notify.getConfig()
 ```
+
+## Compatibility imports
+
+For incremental migrations, change the import path while keeping the familiar API.
+These adapters cover common usage, not every upstream feature.
+
+```tsx
+// Sonner
+import { Toaster, toast } from '@remcostoeten/notifier/compat/sonner'
+
+// react-hot-toast (also exports toast as default)
+import { Toaster, toast } from '@remcostoeten/notifier/compat/react-hot-toast'
+
+// shadcn/ui
+import { Toaster, useToast } from '@remcostoeten/notifier/compat/shadcn'
+```
+
+Continue to import the shared stylesheet once:
+
+```tsx
+import '@remcostoeten/notifier/styles'
+```
+
+## Public exports
+
+The root package exports `Notifier`, `Notification`, `notify`, constants
+(`NotifyStateType`, `NotifyPosition`, `DismissReason`, `Defaults`, `AnimationConfig`),
+and the public TypeScript types. `resetStore` is exported primarily for tests.
+
+## Important integration rules
+
+1. Import `@remcostoeten/notifier/styles` exactly once.
+2. Mount exactly one `<Notifier />` at the application root.
+3. Use the `motion` package, not `framer-motion`.
+4. Call `notify` only from client-side code.
+5. Reuse the returned instance for progress/state changes; do not create a new toast
+   for every step.
+6. Handle the promise returned by `notify.promise`, because rejection is rethrown.

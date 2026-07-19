@@ -341,14 +341,14 @@ I want you to install a package called Notifier, listed on npm as \`@remcostoete
 
 ### Installation
 
-We prefer bun but check the root of the project which lock file is present and use that package manager to install notifier.
+Check the project lockfile and use its existing package manager. The \`motion\` peer dependency is required; do not install \`framer-motion\` for this package.
 
-\`bun add @remcostoeten/notifier\`
-\`npm install @remcostoeten/notifier\`
-\`yarn add @remcostoeten/notifier\`
-\`pnpm add @remcostoeten/notifier\`
+\`bun add @remcostoeten/notifier motion\`
+\`npm install @remcostoeten/notifier motion\`
+\`yarn add @remcostoeten/notifier motion\`
+\`pnpm add @remcostoeten/notifier motion\`
 
-Once installed the only thing to setup the notifier is to render the \`<Notifier />\` component in our app so that it is globally available.
+Import the package stylesheet exactly once and render exactly one \`<Notifier />\` component so that it is globally available. Multiple mounted instances produce duplicate notifications.
 
 In next.js projects you can do this in the root layout.tsx file. In react or other react-like frameworks do so in the equivalent file.
 
@@ -357,6 +357,7 @@ Basic Example:
 import type { Metadata } from "next";
 import "./globals.css";
 import { Notifier } from '@remcostoeten/notifier'
+import '@remcostoeten/notifier/styles'
 
 export default function RootLayout({
   children,
@@ -383,12 +384,13 @@ Now it can be used like this:
 \`\`\`tsx
 import { notify } from '@remcostoeten/notifier'
 
-function someCallback() {
+async function save() {
   try {
-    someCallback()
-    notify.success("Success")
+    const notification = notify.loading('Saving...')
+    await saveChanges()
+    notification.success('Saved')
   } catch (e) {
-    notify.error("Error")
+    notify.error(e instanceof Error ? e.message : 'Could not save')
   }
 }
 \`\`\`
@@ -422,13 +424,24 @@ Instruct the user with some usage examples:
 - \`notify('Hello')\` - Basic notification
 - \`notify.success('Saved!')\` - Success state
 - \`notify.error('Failed')\` - Error state
+- \`notify.warning('Be careful')\` - Warning state
 - \`notify.loading('Working...')\` - Loading spinner
 - \`notify.promise(promise, { loading, success, error })\` - Track async ops
+- \`await notify.confirm('Continue?')\` - Await a confirmation
+- \`notify.dismiss()\` - Dismiss all notifications
+
+Important API behavior:
+- Calls return a chainable instance with \`id\`, \`loading\`, \`success\`, \`error\`, \`info\`, \`warning\`, \`update\`, and \`dismiss\`.
+- Reuse an instance for multi-step operations instead of creating a notification for every state.
+- \`notify.promise\` returns the original value and rethrows rejected errors, so await or handle it.
+- \`duration: 0\` creates a persistent notification.
+- Calls to \`notify\` belong in client-side code such as event handlers or Client Components.
 
 Also instruct him to view the demo page and that when done testing, he can remove the demo:
 - Delete: \`rm components/_notify-demo.tsx\`
 - Remove the <NotifyDemo /> import and usage from the page
 
+Complete AI/API reference: https://github.com/remcostoeten/Notify/blob/main/packages/notifier/llm.txt
 Full docs & demo: https://remcostoeten-notify.vercel.app
 Repository: https://github.com/remcostoeten/notifier
 NPM: https://www.npmjs.com/package/@remcostoeten/notifier
