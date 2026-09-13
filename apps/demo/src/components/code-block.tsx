@@ -18,9 +18,48 @@ import {
 } from 'lucide-react'
 import type { ComponentProps, HTMLAttributes, ReactNode } from 'react'
 import { createContext, useContext, useMemo, useState } from 'react'
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter'
+import bash from 'react-syntax-highlighter/dist/esm/languages/prism/bash'
+import css from 'react-syntax-highlighter/dist/esm/languages/prism/css'
+import diff from 'react-syntax-highlighter/dist/esm/languages/prism/diff'
+import javascript from 'react-syntax-highlighter/dist/esm/languages/prism/javascript'
+import json from 'react-syntax-highlighter/dist/esm/languages/prism/json'
+import jsx from 'react-syntax-highlighter/dist/esm/languages/prism/jsx'
+import markdown from 'react-syntax-highlighter/dist/esm/languages/prism/markdown'
+import markup from 'react-syntax-highlighter/dist/esm/languages/prism/markup'
+import python from 'react-syntax-highlighter/dist/esm/languages/prism/python'
+import scss from 'react-syntax-highlighter/dist/esm/languages/prism/scss'
+import sql from 'react-syntax-highlighter/dist/esm/languages/prism/sql'
+import tsx from 'react-syntax-highlighter/dist/esm/languages/prism/tsx'
+import typescript from 'react-syntax-highlighter/dist/esm/languages/prism/typescript'
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { Input, Button } from './ui'
+
+const REGISTERED_LANGUAGES = {
+    bash,
+    css,
+    diff,
+    javascript,
+    json,
+    jsx,
+    markdown,
+    md: markdown,
+    markup,
+    html: markup,
+    python,
+    py: python,
+    js: javascript,
+    ts: typescript,
+    shell: bash,
+    scss,
+    sql,
+    tsx,
+    typescript
+}
+
+for (const [name, grammar] of Object.entries(REGISTERED_LANGUAGES)) {
+    SyntaxHighlighter.registerLanguage(name, grammar)
+}
 
 const LANG_ICONS: Record<string, LucideIcon> = {
     javascript: FileCode,
