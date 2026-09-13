@@ -157,7 +157,7 @@ export const ThemeColors = {
         border: 'rgba(255, 255, 255, 0.1)',
         borderHighlight: 'rgba(255, 255, 255, 0.2)',
         buttonHover: 'rgba(255, 255, 255, 0.07)',
-        shadow: '0 0 0 1px rgba(255,255,255,0.10), 0 2px 8px rgba(0,0,0,0.38)'
+        shadow: 'inset 0 1px 0 rgba(255,255,255,0.08), inset 0 0 0 1px rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.4), 0 8px 24px -10px rgba(0,0,0,0.75)'
     },
     light: {
         background: '#ffffff',
@@ -167,7 +167,7 @@ export const ThemeColors = {
         border: 'rgba(10, 10, 11, 0.1)',
         borderHighlight: 'rgba(10, 10, 11, 0.2)',
         buttonHover: 'rgba(10, 10, 11, 0.08)',
-        shadow: '0 0 0 1px rgba(10,10,11,0.10), 0 2px 8px rgba(10,10,11,0.10)'
+        shadow: 'inset 0 0 0 1px rgba(10,10,11,0.07), 0 1px 2px rgba(10,10,11,0.08), 0 8px 24px -10px rgba(10,10,11,0.3)'
     }
 } as const
 

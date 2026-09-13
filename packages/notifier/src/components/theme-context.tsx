@@ -56,7 +56,7 @@ const DEFAULT_BORDER_CONFIG: Required<BorderConfig> = {
 
 const DEFAULT_THEME: ThemeConfig = {
     colorMode: 'dark',
-    radius: 'squared',
+    radius: 'rounded',
     iconColor: 'colored',
     border: DEFAULT_BORDER_CONFIG
 }
@@ -109,7 +109,7 @@ export function NotifyThemeProvider({ theme = DEFAULT_THEME, children }: ThemePr
         const iconColorMode = theme.iconColor ?? 'colored'
         const iconColorsKey = iconColorMode === 'hidden' ? 'neutral' : iconColorMode
         const iconColors = IconColors[iconColorsKey]
-        const radiusVariant = theme.radius ?? 'squared'
+        const radiusVariant = theme.radius ?? 'rounded'
 
         const borderConfig: Required<BorderConfig> = {
             enabled: theme.border?.enabled ?? false,

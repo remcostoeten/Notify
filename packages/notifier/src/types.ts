@@ -86,7 +86,7 @@ export type DismissReasonType = 'timeout' | 'swipe' | 'click' | 'manual' | 'repl
  * - `rounded` - Medium rounded corners (12px), modern card appearance
  * - `squared` - Minimal rounded corners (4px), clean squared look
  *
- * @default "squared"
+ * @default "rounded"
  *
  * @example
  * ```tsx
@@ -645,7 +645,7 @@ export interface NotifierProps {
 
     /**
      * Border radius style for notification containers.
-     * @default "squared"
+     * @default "rounded"
      */
     radius?: RadiusVariant
 

@@ -174,6 +174,11 @@ export function NotificationItem({ item, position, index }: Props): JSX.Element 
         ? `${theme.borderConfig.width}px ${theme.borderConfig.style} ${theme.borderConfig.color || theme.border}`
         : 'none'
 
+    const sheen =
+        theme.colorMode === 'dark'
+            ? 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 55%)'
+            : 'linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 55%)'
+
     return (
         <motion.div
             layout='position'
@@ -186,6 +191,7 @@ export function NotificationItem({ item, position, index }: Props): JSX.Element 
                 maxWidth: 'calc(100vw - 32px)',
                 overflow: 'hidden',
                 backgroundColor: theme.background,
+                backgroundImage: sheen,
                 boxShadow: theme.shadow,
                 borderRadius: theme.radius,
                 border: borderStyle,
@@ -238,6 +244,21 @@ export function NotificationItem({ item, position, index }: Props): JSX.Element 
             role={isConfirm ? 'alertdialog' : isAssertive ? 'alert' : 'status'}
             aria-live={isAssertive ? 'assertive' : 'polite'}
         >
+            <motion.div
+                aria-hidden='true'
+                style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: 2,
+                    zIndex: 2,
+                    pointerEvents: 'none'
+                }}
+                animate={{ backgroundColor: stateColors.icon }}
+                transition={AnimationConfig.TEXT}
+            />
+
             <div
                 ref={contentRef}
                 style={{
@@ -256,12 +277,12 @@ export function NotificationItem({ item, position, index }: Props): JSX.Element 
                     style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '10px',
-                        minHeight: '40px',
-                        paddingTop: '8px',
-                        paddingBottom: '8px',
-                        paddingLeft: '14px',
-                        paddingRight: hasAction || isDismissible || isConfirm ? '0' : '14px'
+                        gap: '8px',
+                        minHeight: '32px',
+                        paddingTop: '6px',
+                        paddingBottom: '6px',
+                        paddingLeft: '12px',
+                        paddingRight: hasAction || isDismissible || isConfirm ? '0' : '12px'
                     }}
                 >
                     {showIcon && (
@@ -271,12 +292,8 @@ export function NotificationItem({ item, position, index }: Props): JSX.Element 
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                width: 28,
-                                height: 28,
                                 flexShrink: 0,
-                                borderRadius: '9px',
-                                color: stateColors.icon,
-                                backgroundColor: theme.buttonHover
+                                color: stateColors.icon
                             }}
                             animate={{
                                 color: stateColors.icon
@@ -353,12 +370,12 @@ export function NotificationItem({ item, position, index }: Props): JSX.Element 
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={AnimationConfig.TEXT}
-                        className='mr-1 flex h-10 items-center gap-0.5'
+                        className='mr-1 flex h-8 items-center gap-0.5'
                     >
                         <motion.button
                             ref={cancelButtonRef}
                             onClick={() => resolveConfirm(id, false)}
-                            className='h-8 whitespace-nowrap rounded-lg px-2.5 text-[13px] font-medium transition-colors'
+                            className='h-7 whitespace-nowrap rounded-md px-2.5 text-[13px] font-medium transition-colors'
                             style={{ color: theme.textMuted }}
                             whileHover={{ backgroundColor: theme.buttonHover, color: theme.text }}
                             whileTap={{ scale: 0.97 }}
@@ -367,7 +384,7 @@ export function NotificationItem({ item, position, index }: Props): JSX.Element 
                         </motion.button>
                         <motion.button
                             onClick={() => resolveConfirm(id, true)}
-                            className='h-8 whitespace-nowrap rounded-lg px-2.5 text-[13px] font-medium transition-colors'
+                            className='h-7 whitespace-nowrap rounded-md px-2.5 text-[13px] font-medium transition-colors'
                             style={{
                                 color: theme.text,
                                 backgroundColor: theme.buttonHover,
@@ -387,14 +404,14 @@ export function NotificationItem({ item, position, index }: Props): JSX.Element 
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={AnimationConfig.TEXT}
-                        className='mr-1 flex h-10 items-center'
+                        className='mr-1 flex h-8 items-center'
                     >
                         <motion.button
                             onClick={(e) => {
                                 e.stopPropagation()
                                 options.action?.onClick()
                             }}
-                            className='h-8 whitespace-nowrap rounded-lg px-2.5 text-[13px] font-medium transition-colors'
+                            className='h-7 whitespace-nowrap rounded-md px-2.5 text-[13px] font-medium transition-colors'
                             style={{
                                 color: theme.text,
                                 backgroundColor: theme.buttonHover,
@@ -417,14 +434,14 @@ export function NotificationItem({ item, position, index }: Props): JSX.Element 
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={AnimationConfig.TEXT}
-                        className='mr-1 flex h-10 items-center'
+                        className='mr-1 flex h-8 items-center'
                     >
                         <motion.button
                             onClick={(e) => {
                                 e.stopPropagation()
                                 dismiss(id, DismissReason.MANUAL)
                             }}
-                            className='flex h-8 w-8 items-center justify-center rounded-lg transition-colors'
+                            className='flex h-7 w-7 items-center justify-center rounded-md transition-colors'
                             style={{ color: theme.textSubtle }}
                             whileHover={{
                                 backgroundColor: theme.buttonHover,
