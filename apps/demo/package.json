@@ -6,7 +6,7 @@
     "license": "MIT",
     "scripts": {
         "dev": "bun --bun run next dev",
-        "build": "bun --bun run next build",
+        "build": "bun run --cwd ../../packages/notifier build && bun --bun run next build",
         "start": "bun --bun run next start",
         "lint": "eslint"
     },
