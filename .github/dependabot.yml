@@ -16,11 +16,17 @@ updates:
                   - 'react*'
                   - 'next*'
                   - 'framer-motion'
+      ignore:
+          - dependency-name: 'typescript'
+            update-types: ['version-update:semver-major']
 
     - package-ecosystem: 'npm'
       directory: '/packages/notifier'
       schedule:
           interval: 'weekly'
+      ignore:
+          - dependency-name: 'typescript'
+            update-types: ['version-update:semver-major']
 
     - package-ecosystem: 'github-actions'
       directory: '/'
