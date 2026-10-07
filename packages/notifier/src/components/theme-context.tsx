@@ -101,44 +101,73 @@ export function NotifyThemeProvider({ theme = DEFAULT_THEME, children }: ThemePr
         return () => mediaQuery.removeEventListener('change', handler)
     }, [])
 
+    const { colorMode: themeColorMode, iconColor, radius, border, icons, palette } = theme
+    const borderEnabled = border?.enabled
+    const borderWidth = border?.width
+    const borderColor = border?.color
+    const borderStyle = border?.style
+    const paletteBackground = palette?.background
+    const paletteText = palette?.text
+    const paletteTextMuted = palette?.textMuted
+    const paletteTextSubtle = palette?.textSubtle
+    const paletteBorder = palette?.border
+    const paletteBorderHighlight = palette?.borderHighlight
+    const paletteButtonHover = palette?.buttonHover
+    const paletteShadow = palette?.shadow
+
     const resolvedTheme = useMemo((): ResolvedTheme => {
         const colorMode: 'light' | 'dark' =
-            theme.colorMode === 'auto' ? systemColorMode : (theme.colorMode ?? 'dark')
+            themeColorMode === 'auto' ? systemColorMode : (themeColorMode ?? 'dark')
 
         const colors = ThemeColors[colorMode]
-        const iconColorMode = theme.iconColor ?? 'colored'
+        const iconColorMode = iconColor ?? 'colored'
         const iconColorsKey = iconColorMode === 'hidden' ? 'neutral' : iconColorMode
         const iconColors = IconColors[iconColorsKey]
-        const radiusVariant = theme.radius ?? 'rounded'
+        const radiusVariant = radius ?? 'rounded'
 
         const borderConfig: Required<BorderConfig> = {
-            enabled: theme.border?.enabled ?? false,
-            width: theme.border?.width ?? 1,
-            color: theme.border?.color ?? colors.border,
-            style: theme.border?.style ?? 'solid'
+            enabled: borderEnabled ?? false,
+            width: borderWidth ?? 1,
+            color: borderColor ?? colors.border,
+            style: borderStyle ?? 'solid'
         }
 
         return {
             colorMode,
-            background: theme.palette?.background ?? colors.background,
-            text: theme.palette?.text ?? colors.text,
-            textMuted: theme.palette?.textMuted ?? colors.textMuted,
-            textSubtle: theme.palette?.textSubtle ?? colors.textSubtle,
-            border: theme.palette?.border ?? colors.border,
-            borderHighlight: theme.palette?.borderHighlight ?? colors.borderHighlight,
-            buttonHover: theme.palette?.buttonHover ?? colors.buttonHover,
-            shadow:
-                theme.palette?.shadow === 'none'
-                    ? 'none'
-                    : (theme.palette?.shadow ?? colors.shadow),
+            background: paletteBackground ?? colors.background,
+            text: paletteText ?? colors.text,
+            textMuted: paletteTextMuted ?? colors.textMuted,
+            textSubtle: paletteTextSubtle ?? colors.textSubtle,
+            border: paletteBorder ?? colors.border,
+            borderHighlight: paletteBorderHighlight ?? colors.borderHighlight,
+            buttonHover: paletteButtonHover ?? colors.buttonHover,
+            shadow: paletteShadow === 'none' ? 'none' : (paletteShadow ?? colors.shadow),
             radius: RadiusValues[radiusVariant],
             radiusVariant,
             iconColorMode,
             iconColors,
-            icons: theme.icons,
+            icons,
             borderConfig
         }
-    }, [theme, systemColorMode])
+    }, [
+        themeColorMode,
+        systemColorMode,
+        iconColor,
+        radius,
+        icons,
+        borderEnabled,
+        borderWidth,
+        borderColor,
+        borderStyle,
+        paletteBackground,
+        paletteText,
+        paletteTextMuted,
+        paletteTextSubtle,
+        paletteBorder,
+        paletteBorderHighlight,
+        paletteButtonHover,
+        paletteShadow
+    ])
 
     return <ThemeContext.Provider value={resolvedTheme}>{children}</ThemeContext.Provider>
 }

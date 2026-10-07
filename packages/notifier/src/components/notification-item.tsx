@@ -7,6 +7,7 @@
 import * as React from 'react'
 import {
     AnimatePresence,
+    animate,
     motion,
     useMotionValue,
     useReducedMotion,
@@ -59,7 +60,7 @@ type Props = {
  * Individual notification item component.
  * Handles swipe gestures, hover pause, click dismiss, and all interactions.
  */
-export function NotificationItem({ item, position, index }: Props): JSX.Element {
+function NotificationItemView({ item, position, index }: Props): JSX.Element {
     const { id, state, message, visible, options, stateStartedAt } = item
     const theme = useNotifyTheme()
     const shouldReduceMotion = useReducedMotion()
@@ -75,15 +76,32 @@ export function NotificationItem({ item, position, index }: Props): JSX.Element 
 
     const cancelButtonRef = React.useRef<HTMLButtonElement>(null)
     const contentRef = React.useRef<HTMLDivElement>(null)
-    const [size, setSize] = React.useState<{ width: number; height: number } | null>(null)
+    const width = useMotionValue<number | 'auto'>('auto')
+    const height = useMotionValue<number | 'auto'>('auto')
+    const visibleRef = React.useRef(visible)
+    visibleRef.current = visible
 
     React.useLayoutEffect(() => {
         const maybeNode = contentRef.current
         if (!maybeNode) return
         const node: HTMLDivElement = maybeNode
+        let measured: { width: number; height: number } | null = null
 
         function measure() {
-            setSize({ width: node.offsetWidth, height: node.offsetHeight })
+            const next = { width: node.offsetWidth, height: node.offsetHeight }
+            if (measured && measured.width === next.width && measured.height === next.height) {
+                return
+            }
+            const previous = measured
+            measured = next
+            if (!previous) {
+                width.set(next.width)
+                height.set(next.height)
+                return
+            }
+            const transition = visibleRef.current ? AnimationConfig.RESIZE : AnimationConfig.EXIT
+            animate(width, next.width, transition)
+            animate(height, next.height, transition)
         }
 
         measure()
@@ -91,7 +109,7 @@ export function NotificationItem({ item, position, index }: Props): JSX.Element 
         const observer = new ResizeObserver(() => measure())
         observer.observe(node)
         return () => observer.disconnect()
-    }, [])
+    }, [width, height])
 
     React.useEffect(() => {
         if (!isConfirm || !visible) return
@@ -197,6 +215,8 @@ export function NotificationItem({ item, position, index }: Props): JSX.Element 
                 border: borderStyle,
                 x,
                 y,
+                width,
+                height,
                 opacity,
                 cursor: options.clickToDismiss === true ? 'pointer' : 'default',
                 marginBottom: stackOffset > 0 ? 8 : 0,
@@ -210,7 +230,6 @@ export function NotificationItem({ item, position, index }: Props): JSX.Element 
             animate={{
                 opacity: visible ? 1 : 0,
                 scale: visible || shouldReduceMotion ? 1 : 0.98,
-                ...(size ? { width: size.width, height: size.height } : {}),
                 x:
                     visible || shouldReduceMotion
                         ? 0
@@ -225,15 +244,7 @@ export function NotificationItem({ item, position, index }: Props): JSX.Element 
                           : 0,
                 pointerEvents: visible ? 'auto' : 'none'
             }}
-            transition={
-                visible
-                    ? {
-                          ...AnimationConfig.CONTAINER,
-                          width: AnimationConfig.RESIZE,
-                          height: AnimationConfig.RESIZE
-                      }
-                    : AnimationConfig.EXIT
-            }
+            transition={visible ? AnimationConfig.CONTAINER : AnimationConfig.EXIT}
             drag={swipeEnabled ? swipeDirection : false}
             dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
             dragElastic={0.5}
@@ -375,7 +386,7 @@ export function NotificationItem({ item, position, index }: Props): JSX.Element 
                         <motion.button
                             ref={cancelButtonRef}
                             onClick={() => resolveConfirm(id, false)}
-                            className='h-7 whitespace-nowrap rounded-md px-2.5 text-[13px] font-medium transition-colors'
+                            className='h-7 rounded-md px-2.5 text-[13px] font-medium whitespace-nowrap transition-colors'
                             style={{ color: theme.textMuted }}
                             whileHover={{ backgroundColor: theme.buttonHover, color: theme.text }}
                             whileTap={{ scale: 0.97 }}
@@ -384,7 +395,7 @@ export function NotificationItem({ item, position, index }: Props): JSX.Element 
                         </motion.button>
                         <motion.button
                             onClick={() => resolveConfirm(id, true)}
-                            className='h-7 whitespace-nowrap rounded-md px-2.5 text-[13px] font-medium transition-colors'
+                            className='h-7 rounded-md px-2.5 text-[13px] font-medium whitespace-nowrap transition-colors'
                             style={{
                                 color: theme.text,
                                 backgroundColor: theme.buttonHover,
@@ -411,7 +422,7 @@ export function NotificationItem({ item, position, index }: Props): JSX.Element 
                                 e.stopPropagation()
                                 options.action?.onClick()
                             }}
-                            className='h-7 whitespace-nowrap rounded-md px-2.5 text-[13px] font-medium transition-colors'
+                            className='h-7 rounded-md px-2.5 text-[13px] font-medium whitespace-nowrap transition-colors'
                             style={{
                                 color: theme.text,
                                 backgroundColor: theme.buttonHover,
@@ -458,3 +469,5 @@ export function NotificationItem({ item, position, index }: Props): JSX.Element 
         </motion.div>
     )
 }
+
+export const NotificationItem = React.memo(NotificationItemView)
