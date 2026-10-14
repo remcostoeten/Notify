@@ -12,7 +12,7 @@ import type { NotifyState, IconProps } from '../types'
 import { isValidElement, type ReactNode, type ComponentType } from 'react'
 import type { JSX } from 'react/jsx-runtime'
 
-const ICON_SIZE = 18
+const ICON_SIZE = 20
 
 /**
  * Props for the NotifyIcon component.
@@ -60,7 +60,7 @@ const CircleCheckIcon = ({ size, color }: { size: number; color: string }) => (
         viewBox='0 0 24 24'
         fill='none'
         stroke={color}
-        strokeWidth={2}
+        strokeWidth={1.5}
         strokeLinecap='round'
         strokeLinejoin='round'
     >
@@ -76,7 +76,7 @@ const CircleXIcon = ({ size, color }: { size: number; color: string }) => (
         viewBox='0 0 24 24'
         fill='none'
         stroke={color}
-        strokeWidth={2}
+        strokeWidth={1.5}
         strokeLinecap='round'
         strokeLinejoin='round'
     >
@@ -93,7 +93,7 @@ const InfoIcon = ({ size, color }: { size: number; color: string }) => (
         viewBox='0 0 24 24'
         fill='none'
         stroke={color}
-        strokeWidth={2}
+        strokeWidth={1.5}
         strokeLinecap='round'
         strokeLinejoin='round'
     >
@@ -110,7 +110,7 @@ const AlertIcon = ({ size, color }: { size: number; color: string }) => (
         viewBox='0 0 24 24'
         fill='none'
         stroke={color}
-        strokeWidth={2}
+        strokeWidth={1.5}
         strokeLinecap='round'
         strokeLinejoin='round'
     >
@@ -218,7 +218,7 @@ export function NotifyIcon({ state }: NotifyIconProps): JSX.Element {
                         {icons?.info ? (
                             renderCustomIcon(icons.info, buildIconProps(state))
                         ) : (
-                            <InfoIcon size={ICON_SIZE} color={theme.textMuted} />
+                            <InfoIcon size={ICON_SIZE} color={iconColors.info.icon} />
                         )}
                     </motion.div>
                 )}

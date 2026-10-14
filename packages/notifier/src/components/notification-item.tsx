@@ -29,20 +29,56 @@ import { useNotifyTheme } from './theme-context'
 import type { NotifyItem, NotifyPositionType } from '../types'
 import type { JSX } from 'react'
 
-const XIcon = (props: React.SVGProps<any>) => (
+const TOAST_WIDTH = 400
+const TOAST_PADDING = 16
+const CLOSE_BUTTON_SIZE = 36
+
+const XIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg
         viewBox='0 0 24 24'
         fill='none'
         stroke='currentColor'
-        strokeWidth='2'
+        strokeWidth='1.5'
         strokeLinecap='round'
         strokeLinejoin='round'
+        aria-hidden='true'
         {...props}
     >
-        <path d='M18 6 6 18' />
-        <path d='m6 6 12 12' />
+        <path d='M18 6 6 18M6 6l12 12' />
     </svg>
 )
+
+const ChevronIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg
+        viewBox='0 0 24 24'
+        fill='none'
+        stroke='currentColor'
+        strokeWidth='1.5'
+        strokeLinecap='round'
+        strokeLinejoin='round'
+        aria-hidden='true'
+        {...props}
+    >
+        <path d='m9 18 6-6-6-6' />
+    </svg>
+)
+
+const textButtonStyle: React.CSSProperties = {
+    appearance: 'none',
+    background: 'none',
+    border: 'none',
+    padding: 0,
+    margin: 0,
+    cursor: 'pointer',
+    font: 'inherit',
+    fontSize: '14px',
+    lineHeight: '20px',
+    fontWeight: 600,
+    whiteSpace: 'nowrap',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px'
+}
 
 /**
  * Props for the NotificationItem component.
@@ -70,9 +106,8 @@ function NotificationItemView({ item, position, index }: Props): JSX.Element {
     const isConfirm = state === NotifyStateType.CONFIRM
     const confirmOptions = options.confirm
     const isAssertive = state === NotifyStateType.ERROR || state === NotifyStateType.WARNING
-    const visualState = state === NotifyStateType.IDLE ? NotifyStateType.INFO : state
-    const stateColors = theme.iconColors[visualState as keyof typeof theme.iconColors]
     const showIcon = !(theme.iconColorMode === 'hidden' && item.state !== NotifyStateType.LOADING)
+    const hasActions = isConfirm || hasAction
 
     const cancelButtonRef = React.useRef<HTMLButtonElement>(null)
     const contentRef = React.useRef<HTMLDivElement>(null)
@@ -133,7 +168,6 @@ function NotificationItemView({ item, position, index }: Props): JSX.Element {
     const x = useMotionValue(0)
     const y = useMotionValue(0)
 
-    // Calculate opacity based on swipe distance
     const swipeValue = isHorizontalSwipe ? x : y
     const opacity = useTransform(
         swipeValue,
@@ -141,7 +175,6 @@ function NotificationItemView({ item, position, index }: Props): JSX.Element {
         [0, 1, 0]
     )
 
-    // Animation direction based on position
     const animationDir = PositionAnimationDirection[position]
 
     const handleDragEnd = (_: unknown, info: PanInfo) => {
@@ -184,35 +217,25 @@ function NotificationItemView({ item, position, index }: Props): JSX.Element {
         }
     }
 
-    // Stack offset for multiple notifications
     const stackOffset = index * 8
 
-    // Build border style
     const borderStyle = theme.borderConfig.enabled
         ? `${theme.borderConfig.width}px ${theme.borderConfig.style} ${theme.borderConfig.color || theme.border}`
         : 'none'
 
-    const sheen =
-        theme.colorMode === 'dark'
-            ? 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 55%)'
-            : 'linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 55%)'
-
     return (
         <motion.div
             layout='position'
-            className='flex items-center overflow-hidden'
             style={{
-                display: 'flex',
-                alignItems: 'center',
                 position: 'relative',
                 isolation: 'isolate',
                 maxWidth: 'calc(100vw - 32px)',
                 overflow: 'hidden',
                 backgroundColor: theme.background,
-                backgroundImage: sheen,
                 boxShadow: theme.shadow,
                 borderRadius: theme.radius,
                 border: borderStyle,
+                boxSizing: 'border-box',
                 x,
                 y,
                 width,
@@ -255,66 +278,46 @@ function NotificationItemView({ item, position, index }: Props): JSX.Element {
             role={isConfirm ? 'alertdialog' : isAssertive ? 'alert' : 'status'}
             aria-live={isAssertive ? 'assertive' : 'polite'}
         >
-            <motion.div
-                aria-hidden='true'
-                style={{
-                    position: 'absolute',
-                    left: 0,
-                    top: 0,
-                    bottom: 0,
-                    width: 2,
-                    zIndex: 2,
-                    pointerEvents: 'none'
-                }}
-                animate={{ backgroundColor: stateColors.icon }}
-                transition={AnimationConfig.TEXT}
-            />
-
             <div
                 ref={contentRef}
                 style={{
                     display: 'flex',
-                    alignItems: 'center',
+                    alignItems: 'flex-start',
+                    gap: '16px',
                     position: 'relative',
-                    zIndex: 1,
-                    width: 'max-content',
-                    maxWidth: 'min(360px, calc(100vw - 32px))',
+                    boxSizing: 'border-box',
+                    width: `min(${TOAST_WIDTH}px, calc(100vw - 32px))`,
+                    padding: `${TOAST_PADDING}px`,
+                    paddingRight:
+                        isDismissible && !isConfirm
+                            ? `${TOAST_PADDING + 28}px`
+                            : `${TOAST_PADDING}px`,
                     flexShrink: 0
                 }}
             >
-                {/* Main content area */}
+                {showIcon && (
+                    <div
+                        aria-hidden='true'
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                            marginTop: '1px'
+                        }}
+                    >
+                        <NotifyIcon state={state} />
+                    </div>
+                )}
+
                 <div
-                    className='flex items-center'
                     style={{
                         display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        minHeight: '32px',
-                        paddingTop: '6px',
-                        paddingBottom: '6px',
-                        paddingLeft: '12px',
-                        paddingRight: hasAction || isDismissible || isConfirm ? '0' : '12px'
+                        flexDirection: 'column',
+                        flex: 1,
+                        minWidth: 0
                     }}
                 >
-                    {showIcon && (
-                        <motion.div
-                            aria-hidden='true'
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                flexShrink: 0,
-                                color: stateColors.icon
-                            }}
-                            animate={{
-                                color: stateColors.icon
-                            }}
-                            transition={AnimationConfig.TEXT}
-                        >
-                            <NotifyIcon state={state} />
-                        </motion.div>
-                    )}
-
                     <AnimatePresence initial={false} mode='wait'>
                         <motion.div
                             key={`${state}:${stateStartedAt}`}
@@ -342,16 +345,15 @@ function NotificationItemView({ item, position, index }: Props): JSX.Element {
                             style={{
                                 display: 'flex',
                                 flexDirection: 'column',
-                                gap: '2px',
+                                gap: '5px',
                                 minWidth: 0
                             }}
                         >
                             <span
                                 style={{
-                                    fontSize: '13px',
-                                    fontWeight: 550,
-                                    lineHeight: 1.4,
-                                    letterSpacing: '-0.01em',
+                                    fontSize: '14px',
+                                    fontWeight: 600,
+                                    lineHeight: '20px',
                                     overflowWrap: 'break-word',
                                     color: theme.text
                                 }}
@@ -361,9 +363,9 @@ function NotificationItemView({ item, position, index }: Props): JSX.Element {
                             {options.description != null && (
                                 <span
                                     style={{
-                                        fontSize: '12px',
+                                        fontSize: '14px',
                                         fontWeight: 400,
-                                        lineHeight: 1.4,
+                                        lineHeight: '20px',
                                         overflowWrap: 'break-word',
                                         color: theme.textMuted
                                     }}
@@ -373,99 +375,99 @@ function NotificationItemView({ item, position, index }: Props): JSX.Element {
                             )}
                         </motion.div>
                     </AnimatePresence>
+
+                    {hasActions && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={AnimationConfig.TEXT}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '12px',
+                                marginTop: '16px'
+                            }}
+                        >
+                            {isConfirm && (
+                                <motion.button
+                                    ref={cancelButtonRef}
+                                    type='button'
+                                    onClick={() => resolveConfirm(id, false)}
+                                    style={{ ...textButtonStyle, color: theme.textSubtle }}
+                                    whileHover={{ color: theme.textMuted }}
+                                    whileTap={{ scale: 0.98 }}
+                                >
+                                    {confirmOptions?.cancelLabel ?? Defaults.LABELS.CANCEL}
+                                </motion.button>
+                            )}
+
+                            {isConfirm && (
+                                <motion.button
+                                    type='button'
+                                    onClick={() => resolveConfirm(id, true)}
+                                    style={{ ...textButtonStyle, color: theme.text }}
+                                    whileTap={{ scale: 0.98 }}
+                                >
+                                    {confirmOptions?.confirmLabel ?? Defaults.LABELS.CONFIRM}
+                                    <ChevronIcon width={20} height={20} />
+                                </motion.button>
+                            )}
+
+                            {hasAction && !isConfirm && (
+                                <motion.button
+                                    type='button'
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        options.action?.onClick()
+                                    }}
+                                    style={{ ...textButtonStyle, color: theme.text }}
+                                    whileTap={{ scale: 0.98 }}
+                                >
+                                    {options.action?.label}
+                                    <ChevronIcon width={20} height={20} />
+                                </motion.button>
+                            )}
+                        </motion.div>
+                    )}
                 </div>
-
-                {/* Confirm buttons */}
-                {isConfirm && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={AnimationConfig.TEXT}
-                        className='mr-1 flex h-8 items-center gap-0.5'
-                    >
-                        <motion.button
-                            ref={cancelButtonRef}
-                            onClick={() => resolveConfirm(id, false)}
-                            className='h-7 rounded-md px-2.5 text-[13px] font-medium whitespace-nowrap transition-colors'
-                            style={{ color: theme.textMuted }}
-                            whileHover={{ backgroundColor: theme.buttonHover, color: theme.text }}
-                            whileTap={{ scale: 0.97 }}
-                        >
-                            {confirmOptions?.cancelLabel ?? Defaults.LABELS.CANCEL}
-                        </motion.button>
-                        <motion.button
-                            onClick={() => resolveConfirm(id, true)}
-                            className='h-7 rounded-md px-2.5 text-[13px] font-medium whitespace-nowrap transition-colors'
-                            style={{
-                                color: theme.text,
-                                backgroundColor: theme.buttonHover,
-                                boxShadow: `inset 0 0 0 1px ${theme.border}`
-                            }}
-                            whileHover={{ boxShadow: `inset 0 0 0 1px ${theme.borderHighlight}` }}
-                            whileTap={{ scale: 0.97 }}
-                        >
-                            {confirmOptions?.confirmLabel ?? Defaults.LABELS.CONFIRM}
-                        </motion.button>
-                    </motion.div>
-                )}
-
-                {/* Action button */}
-                {hasAction && !isConfirm && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={AnimationConfig.TEXT}
-                        className='mr-1 flex h-8 items-center'
-                    >
-                        <motion.button
-                            onClick={(e) => {
-                                e.stopPropagation()
-                                options.action?.onClick()
-                            }}
-                            className='h-7 rounded-md px-2.5 text-[13px] font-medium whitespace-nowrap transition-colors'
-                            style={{
-                                color: theme.text,
-                                backgroundColor: theme.buttonHover,
-                                boxShadow: `inset 0 0 0 1px ${theme.border}`
-                            }}
-                            whileHover={{
-                                backgroundColor: theme.buttonHover,
-                                boxShadow: `inset 0 0 0 1px ${theme.borderHighlight}`
-                            }}
-                            whileTap={{ scale: 0.97 }}
-                        >
-                            {options.action?.label}
-                        </motion.button>
-                    </motion.div>
-                )}
-
-                {/* Dismiss button */}
-                {isDismissible && !isConfirm && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={AnimationConfig.TEXT}
-                        className='mr-1 flex h-8 items-center'
-                    >
-                        <motion.button
-                            onClick={(e) => {
-                                e.stopPropagation()
-                                dismiss(id, DismissReason.MANUAL)
-                            }}
-                            className='flex h-7 w-7 items-center justify-center rounded-md transition-colors'
-                            style={{ color: theme.textSubtle }}
-                            whileHover={{
-                                backgroundColor: theme.buttonHover,
-                                color: theme.textMuted
-                            }}
-                            whileTap={{ scale: 0.97 }}
-                            aria-label='Dismiss notification'
-                        >
-                            <XIcon className='h-4 w-4' />
-                        </motion.button>
-                    </motion.div>
-                )}
             </div>
+
+            {isDismissible && !isConfirm && (
+                <motion.button
+                    type='button'
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={AnimationConfig.TEXT}
+                    onClick={(e) => {
+                        e.stopPropagation()
+                        dismiss(id, DismissReason.MANUAL)
+                    }}
+                    style={{
+                        appearance: 'none',
+                        background: 'none',
+                        border: 'none',
+                        padding: 0,
+                        margin: 0,
+                        cursor: 'pointer',
+                        position: 'absolute',
+                        top: 6,
+                        right: 7,
+                        width: CLOSE_BUTTON_SIZE,
+                        height: CLOSE_BUTTON_SIZE,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderRadius: 8,
+                        color: theme.textSubtle,
+                        zIndex: 2
+                    }}
+                    whileHover={{ backgroundColor: theme.buttonHover, color: theme.textMuted }}
+                    whileTap={{ scale: 0.97 }}
+                    aria-label='Dismiss notification'
+                >
+                    <XIcon width={20} height={20} />
+                </motion.button>
+            )}
         </motion.div>
     )
 }

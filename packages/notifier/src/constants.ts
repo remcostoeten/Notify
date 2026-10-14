@@ -150,24 +150,24 @@ export const RadiusValues = {
  */
 export const ThemeColors = {
     dark: {
-        background: '#151515',
-        text: '#f4f4f4',
-        textMuted: 'rgba(255, 255, 255, 0.6)',
-        textSubtle: 'rgba(255, 255, 255, 0.4)',
-        border: 'rgba(255, 255, 255, 0.1)',
-        borderHighlight: 'rgba(255, 255, 255, 0.2)',
-        buttonHover: 'rgba(255, 255, 255, 0.07)',
-        shadow: 'inset 0 1px 0 rgba(255,255,255,0.08), inset 0 0 0 1px rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.4), 0 8px 24px -10px rgba(0,0,0,0.75)'
+        background: '#1f1f1f',
+        text: '#f5f5f5',
+        textMuted: '#a3a3a3',
+        textSubtle: '#7a7a7a',
+        border: 'rgba(255, 255, 255, 0.08)',
+        borderHighlight: 'rgba(255, 255, 255, 0.16)',
+        buttonHover: 'rgba(255, 255, 255, 0.06)',
+        shadow: '0 12px 16px -4px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3)'
     },
     light: {
         background: '#ffffff',
-        text: '#0a0a0b',
-        textMuted: 'rgba(10, 10, 11, 0.7)',
-        textSubtle: 'rgba(10, 10, 11, 0.5)',
-        border: 'rgba(10, 10, 11, 0.1)',
-        borderHighlight: 'rgba(10, 10, 11, 0.2)',
-        buttonHover: 'rgba(10, 10, 11, 0.08)',
-        shadow: 'inset 0 0 0 1px rgba(10,10,11,0.07), 0 1px 2px rgba(10,10,11,0.08), 0 8px 24px -10px rgba(10,10,11,0.3)'
+        text: '#181d27',
+        textMuted: '#535862',
+        textSubtle: '#717680',
+        border: '#e9eaeb',
+        borderHighlight: '#d5d7da',
+        buttonHover: '#f5f5f5',
+        shadow: '0 20px 24px -4px rgba(10, 13, 18, 0.08), 0 8px 8px -4px rgba(10, 13, 18, 0.03)'
     }
 } as const
 
@@ -212,32 +212,32 @@ export const IconColors = {
         success: {
             bg: 'rgba(140, 140, 150, 0.12)',
             border: 'rgba(140, 140, 150, 0.2)',
-            icon: '#909098'
+            icon: '#8c8c8c'
         },
         error: {
             bg: 'rgba(140, 140, 150, 0.12)',
             border: 'rgba(140, 140, 150, 0.2)',
-            icon: '#909098'
+            icon: '#8c8c8c'
         },
         info: {
             bg: 'transparent',
             border: 'transparent',
-            icon: '#909098'
+            icon: '#8c8c8c'
         },
         warning: {
             bg: 'rgba(140, 140, 150, 0.12)',
             border: 'rgba(140, 140, 150, 0.2)',
-            icon: '#909098'
+            icon: '#8c8c8c'
         },
         confirm: {
             bg: 'rgba(140, 140, 150, 0.12)',
             border: 'rgba(140, 140, 150, 0.2)',
-            icon: '#909098'
+            icon: '#8c8c8c'
         },
         loading: {
             bg: 'transparent',
             border: 'transparent',
-            icon: '#909098'
+            icon: '#8c8c8c'
         }
     }
 } as const

@@ -48,7 +48,7 @@ export interface ResolvedTheme {
 }
 
 const DEFAULT_BORDER_CONFIG: Required<BorderConfig> = {
-    enabled: false,
+    enabled: true,
     width: 1,
     color: '',
     style: 'solid'
@@ -57,7 +57,7 @@ const DEFAULT_BORDER_CONFIG: Required<BorderConfig> = {
 const DEFAULT_THEME: ThemeConfig = {
     colorMode: 'dark',
     radius: 'rounded',
-    iconColor: 'colored',
+    iconColor: 'neutral',
     border: DEFAULT_BORDER_CONFIG
 }
 
@@ -120,13 +120,13 @@ export function NotifyThemeProvider({ theme = DEFAULT_THEME, children }: ThemePr
             themeColorMode === 'auto' ? systemColorMode : (themeColorMode ?? 'dark')
 
         const colors = ThemeColors[colorMode]
-        const iconColorMode = iconColor ?? 'colored'
+        const iconColorMode = iconColor ?? 'neutral'
         const iconColorsKey = iconColorMode === 'hidden' ? 'neutral' : iconColorMode
         const iconColors = IconColors[iconColorsKey]
         const radiusVariant = radius ?? 'rounded'
 
         const borderConfig: Required<BorderConfig> = {
-            enabled: borderEnabled ?? false,
+            enabled: borderEnabled ?? true,
             width: borderWidth ?? 1,
             color: borderColor ?? colors.border,
             style: borderStyle ?? 'solid'

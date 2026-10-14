@@ -255,7 +255,7 @@ export function Notifier({
     // Theme
     colorMode = 'dark',
     radius = 'rounded',
-    iconColor = 'colored',
+    iconColor = 'neutral',
     border,
     icons,
     theme
