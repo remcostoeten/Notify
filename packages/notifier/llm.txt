@@ -1,18 +1,15 @@
 # @remcostoeten/notifier - AI integration guide
 
 Use this file as the source of truth when installing or using `@remcostoeten/notifier`.
-It is a client-side React notification library with chainable state transitions, promise
-tracking, confirmations, actions, theming, and adapters for Sonner, react-hot-toast,
-and shadcn/ui.
+It is a client-side React toast library. A toast is a surface with slots (icon or avatar,
+title with meta, description, progress, actions, close). Content is passed to `notify` as an
+object, or rendered from the `Toast` primitives through `notify.custom`.
 
 ## Requirements and installation
 
 - React and React DOM 18 or newer
-- `motion` 12 or newer (the package uses `motion/react`; do not install
-  `framer-motion` for this integration)
+- `motion` 12 or newer (the package imports `motion/react`; do not install `framer-motion`)
 - TypeScript is supported but not required
-
-Use the package manager already used by the consumer project:
 
 ```bash
 bun add @remcostoeten/notifier motion
@@ -21,369 +18,298 @@ pnpm add @remcostoeten/notifier motion
 yarn add @remcostoeten/notifier motion
 ```
 
-## Required setup
+There is no stylesheet to import. `Notifier` renders its own `<style>` element (pass `nonce`
+under a strict CSP). The font is `Inter` when the page loads it, then the system font stack.
+Override it with `theme.font`.
 
-Import the stylesheet once and mount exactly one `<Notifier />` near the application
-root. In Next.js App Router, the stylesheet can be imported from `app/layout.tsx`.
-Calls to `notify` must run in client-side code, such as a Client Component or event
-handler.
+## Setup
+
+Mount exactly one `<Notifier />` near the application root. Calls to `notify` run in client
+code, such as an event handler or a Client Component.
 
 ```tsx
 // app/layout.tsx
 import { Notifier } from '@remcostoeten/notifier'
-import '@remcostoeten/notifier/styles'
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
         <html lang='en'>
             <body>
                 {children}
-                <Notifier />
+                <Notifier position='bottom-right' />
             </body>
         </html>
     )
 }
 ```
 
-Do not mount a `<Notifier />` on every page or component. Multiple mounted instances
-render duplicate notifications.
+## notify
 
-## Basic usage
+`notify` returns the toast id (a string). Every function below is a property of `notify`.
 
-```tsx
-'use client'
+| Call | Behavior |
+| --- | --- |
+| `notify(title, input?)` | Open a toast. `title` is a string. `input` is any `ToastInput` field |
+| `notify(input)` | Open a toast from a `ToastInput` object |
+| `notify.success(title, input?)` | Same with `status: 'success'`. Also `error`, `warning`, `info`, `loading` |
+| `notify.update(id, patch)` | Merge a `ToastPatch` into an open toast |
+| `notify.dismiss(id?)` | Close one toast, or every toast without an id |
+| `notify.promise(promise, messages)` | Loading toast that becomes a success or error toast |
+| `notify.custom(render, options?)` | Render your own content. `render` receives `{ id, tone, dismiss, update }` |
 
-import { notify } from '@remcostoeten/notifier'
+Passing an `id` that is already open updates that toast in place instead of opening another.
+`update` on an unknown or closing id does nothing.
 
-export function SaveButton() {
-    return (
-        <button onClick={() => notify.success('Saved!')}>
-            Save
-        </button>
-    )
-}
-```
+## ToastInput
 
-Available notification states:
+All fields are optional.
 
-```tsx
-notify('New message')             // info notification
-notify.info('New message')
-notify.success('Saved')
-notify.error('Could not save')
-notify.warning('Storage is low')
-notify.loading('Saving')          // persistent until transitioned or dismissed
-```
+| Field | Type | Notes |
+| --- | --- | --- |
+| `title` | `ReactNode` | First line, semibold |
+| `meta` | `ReactNode` | Muted text after a divider, on the title line |
+| `description` | `ReactNode` | Body text. Wraps at about 71% of the toast width |
+| `status` | `'success' \| 'error' \| 'warning' \| 'info' \| 'loading'` | Adds a status icon. See Status |
+| `icon` | `IconConfig \| ReactElement` | `{ shape?, status?, node? }`. A bare element is placed in a box |
+| `avatar` | `AvatarConfig` | `{ src?, alt?, fallback?, badge?, shape? }`. Replaces the icon |
+| `progress` | `number \| { value: number \| null, label?: boolean \| ReactNode }` | 0 to 100. `null` is indeterminate. A number shows a percentage label |
+| `actions` | `ActionConfig[]` | See Actions |
+| `close` | `boolean` | Close button. Default `true` |
+| `tone` | `'light' \| 'dark'` | Default is the `Notifier` tone |
+| `width` | `number \| string` | Default 400px |
+| `className`, `style` | `string`, `CSSProperties` | Root element |
+| `classNames` | `Partial<Record<ToastSlot, string>>` | Slots: root, icon, avatar, badge, body, title, meta, description, progress, label, actions, action, aside, close |
+| `id` | `string` | Generated when omitted |
+| `position` | `ToastPosition` | Default is the `Notifier` position |
+| `duration` | `number` | Milliseconds. `0` keeps the toast open. See Duration |
+| `swipe` | `boolean` | Default is the `Notifier` setting |
+| `onOpen`, `onDismiss`, `onClose` | `(id) => void`, `(id, reason) => void`, `(id) => void` | `onClose` fires after the exit animation |
 
-Messages accept React content:
+Dismiss reasons: `timeout`, `swipe`, `close`, `action`, `manual`, `replaced`.
 
-```tsx
-notify.success(<span>Saved <strong>successfully</strong></span>)
-notify({
-    message: 'Upload complete',
-    description: 'report.pdf is ready to share'
-})
-```
+### Status
 
-## Chainable instances
+`status` picks the glyph and color of the icon. Every status, loading included, defaults to
+the `circle` shape, so the text does not move when a loading toast becomes a success toast.
+`error` and `warning` are announced as alerts, the rest politely. A custom icon with no
+status defaults to the `box` shape.
 
-Every notification creation method returns a `NotifyInstance`. State methods mutate
-the same notification and return the same instance.
+### Icon
 
-```tsx
-const notification = notify.loading('Uploading...')
+`shape`: `'circle'` (tinted 40px circle with a plain mark, the status default), `'box'` (40px
+bordered square, the custom icon default), `'ring'` (glyph with two concentric rings, opt-in)
+or `'bare'` (20px glyph, opt-in). `node` replaces the glyph.
+Inside a toast, tokens are readable as CSS variables, so a custom glyph can use
+`style={{ color: 'var(--ntf-accent-text)' }}`.
 
-try {
-    await uploadFile()
-    notification.success('Uploaded')
-} catch (error) {
-    notification.error(error instanceof Error ? error.message : 'Upload failed')
-}
-```
+### Avatar
 
-Instance API:
+`badge`: `'online' | 'away' | 'busy' | 'offline'`. Without `src`, `fallback` renders in the
+avatar (for example initials). `shape`: `'square'` (default) or `'circle'`.
 
-```ts
-interface NotifyInstance {
-    readonly id: string
-    loading(message?: React.ReactNode): NotifyInstance
-    success(message?: React.ReactNode): NotifyInstance
-    error(message?: React.ReactNode): NotifyInstance
-    info(message?: React.ReactNode): NotifyInstance
-    warning(message?: React.ReactNode): NotifyInstance
-    update(options: Partial<NotifyOptions>): NotifyInstance
-    promise<T>(promise: Promise<T>, options?: PromiseOptions<T>): Promise<T>
-    confirm(message: React.ReactNode, options?: ConfirmOptions): Promise<boolean>
-    dismiss(): void
-}
-```
-
-Use `update` to change options without creating another notification:
-
-```tsx
-const notification = notify('Item deleted', { duration: 0 })
-
-notification.update({
-    description: 'The item can still be restored',
-    action: {
-        label: 'Undo',
-        onClick: () => {
-            restoreItem()
-            notification.success('Restored')
-        }
-    }
-})
-```
-
-## Promise tracking
-
-`notify.promise` returns the original resolved value and rethrows a rejection after
-showing the error state. Always `await` or otherwise handle the returned promise.
-Success and error messages may be functions of the resolved data or rejection.
-
-```tsx
-try {
-    const user = await notify.promise(loadUser(), {
-        loading: 'Loading user...',
-        success: (data) => `Welcome, ${data.name}`,
-        error: (error) => error instanceof Error ? error.message : 'Could not load user'
-    })
-
-    useUser(user)
-} catch (error) {
-    // The error notification is already visible; handle the rejection as needed.
-}
-```
-
-To reuse an existing instance, call `notification.promise(promise, options)`.
-
-## Confirmations
-
-```tsx
-const confirmed = await notify.confirm('Delete this file?', {
-    confirmLabel: 'Delete',
-    cancelLabel: 'Keep'
-})
-
-if (confirmed) {
-    await deleteFile()
-    notify.success('File deleted')
-}
-```
-
-The static `notify.confirm` creates a dedicated confirmation. An instance-level
-confirmation remains available for a later transition or manual dismissal:
-
-```tsx
-const notification = notify()
-const confirmed = await notification.confirm('Publish now?')
-
-if (confirmed) notification.loading('Publishing...')
-else notification.dismiss()
-```
-
-## Actions, dismissal, and callbacks
-
-```tsx
-const notification = notify('File moved to trash', {
-    duration: 5000,
-    dismissible: true,
-    action: {
-        label: 'Undo',
-        onClick: () => notification.success('File restored')
-    },
-    onOpen: (id) => console.log('opened', id),
-    onUpdate: (id, nextState, previousState) => {
-        console.log(id, previousState, '->', nextState)
-    },
-    onDismiss: (id, reason) => console.log('dismissed', id, reason),
-    onClose: (id) => console.log('closed', id)
-})
-```
-
-Action clicks do not dismiss automatically. Call the instance's `dismiss()` method
-or transition it when appropriate.
-
-```tsx
-notification.dismiss()           // dismiss this notification
-notify.dismiss(notification.id)  // dismiss by ID
-notify.dismiss()                  // dismiss all notifications
-```
-
-Dismiss reasons are `timeout`, `swipe`, `click`, `manual`, and `replaced`.
-
-## Per-notification options
+### Actions
 
 ```ts
-interface NotifyOptions {
-    message?: React.ReactNode
-    description?: React.ReactNode
-    position?: NotifyPositionType
-    duration?: number
-    dismissible?: boolean
-    pauseOnHover?: boolean
-    swipeToDismiss?: boolean
-    clickToDismiss?: boolean
-    action?: { label: string; onClick: () => void }
-    loadingMessage?: string
-    successMessage?: string
-    errorMessage?: string
-    warningMessage?: string
-    onOpen?: (id: string) => void
-    onClose?: (id: string) => void
-    onDismiss?: (id: string, reason: DismissReasonType) => void
-    onUpdate?: (id: string, next: NotifyState, previous: NotifyState) => void
+type ActionConfig = {
+    label: ReactNode
+    onClick?: (toast: { id; dismiss; update }) => void
+    variant?: 'text' | 'outline' | 'filled' // default 'text'
+    color?: 'default' | 'muted' | 'accent' // default 'default'
+    dismiss?: boolean // default true: the toast closes after onClick
+    href?: string // renders an anchor
+    disabled?: boolean
 }
 ```
 
-`duration: 0` makes info, success, warning, and error notifications persistent.
-Loading and confirmation states do not auto-dismiss. Per-notification options override
-the defaults configured by `<Notifier />`.
+Text actions have no padding and sit flush with the text. Outline and filled actions are
+34px tall buttons. Filled with `color: 'accent'` is the primary button. Filled with the
+default color is a neutral button.
 
-## `<Notifier />` API
+### Duration
 
-```ts
-interface NotifierProps {
-    position?: 'top' | 'top-left' | 'top-center' | 'top-right' |
-        'bottom' | 'bottom-left' | 'bottom-center' | 'bottom-right'
-    maxVisible?: number
-    duration?: number
-    swipeToDismiss?: boolean
-    pauseOnHover?: boolean
-    clickToDismiss?: boolean
-    dismissible?: boolean
-    offset?: number | string | { x?: number; y?: number }
-    gap?: number
-    stack?: boolean
-    colorMode?: 'dark' | 'light' | 'auto'
-    radius?: 'pill' | 'rounded' | 'squared'
-    iconColor?: 'colored' | 'neutral' | 'hidden'
-    border?: BorderConfig
-    icons?: IconConfig
-    theme?: ThemePalette
-}
+An explicit `duration` wins, and `0` means persistent. Otherwise a toast is persistent when
+`status` is `'loading'` or when `progress` is below 100 or `null`. Every other toast uses the
+`Notifier` duration (default 5000). `update` keeps the running timer unless the patch sets
+`duration` or the toast switches between persistent and timed, in which case the timer
+starts again. Passing `duration` in a patch always restarts it.
+
+## Update in place
+
+```tsx
+const id = notify({ icon: <CloudUpload />, title: 'Uploading', progress: 0 })
+upload.on('progress', (percent) => notify.update(id, { progress: percent }))
+upload.on('done', () => notify.update(id, { title: 'Done', progress: 100 }))
 ```
 
-Runtime defaults:
+At 100 the toast starts its normal timer and closes. To clear a slot, patch it with
+`undefined`, for example `notify.update(id, { actions: undefined })`.
+
+## Promise
+
+```tsx
+await notify.promise(save(), {
+    loading: 'Saving',
+    success: (data) => ({ title: 'Saved', description: data.name }),
+    error: (error) => ({ title: 'Could not save', description: error.message }),
+    id: 'save' // optional
+})
+```
+
+Each message is a string, a `ToastInput`, or a function of the value or the `Error`. Icon,
+avatar, meta, description, progress and actions from the loading toast are cleared when the
+promise settles. The call resolves with the promise's value and rethrows its error.
+
+## Primitives
+
+`Toast` is the surface. Pass content props for the default layout, or children to build your
+own. Parts read their tone, classes and dismiss handler from the toast around them.
+
+```tsx
+import { notify, Toast } from '@remcostoeten/notifier'
+
+notify.custom((toast) => (
+    <Toast tone='light'>
+        <Toast.Avatar src={sienna.src} badge='online' />
+        <Toast.Body>
+            <Toast.Title meta='2 mins ago'>Sienna Hewitt</Toast.Title>
+            <Toast.Description>I have finished adding my notes.</Toast.Description>
+            <Toast.Progress value={60} label />
+            <Toast.Actions aside='optional trailing content'>
+                <Toast.Action variant='outline'>Dismiss</Toast.Action>
+                <Toast.Action variant='filled' color='accent' onClick={reply}>
+                    Reply
+                </Toast.Action>
+            </Toast.Actions>
+        </Toast.Body>
+        <Toast.Close />
+    </Toast>
+))
+```
+
+| Part | Props |
+| --- | --- |
+| `Toast` | `tone`, `width`, `className`, `classNames`, `style`, `children`, and every content field |
+| `Toast.Icon` | `shape`, `status`, `node`, `children` |
+| `Toast.Avatar` | `src`, `alt`, `fallback`, `badge`, `shape` |
+| `Toast.Body` | Column for text, progress and actions |
+| `Toast.Title` | `meta` |
+| `Toast.Description` | none |
+| `Toast.Progress` | `value` (`null` is indeterminate), `label` |
+| `Toast.Actions` | `aside` |
+| `Toast.Action` | `variant`, `color`, `onClick`, `dismiss`, `href`, `disabled` |
+| `Toast.Close` | `label` (aria-label, default `Close`) |
+
+`useToast()` returns `{ id, tone, dismiss, update }` for the toast it is rendered in. Outside a
+toast it returns no-op handlers, so `Toast` can also be rendered on its own, for example in docs.
+A standalone `Toast` includes its own stylesheet.
+
+## Notifier props
 
 | Prop | Default | Notes |
 | --- | --- | --- |
-| `position` | `'bottom'` | `top`/`bottom` are centered aliases |
-| `maxVisible` | `5` | Oldest item is replaced when exceeded |
-| `duration` | `3000` | Milliseconds; `0` disables auto-dismiss |
-| `swipeToDismiss` | `true` | Gesture direction follows position |
-| `pauseOnHover` | `true` | Pauses active timers |
-| `clickToDismiss` | `false` | Buttons do not trigger click dismissal |
-| `dismissible` | `false` | Prefer per-notification `dismissible` when needed |
-| `offset` | `16` | Number, CSS length, or `{ x, y }` |
-| `gap` | `8` | Pixels between notifications |
-| `stack` | `false` | Collapses items until hover |
-| `colorMode` | `'dark'` | `'auto'` follows system preference |
-| `radius` | `'squared'` | Also supports `'rounded'` and `'pill'` |
-| `iconColor` | `'colored'` | `'hidden'` still shows the loading spinner |
+| `position` | `'bottom-right'` | `top-left`, `top-center`, `top-right`, `bottom-left`, `bottom-center`, `bottom-right` |
+| `tone` | `'light'` | `'light'`, `'dark'` or `'auto'` (follows `prefers-color-scheme`) |
+| `maxVisible` | `3` | Per position. The oldest open toast is dismissed with reason `replaced` |
+| `duration` | `5000` | `0` keeps every toast open unless it sets its own |
+| `swipe` | `true` | Swipe towards the screen edge to dismiss |
+| `pauseOnHover` | `true` | Holds every timer while the pointer is over a toast, and while the tab is hidden |
+| `hotkey` | `'alt+t'` | Focuses the newest open toast. Modifiers and one key joined by `+`, or `false` to turn it off |
+| `close` | `true` | Close button default |
+| `stack` | `false` | Overlapping stack that expands on hover |
+| `offset` | `24` | Number, or `{ x?, y? }` |
+| `gap` | `12` | Pixels between toasts |
+| `theme` | none | See Theming |
+| `nonce` | none | CSP nonce for the stylesheet |
+| `className` | none | Added to each position container |
 
-Full configuration example:
+Mounting a second `Notifier` logs a warning in development.
+
+## Keyboard
+
+`Notifier` sits at the end of the page, so the `hotkey` (default `alt+t`) moves focus to the newest
+open toast. Tab then reaches its actions and close button. `Escape` dismisses the focused toast
+and returns focus to where it was before. A toast never closes while focus is inside it: the
+timer holds on focus and resumes with the time left on blur, whatever `pauseOnHover` is. Toasts
+that ask for a decision should use `duration: 0`.
+
+## Theming
+
+Tokens are CSS custom properties, one set per tone. Set them with the `theme` prop or in CSS.
 
 ```tsx
 <Notifier
-    position='top-right'
-    maxVisible={4}
-    duration={4000}
-    offset={{ x: 20, y: 24 }}
-    gap={10}
-    stack
-    swipeToDismiss
-    pauseOnHover
-    clickToDismiss={false}
-    colorMode='auto'
-    radius='rounded'
-    iconColor='colored'
-    border={{
-        enabled: true,
-        width: 1,
-        color: 'rgba(128, 128, 128, 0.25)',
-        style: 'solid'
-    }}
     theme={{
-        background: '#111',
-        text: '#fff',
-        textMuted: '#bbb',
-        textSubtle: '#888',
-        border: '#333',
-        borderHighlight: '#555',
-        buttonHover: '#222',
-        shadow: '0 12px 36px rgba(0, 0, 0, 0.3)'
+        font: 'Geist, sans-serif',
+        radius: 16,
+        width: 420,
+        dark: { background: '#0b0b0c', accent: '#7c6cff' },
+        light: { accentText: '#4338ca' }
     }}
 />
 ```
 
-Custom icons can be supplied for `loading`, `success`, `error`, `info`, `warning`,
-and `confirm`, or with one render function:
-
-```tsx
-<Notifier
-    icons={{
-        success: <CheckIcon />,
-        render: ({ state, colorMode, size, color }) => (
-            <AppIcon state={state} size={size} color={color} />
-        )
-    }}
-/>
+```css
+:root {
+    --ntf-dark-background: #0b0b0c;
+    --ntf-light-accent: #5f5afa;
+    --ntf-radius: 16px;
+}
 ```
 
-## Global configuration helpers
+Token names: `background`, `foreground`, `body`, `meta`, `muted`, `icon`, `divider`, `border`,
+`shadow`, `accent`, `accentText`, `accentForeground`, `track`, `control`, `controlBorder`,
+`controlForeground`, `controlShadow`, `controlHover`, `success`, `error`, `warning`, `info`.
+The variable for token `accentText` in tone `dark` is `--ntf-dark-accent-text`. Non-tone
+variables: `--ntf-font`, `--ntf-radius`, `--ntf-width`.
 
-Normally `<Notifier />` synchronizes global behavior. For imperative configuration:
+Inside a toast the active tone's tokens are also available without the tone, such as
+`var(--ntf-foreground)` and `var(--ntf-accent-text)`.
+
+## Recipes
+
+Status toast with text actions:
 
 ```tsx
-notify.configure({
-    position: 'bottom-right',
-    maxVisible: 3,
-    defaultDuration: 4000,
-    swipeToDismiss: true,
-    pauseOnHover: true,
-    clickToDismiss: false,
-    offset: 16,
-    gap: 8
+notify({
+    tone: 'dark',
+    status: 'success',
+    title: '“Amélie Laurent” details updated',
+    description: 'Your changes have been saved and your profile is live.',
+    actions: [{ label: 'Dismiss', color: 'muted' }, { label: 'View profile' }]
 })
-
-const config = notify.getConfig()
 ```
 
-## Compatibility imports
-
-For incremental migrations, change the import path while keeping the familiar API.
-These adapters cover common usage, not every upstream feature.
+Icon box with outline and filled buttons:
 
 ```tsx
-// Sonner
-import { Toaster, toast } from '@remcostoeten/notifier/compat/sonner'
-
-// react-hot-toast (also exports toast as default)
-import { Toaster, toast } from '@remcostoeten/notifier/compat/react-hot-toast'
-
-// shadcn/ui
-import { Toaster, useToast } from '@remcostoeten/notifier/compat/shadcn'
+notify({
+    tone: 'dark',
+    icon: <Codepen />,
+    title: 'A new update is available',
+    meta: 'v4.2',
+    description: 'Includes the all new dashboard view.',
+    actions: [
+        { label: 'Skip this update', variant: 'outline', color: 'muted' },
+        { label: 'Install now', variant: 'filled' }
+    ]
+})
 ```
 
-Continue to import the shared stylesheet once:
+Undo:
 
 ```tsx
-import '@remcostoeten/notifier/styles'
+notify({
+    title: 'File moved to trash',
+    actions: [{ label: 'Undo', color: 'accent', onClick: restore }]
+})
 ```
 
-## Public exports
+## Rules for generated code
 
-The root package exports `Notifier`, `Notification`, `notify`, constants
-(`NotifyStateType`, `NotifyPosition`, `DismissReason`, `Defaults`, `AnimationConfig`),
-and the public TypeScript types. `resetStore` is exported primarily for tests.
-
-## Important integration rules
-
-1. Import `@remcostoeten/notifier/styles` exactly once.
-2. Mount exactly one `<Notifier />` at the application root.
-3. Use the `motion` package, not `framer-motion`.
-4. Call `notify` only from client-side code.
-5. Reuse the returned instance for progress/state changes; do not create a new toast
-   for every step.
-6. Handle the promise returned by `notify.promise`, because rejection is rethrown.
+- Mount one `<Notifier />`. Do not import a stylesheet.
+- Keep the id returned by `notify` when the toast will be updated or dismissed later.
+- Use `status: 'loading'` or `progress` for work in flight. Do not set `duration` on them
+  unless the toast should close by itself.
+- Use `notify.update` to change an open toast. Do not open a second toast for the same job.
+- Use `color: 'accent'` with `variant: 'filled'` for the primary action.
+- Put layout the slots cannot express in `notify.custom` with the `Toast` parts.

@@ -13,39 +13,29 @@
         "build:apps": "bun run --filter='./apps/*' build",
         "typecheck": "bun run --filter='*' typecheck",
         "dev": "bun run --filter='./apps/*' dev",
-        "format": "prettier --write .",
-        "format:check": "prettier --check .",
-        "lint": "eslint .",
-        "lint:fix": "eslint . --fix",
+        "format": "oxfmt",
+        "format:check": "oxfmt --check",
+        "lint": "oxlint",
+        "lint:fix": "oxlint --fix",
         "prepare": "husky"
     },
     "lint-staged": {
         "*.{ts,tsx}": [
-            "eslint --fix",
-            "prettier --write"
+            "oxlint --fix",
+            "oxfmt --no-error-on-unmatched-pattern"
         ],
-        "*.{json,md,yml,yaml}": [
-            "prettier --write"
-        ],
-        "*.css": [
-            "prettier --write"
+        "*.{json,md,yml,yaml,css}": [
+            "oxfmt --no-error-on-unmatched-pattern"
         ]
     },
     "devDependencies": {
-        "@eslint/js": "9.39.2",
         "@types/node": "^22",
         "@types/react": "^19",
         "@types/react-dom": "^19",
-        "@typescript-eslint/eslint-plugin": "^8.0.0",
-        "@typescript-eslint/parser": "^8.0.0",
-        "eslint": "^9.0.0",
-        "eslint-config-prettier": "^10.0.0",
-        "eslint-plugin-react": "^7.37.0",
-        "eslint-plugin-react-hooks": "^5.0.0",
         "husky": "^9.0.0",
         "lint-staged": "^16.0.0",
-        "prettier": "^3.4.0",
-        "prettier-plugin-tailwindcss": "^0.6.0",
+        "oxfmt": "^0.74.0",
+        "oxlint": "^1.89.0",
         "typescript": "^5"
     },
     "packageManager": "bun@1.2.0"

@@ -1,419 +1,289 @@
-/**
- * @fileoverview Reactive store for notification state management.
- * Supports multiple notifications with position-based stacking.
- */
-
-import { NotifyStateType, Defaults, DismissReason } from './constants'
+import { Defaults } from './constants'
+import { generateId } from './utils'
 import type {
-    NotifyState,
-    NotifyMessage,
-    NotifyOptions,
-    NotifyItem,
-    NotifyPositionType,
-    StoreListener,
-    DismissReasonType
+    CustomRender,
+    CustomToastOptions,
+    DismissReason,
+    ToastHandle,
+    ToastID,
+    ToastInput,
+    ToastPatch,
+    ToastPosition,
+    ToastRecord
 } from './types'
 
-// ============================================================================
-// STORE STATE
-// ============================================================================
+type StoreConfig = {
+    position: ToastPosition
+    duration: number
+    maxVisible: number
+}
 
-/** Map of notification items by ID */
-const notifications = new Map<string, NotifyItem>()
+type Hold = 'hover' | 'hidden' | 'focus'
 
-/** Set of subscribed listeners */
-const listeners = new Set<StoreListener>()
+type Timer = {
+    handle: ReturnType<typeof setTimeout> | null
+    total: number
+    remaining: number
+    startedAt: number
+}
 
-/** Map of dismiss timeouts by notification ID */
-const dismissTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
+const records = new Map<ToastID, ToastRecord>()
+const listeners = new Set<() => void>()
+const timers = new Map<ToastID, Timer>()
+const removals = new Map<ToastID, ReturnType<typeof setTimeout>>()
+const holds = new Set<Hold>()
 
-/** Map of pending post-animation delete timeouts by notification ID */
-const deleteTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
+const defaultConfig: StoreConfig = {
+    position: Defaults.POSITION,
+    duration: Defaults.DURATION_MS,
+    maxVisible: Defaults.MAX_VISIBLE
+}
 
-// ============================================================================
-// INTERNAL HELPERS
-// ============================================================================
+let config: StoreConfig = { ...defaultConfig }
+let snapshot: readonly ToastRecord[] = []
 
-/**
- * Notifies all subscribed listeners of a state change.
- * @internal
- */
-function emit(): void {
+function emit() {
+    snapshot = Array.from(records.values())
     listeners.forEach((listener) => listener())
 }
 
+function positionOf(input: ToastInput): ToastPosition {
+    return input.position ?? config.position
+}
+
 /**
- * Clears any pending auto-dismiss timeout for a notification.
- * @internal
+ * @name resolveDuration
+ * @description Milliseconds a toast stays open, or Infinity when it stays until
+ * it is updated or dismissed. An explicit `duration` wins, with 0 meaning
+ * persistent. Loading toasts and toasts with unfinished progress are persistent,
+ * and so is every toast when the fallback is 0.
+ *
+ * @example
+ * resolveDuration({ status: 'loading' }, 5000) // Infinity
+ * resolveDuration({ progress: 100 }, 5000) // 5000
  */
-function clearDismissTimeout(id: string): void {
-    const timeout = dismissTimeouts.get(id)
-    if (timeout) {
-        clearTimeout(timeout)
-        dismissTimeouts.delete(id)
+export function resolveDuration(input: ToastInput, fallback: number): number {
+    if (input.duration !== undefined) return input.duration > 0 ? input.duration : Infinity
+    if (input.status === 'loading') return Infinity
+    if (input.progress !== undefined) {
+        const value = typeof input.progress === 'number' ? input.progress : input.progress.value
+        if (value === null || value < 100) return Infinity
     }
+    return fallback > 0 ? fallback : Infinity
 }
 
-/**
- * Clears any pending post-animation delete timeout for a notification.
- * @internal
- */
-function clearDeleteTimeout(id: string): void {
-    const timeout = deleteTimeouts.get(id)
-    if (timeout) {
-        clearTimeout(timeout)
-        deleteTimeouts.delete(id)
+function schedule(id: ToastID, timer: Timer) {
+    if (timer.handle !== null || holds.size > 0 || !Number.isFinite(timer.remaining)) return
+    timer.startedAt = Date.now()
+    timer.handle = setTimeout(() => dismiss(id, 'timeout'), timer.remaining)
+}
+
+function clearTimer(id: ToastID) {
+    const timer = timers.get(id)
+    if (timer?.handle) clearTimeout(timer.handle)
+    timers.delete(id)
+}
+
+function startTimer(id: ToastID, total: number) {
+    clearTimer(id)
+    const timer: Timer = { handle: null, total, remaining: total, startedAt: 0 }
+    timers.set(id, timer)
+    schedule(id, timer)
+}
+
+function retime(id: ToastID, input: ToastInput, restart: boolean) {
+    const total = resolveDuration(input, config.duration)
+    if (restart || timers.get(id)?.total !== total) startTimer(id, total)
+}
+
+function cancelRemoval(id: ToastID) {
+    const removal = removals.get(id)
+    if (removal) clearTimeout(removal)
+    removals.delete(id)
+}
+
+function enforceMaxVisible(position: ToastPosition) {
+    const open = Array.from(records.values()).filter(
+        (record) => record.open && positionOf(record.input) === position
+    )
+    const overflow = open.length - config.maxVisible + 1
+    if (overflow > 0) open.slice(0, overflow).forEach((record) => dismiss(record.id, 'replaced'))
+}
+
+function open(id: ToastID, input: ToastInput, render: CustomRender | null) {
+    cancelRemoval(id)
+    const existing = records.get(id)
+
+    if (existing) {
+        const merged = { ...existing.input, ...input }
+        records.set(id, {
+            ...existing,
+            input: merged,
+            render: render ?? existing.render,
+            open: true
+        })
+        retime(id, merged, !existing.open)
+        emit()
+        return
     }
+
+    enforceMaxVisible(positionOf(input))
+    records.set(id, { id, input, render, open: true, createdAt: Date.now() })
+    input.onOpen?.(id)
+    startTimer(id, resolveDuration(input, config.duration))
+    emit()
 }
 
 /**
- * Determines if a state should auto-dismiss.
- * @internal
+ * @name configureStore
+ * @description Sets the defaults every toast falls back to. Called by `Notifier`
+ * when it mounts and whenever its props change.
+ *
+ * @example
+ * configureStore({ position: 'top-right', maxVisible: 4 })
  */
-function shouldAutoDismiss(state: NotifyState): boolean {
-    return (
-        state === NotifyStateType.SUCCESS ||
-        state === NotifyStateType.ERROR ||
-        state === NotifyStateType.INFO ||
-        state === NotifyStateType.WARNING
-    )
+export function configureStore(patch: Partial<StoreConfig>) {
+    config = { ...config, ...patch }
 }
 
-/**
- * Sets up auto-dismiss timeout for a notification.
- * @internal
- */
-function setupAutoDismiss(id: string, duration: number): void {
-    clearDismissTimeout(id)
-    dismissTimeouts.set(
-        id,
-        setTimeout(() => {
-            dismiss(id, DismissReason.TIMEOUT)
-        }, duration)
-    )
+export function getStoreConfig(): StoreConfig {
+    return config
 }
 
-// ============================================================================
-// PUBLIC API
-// ============================================================================
-
-/**
- * Returns all notifications as an array, sorted by creation time.
- * @returns Array of notification items
- */
-export function getNotifications(): NotifyItem[] {
-    return Array.from(notifications.values()).sort((a, b) => a.createdAt - b.createdAt)
-}
-
-export function resetStore(): void {
-    dismissTimeouts.forEach(clearTimeout)
-    deleteTimeouts.forEach(clearTimeout)
-    notifications.clear()
-    listeners.clear()
-    dismissTimeouts.clear()
-    deleteTimeouts.clear()
-}
-
-/**
- * Returns a specific notification by ID.
- * @param id - Notification ID
- * @returns The notification item or undefined
- */
-export function getNotification(id: string): NotifyItem | undefined {
-    return notifications.get(id)
-}
-
-/**
- * Subscribes to store changes.
- * @param listener - Callback invoked on state changes
- * @returns Unsubscribe function
- */
-export function subscribe(listener: StoreListener): () => void {
+export function subscribe(listener: () => void): () => void {
     listeners.add(listener)
-    return () => listeners.delete(listener)
-}
-
-/**
- * Creates a new notification or updates an existing one.
- * @param id - Notification ID
- * @param state - New notification state
- * @param message - Message to display
- * @param options - Additional options
- */
-export function setState(
-    id: string,
-    state: NotifyState,
-    message: NotifyMessage,
-    options: NotifyOptions = {}
-): void {
-    clearDismissTimeout(id)
-    clearDeleteTimeout(id)
-
-    const existing = notifications.get(id)
-    const prevState = existing?.state ?? NotifyStateType.IDLE
-
-    const mergedOptions: NotifyOptions = {
-        ...(existing?.options ?? {}),
-        ...options,
-        // Preserve action if it exists in either
-        action: options.action ?? existing?.options?.action
-    }
-
-    // Call onUpdate callback if state changed
-    if (existing && state !== prevState && mergedOptions.onUpdate) {
-        mergedOptions.onUpdate(id, state, prevState)
-    }
-
-    const now = Date.now()
-    const isStateChange = existing && state !== prevState
-
-    const item: NotifyItem = {
-        id,
-        state,
-        message,
-        options: mergedOptions,
-        visible: true,
-        prevState,
-        confirmResolver: existing?.confirmResolver ?? null,
-        createdAt: existing?.createdAt ?? now,
-        stateStartedAt: isStateChange ? now : (existing?.stateStartedAt ?? now),
-        paused: false,
-        remainingTime: null
-    }
-
-    notifications.set(id, item)
-
-    // Call onOpen for new notifications
-    if (!existing && mergedOptions.onOpen) {
-        mergedOptions.onOpen(id)
-    }
-
-    emit()
-
-    // Auto-dismiss for terminal states
-    if (shouldAutoDismiss(state) && mergedOptions.duration !== 0) {
-        const duration = mergedOptions.duration ?? Defaults.DURATION_MS
-        setupAutoDismiss(id, duration)
+    return () => {
+        listeners.delete(listener)
     }
 }
 
+export function getSnapshot(): readonly ToastRecord[] {
+    return snapshot
+}
+
+export function getRecord(id: ToastID): ToastRecord | undefined {
+    return records.get(id)
+}
+
 /**
- * Transitions to confirm state with a resolver.
- * @param id - Notification ID
- * @param message - Confirmation message
- * @param options - Notification options
- * @param resolver - Callback to resolve the confirm promise
- * @internal
+ * @name show
+ * @description Opens a toast from declarative content. Passing the id of an
+ * existing toast updates it instead.
+ *
+ * @example
+ * const id = show({ title: 'Saved', status: 'success' })
  */
-export function setConfirmState(
-    id: string,
-    message: NotifyMessage,
-    options: NotifyOptions,
-    resolver: (confirmed: boolean) => void
-): void {
-    clearDismissTimeout(id)
-    clearDeleteTimeout(id)
+export function show(input: ToastInput): ToastID {
+    const id = input.id ?? generateId()
+    open(id, input, null)
+    return id
+}
 
-    const existing = notifications.get(id)
-    const prevState = existing?.state ?? NotifyStateType.IDLE
+/**
+ * @name showCustom
+ * @description Opens a toast whose content is rendered by the caller.
+ *
+ * @example
+ * showCustom((toast) => <Toast title='Hello' />, { duration: 3000 })
+ */
+export function showCustom(render: CustomRender, options: CustomToastOptions = {}): ToastID {
+    const id = options.id ?? generateId()
+    open(id, options, render)
+    return id
+}
 
-    const mergedOptions = existing ? { ...existing.options, ...options } : options
-
-    const now = Date.now()
-
-    const item: NotifyItem = {
-        id,
-        state: NotifyStateType.CONFIRM,
-        message,
-        options: mergedOptions,
-        visible: true,
-        prevState,
-        confirmResolver: resolver,
-        createdAt: existing?.createdAt ?? now,
-        stateStartedAt: now,
-        paused: false,
-        remainingTime: null
-    }
-
-    notifications.set(id, item)
-
-    if (!existing && mergedOptions.onOpen) {
-        mergedOptions.onOpen(id)
-    }
-
+/**
+ * @name update
+ * @description Merges a patch into an open toast. The timer keeps running unless
+ * the patch sets `duration` or changes whether the toast is persistent.
+ *
+ * @example
+ * update(id, { progress: 60 })
+ */
+export function update(id: ToastID, patch: ToastPatch) {
+    const existing = records.get(id)
+    if (!existing || !existing.open) return
+    const merged = { ...existing.input, ...patch }
+    records.set(id, { ...existing, input: merged })
+    retime(id, merged, 'duration' in patch)
     emit()
 }
 
 /**
- * Resolves a pending confirmation dialog.
- * Does NOT dismiss the notification - caller should chain to next state or dismiss manually.
- * @param id - Notification ID
- * @param confirmed - Whether the user confirmed
- * @internal
+ * @name dismiss
+ * @description Closes a toast. It stays in the store until its exit animation has
+ * played, then `onClose` fires and it is removed.
+ *
+ * @example
+ * dismiss(id, 'manual')
  */
-export function resolveConfirm(id: string, confirmed: boolean): void {
-    const item = notifications.get(id)
-    if (item?.confirmResolver) {
-        const resolver = item.confirmResolver
-        notifications.set(id, { ...item, confirmResolver: null })
-        emit()
-        resolver(confirmed)
-    }
-}
-
-/**
- * Pauses the auto-dismiss timer for a notification.
- * @param id - Notification ID
- */
-export function pauseTimer(id: string): void {
-    const item = notifications.get(id)
-    if (!item || item.paused) return
-
-    const timeout = dismissTimeouts.get(id)
-    if (timeout) {
-        clearDismissTimeout(id)
-        const elapsed = Date.now() - item.stateStartedAt
-        const duration = item.options.duration ?? Defaults.DURATION_MS
-        const remaining = Math.max(0, duration - elapsed)
-
-        notifications.set(id, { ...item, paused: true, remainingTime: remaining })
-        emit()
-    }
-}
-
-export function resumeTimer(id: string): void {
-    const item = notifications.get(id)
-    if (!item || !item.paused) return
-
-    const remaining = item.remainingTime ?? Defaults.DURATION_MS
-    const now = Date.now()
-    notifications.set(id, { ...item, paused: false, remainingTime: null, stateStartedAt: now })
-
-    if (shouldAutoDismiss(item.state)) {
-        setupAutoDismiss(id, remaining)
-    }
-
+export function dismiss(id: ToastID, reason: DismissReason = 'manual') {
+    const record = records.get(id)
+    if (!record || !record.open) return
+    clearTimer(id)
+    records.set(id, { ...record, open: false })
+    record.input.onDismiss?.(id, reason)
     emit()
-}
-
-/**
- * Pauses the auto-dismiss timer of every notification.
- * Used for stack-wide hover pause and background-tab pause.
- */
-export function pauseAllTimers(): void {
-    notifications.forEach((_, id) => pauseTimer(id))
-}
-
-/**
- * Resumes the auto-dismiss timer of every paused notification.
- */
-export function resumeAllTimers(): void {
-    notifications.forEach((_, id) => resumeTimer(id))
-}
-
-/**
- * Dismisses a notification.
- * @param id - Notification ID
- * @param reason - Reason for dismissal
- */
-export function dismiss(id: string, reason: DismissReasonType = DismissReason.MANUAL): void {
-    const item = notifications.get(id)
-    if (!item) return
-
-    clearDismissTimeout(id)
-
-    // Auto-resolve pending confirms as false
-    if (item.confirmResolver) {
-        item.confirmResolver(false)
-    }
-
-    // Call onDismiss callback
-    if (item.options.onDismiss) {
-        item.options.onDismiss(id, reason)
-    }
-
-    notifications.set(id, { ...item, visible: false, confirmResolver: null })
-    emit()
-
-    clearDeleteTimeout(id)
-    deleteTimeouts.set(
+    removals.set(
         id,
         setTimeout(() => {
-            deleteTimeouts.delete(id)
-            notifications.delete(id)
-            if (item.options.onClose) {
-                item.options.onClose(id)
-            }
+            removals.delete(id)
+            records.delete(id)
+            record.input.onClose?.(id)
             emit()
-        }, Defaults.EXIT_ANIMATION_MS)
+        }, Defaults.EXIT_MS)
     )
 }
 
-/**
- * Dismisses all notifications.
- * @param reason - Reason for dismissal
- */
-export function dismissAll(reason: DismissReasonType = DismissReason.MANUAL): void {
-    notifications.forEach((_, id) => dismiss(id, reason))
+export function dismissAll(reason: DismissReason = 'manual') {
+    records.forEach((_, id) => dismiss(id, reason))
 }
 
-/**
- * Enforces maximum visible notifications limit.
- * When a position is given, only notifications in that position count toward the limit.
- * @param maxVisible - Maximum number to keep
- * @param excludeId - ID to exclude from removal
- * @param position - Position the new notification will occupy
- */
-export function enforceMaxVisible(
-    maxVisible: number,
-    excludeId?: string,
-    position?: NotifyPositionType
-): void {
-    const items = getNotifications()
-    const visibleItems = items.filter(
-        (item) =>
-            item.visible &&
-            item.id !== excludeId &&
-            (position === undefined || (item.options.position ?? position) === position)
-    )
-
-    if (visibleItems.length >= maxVisible) {
-        const toRemove = visibleItems.slice(0, visibleItems.length - maxVisible + 1)
-        toRemove.forEach((item) => dismiss(item.id, DismissReason.REPLACED))
+export function handleFor(id: ToastID): ToastHandle {
+    return {
+        id,
+        dismiss: (reason) => dismiss(id, reason),
+        update: (patch) => update(id, patch)
     }
 }
 
 /**
- * Updates options for an existing notification without changing state.
- * @param id - Notification ID
- * @param options - Options to merge
+ * @name pauseTimers
+ * @description Holds every auto-dismiss timer, remembering the time each had left.
+ * Timers resume once every hold has been released.
+ *
+ * @example
+ * pauseTimers('hover')
  */
-export function updateOptions(id: string, options: Partial<NotifyOptions>): void {
-    const item = notifications.get(id)
-    if (!item) return
+export function pauseTimers(hold: Hold) {
+    const running = holds.size === 0
+    holds.add(hold)
+    if (!running) return
+    const now = Date.now()
+    timers.forEach((timer) => {
+        if (timer.handle === null) return
+        clearTimeout(timer.handle)
+        timer.handle = null
+        timer.remaining = Math.max(0, timer.remaining - (now - timer.startedAt))
+    })
+}
 
-    const updated: NotifyItem = {
-        ...item,
-        options: {
-            ...item.options,
-            ...options
-        }
-    }
+export function resumeTimers(hold: Hold) {
+    holds.delete(hold)
+    if (holds.size > 0) return
+    timers.forEach((timer, id) => schedule(id, timer))
+}
 
-    if (
-        options.duration !== undefined &&
-        shouldAutoDismiss(item.state) &&
-        item.visible &&
-        !item.paused
-    ) {
-        if (options.duration === 0) {
-            clearDismissTimeout(id)
-        } else {
-            updated.stateStartedAt = Date.now()
-            setupAutoDismiss(id, options.duration)
-        }
-    }
-
-    notifications.set(id, updated)
-    emit()
+export function resetStore() {
+    timers.forEach((timer) => {
+        if (timer.handle) clearTimeout(timer.handle)
+    })
+    removals.forEach((removal) => clearTimeout(removal))
+    records.clear()
+    listeners.clear()
+    timers.clear()
+    removals.clear()
+    holds.clear()
+    config = { ...defaultConfig }
+    snapshot = []
 }

@@ -1,175 +1,89 @@
-# @remcostoeten/notifier
-
-A lightweight, chainable notification system for React with smooth animations, flexible theming, and a Sonner-like API.
-
 <p align="center">
-  <a href="https://www.npmjs.com/package/@remcostoeten/notifier">
-    <img src="https://img.shields.io/npm/v/@remcostoeten/notifier.svg" alt="npm version" />
-  </a>
-  <a href="https://www.npmjs.com/package/@remcostoeten/notifier">
-    <img src="https://img.shields.io/npm/dm/@remcostoeten/notifier.svg" alt="npm downloads" />
-  </a>
-  <a href="https://bundlephobia.com/package/@remcostoeten/notifier">
-    <img src="https://img.shields.io/bundlephobia/minzip/@remcostoeten/notifier" alt="bundle size" />
-  </a>
-  <a href="https://github.com/remcostoeten/toasti/blob/master/LICENSE">
-    <img src="https://img.shields.io/npm/l/@remcostoeten/notifier.svg" alt="license" />
-  </a>
+  <img src="packages/notifier/assets/logo.png" width="88" alt="Notifier logo" />
 </p>
 
-<!-- Added preview image placeholder -->
+<h1 align="center">Notifier</h1>
+
+Toast notifications for React, built from slots: an icon or avatar, a title, a description, progress and actions.
+
 <p align="center">
-  <img src="public/preview.gif" alt="Notifier Preview" width="600" />
+  <img src="https://shieldcn.dev/github/remcostoeten/Notify/release.svg?font=jetbrains-mono" alt="release" />
+  <img src="https://shieldcn.dev/github/remcostoeten/Notify/ci.svg?font=jetbrains-mono" alt="CI" />
+  <img src="https://shieldcn.dev/github/remcostoeten/Notify/license.svg?font=jetbrains-mono" alt="license" />
+  <img src="https://shieldcn.dev/npm/v/@remcostoeten/notifier.svg?font=jetbrains-mono" alt="npm" />
+  <img src="https://shieldcn.dev/npm/types/@remcostoeten/notifier.svg?font=jetbrains-mono" alt="types" />
+  <img src="https://shieldcn.dev/badge/UI-React-black.svg?font=jetbrains-mono&logo=react" alt="React" />
+  <img src="https://shieldcn.dev/badge/animation-Motion-black.svg?font=jetbrains-mono" alt="Motion" />
 </p>
 
-## Features
+<p align="center">
+  <img src="packages/notifier/assets/toasts.png" width="100%" alt="Four toasts: a dark status toast with two text actions, a light upload toast with a progress bar, a light message toast with an avatar and two buttons, and a dark update toast with an icon box and two buttons." />
+</p>
 
-- **Chainable API**: State transitions made easy (`notify.loading().success()`)
-- **Promise Tracking**: Automatic state updates for async operations
-- **Confirmations**: Built-in async/await confirmation dialogs
-- **Highly Customizable**: 6 positions, 3 radius styles, and dark/light/auto modes
-- **Performance First**: Driven by Framer Motion for buttery smooth 60fps animations
-- **Swipe to Dismiss**: Natural touch and mouse gestures with direction awareness
-- **Lightweight**: Zero unnecessary dependencies, tree-shakable
-- **Typescript**: Core-first TS support with rich type definitions
+A toast is a surface with slots. Pass the slots as one object to `notify`, or compose the same parts yourself for layouts the slots do not cover.
 
-## Installation
+- **Slots**: icon or avatar, title with meta, description, progress and actions, in a light or dark tone.
+- **Updates in place**: `notify.update` and `notify.promise` change an open toast, so a progress toast stays one element.
+- **Primitives**: `Toast` and its parts render any layout through `notify.custom`.
+- **Tokens**: colors, radius, width and font are CSS variables, set from the `theme` prop or your own stylesheet.
+- **Behavior**: six positions, hover and focus pause, swipe to dismiss, an expanding stack and reduced motion.
+- **Keyboard**: `Alt+T` focuses the newest toast, Tab reaches its actions and Escape dismisses it.
+
+The API reference is in [packages/notifier/llm.txt](packages/notifier/llm.txt).
+
+## Install
 
 ```bash
-bun add @remcostoeten/notifier
+bun add @remcostoeten/notifier motion
 # or
-npm install @remcostoeten/notifier
+npm install @remcostoeten/notifier motion
 ```
 
-## Quick Start
-
-1. Add the Notifier component to your root layout:
+Mount `Notifier` once, then call `notify` from client code. The stylesheet ships with the component.
 
 ```tsx
-import { Notifier } from '@remcostoeten/notifier'
+import { Notifier, notify } from '@remcostoeten/notifier'
 
-export default function RootLayout({ children }) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
         <html>
             <body>
                 {children}
-                <Notifier position='bottom-right' />
+                <Notifier />
             </body>
         </html>
     )
 }
-```
 
-1. Call notify from anywhere:
+notify('Saved')
 
-```tsx
-import { notify } from '@remcostoeten/notifier'
-
-function MyComponent() {
-    const handleSave = async () => {
-        const n = notify.loading('Saving...')
-
-        try {
-            await saveData()
-            n.success('Saved!')
-        } catch (err) {
-            n.error('Failed to save')
-        }
-    }
-
-    return <button onClick={handleSave}>Save</button>
-}
-```
-
-## API
-
-### Basic Methods
-
-```tsx
-notify('Message') // Info notification
-notify.loading('Processing...') // Loading state
-notify.success('Done!') // Success state
-notify.error('Failed') // Error state
-notify.dismiss() // Dismiss all
-notify.dismiss(id) // Dismiss by ID
-```
-
-### Chaining
-
-Each method returns an instance for state transitions:
-
-```tsx
-const n = notify.loading('Saving...')
-
-try {
-    await saveData()
-    n.success('Saved!')
-} catch (err) {
-    n.error(err.message)
-}
-```
-
-### Promise Tracking
-
-```tsx
-notify.promise(fetchData(), {
-    loading: 'Loading...',
-    success: 'Data loaded!',
-    error: (err) => `Error: ${err.message}`
+notify({
+    tone: 'dark',
+    status: 'success',
+    title: 'Details updated',
+    description: 'Your changes have been saved.',
+    actions: [{ label: 'Dismiss', color: 'muted' }, { label: 'View profile' }]
 })
 ```
 
-### Confirmations
-
-```tsx
-const confirmed = await notify.confirm('Delete this item?', {
-    confirmLabel: 'Delete',
-    cancelLabel: 'Cancel'
-})
-
-if (confirmed) {
-    await deleteItem()
-}
-```
-
-## Notifier Props
-
-| Prop           | Type                                                                                              | Default          | Description                                      |
-| -------------- | ------------------------------------------------------------------------------------------------- | ---------------- | ------------------------------------------------ |
-| position       | `'top-left' \| 'top-center' \| 'top-right' \| 'bottom-left' \| 'bottom-center' \| 'bottom-right'` | `'bottom-right'` | Notification position                            |
-| duration       | `number`                                                                                          | `3000`           | Auto-dismiss duration in ms. Set to 0 to disable |
-| maxVisible     | `number`                                                                                          | `5`              | Maximum visible notifications                    |
-| colorMode      | `'dark' \| 'light' \| 'auto'`                                                                     | `'dark'`         | Color theme                                      |
-| radius         | `'pill' \| 'rounded' \| 'squared'`                                                                | `'squared'`      | Border radius style                              |
-| iconColor      | `'colored' \| 'neutral' \| 'hidden'`                                                              | `'colored'`      | Icon color mode                                  |
-| swipeToDismiss | `boolean`                                                                                         | `true`           | Enable swipe gestures                            |
-| pauseOnHover   | `boolean`                                                                                         | `true`           | Pause auto-dismiss on hover                      |
-| gap            | `number`                                                                                          | `8`              | Gap between notifications (px)                   |
-
-## Project Structure
-
-```
-├── packages/
-│   ├── notifier/          # Core library (@remcostoeten/notifier)
-│   └── release-cli/       # Internal release automation tool
-├── apps/
-│   └── demo/              # Documentation & Showcase (Next.js)
-└── README.md
-```
+Toasts use Inter when the page loads it and the system font otherwise.
 
 ## Development
 
+Needs Bun 1.2 or newer. The demo site in `apps/demo` is its own project and reads the built `packages/notifier/dist`.
+
 ```bash
-# Install dependencies
-bun install
-
-# Run documentation/showcase
-bun dev
-
-# Build the library
-bun run build:packages
+bun install                                  # install the workspace
+bun run typecheck                            # tsc across the packages
+cd packages/notifier && bun run test         # vitest
+cd packages/notifier && bun run build        # tsup to dist/
+cd apps/demo && bun install && bun run dev   # demo on localhost:3000
 ```
 
-## License
+Contribution notes are in [packages/notifier/CONTRIBUTING.md](packages/notifier/CONTRIBUTING.md) and the security policy is in [SECURITY.md](SECURITY.md).
 
-MIT © [Remco Stoeten](https://github.com/remcostoeten)
+<br/>
+
+xxx,<br/>
+[Remco Stoeten](https://remcostoeten.com)<br/>
+<small>MIT</small>

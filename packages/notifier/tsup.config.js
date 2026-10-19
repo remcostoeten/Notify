@@ -1,12 +1,7 @@
 import { defineConfig } from 'tsup'
 
 export default defineConfig({
-    entry: [
-        'src/index.tsx',
-        'src/compat/sonner/index.tsx',
-        'src/compat/react-hot-toast/index.tsx',
-        'src/compat/shadcn/index.tsx'
-    ],
+    entry: ['src/index.tsx'],
     format: ['cjs', 'esm'],
     dts: true,
     sourcemap: true,

@@ -1,56 +1,50 @@
-/**
- * @fileoverview Tests for utility functions
- */
-
 import { describe, it, expect } from 'vitest'
-import { generateId, getErrorMessage, isObject, cn } from '../utils'
+import { cx, kebab, matchesHotkey } from '../utils'
 
-describe('utils', () => {
-    describe('generateId', () => {
-        it('generates unique IDs with correct format', () => {
-            const id1 = generateId()
-            const id2 = generateId()
+const none = { altKey: false, ctrlKey: false, shiftKey: false, metaKey: false }
 
-            expect(id1).not.toBe(id2)
-            expect(id1).toMatch(/^notify_\d+_[a-z0-9]+$/)
-        })
+describe('matchesHotkey', () => {
+    it('matches a modifier and a letter by physical key', () => {
+        expect(matchesHotkey({ ...none, code: 'KeyT', altKey: true }, 'alt+t')).toBe(true)
     })
 
-    describe('getErrorMessage', () => {
-        it('extracts message from Error instance', () => {
-            expect(getErrorMessage(new Error('Network failed'), 'fallback')).toBe('Network failed')
-        })
-
-        it('returns string errors directly', () => {
-            expect(getErrorMessage('String error', 'fallback')).toBe('String error')
-        })
-
-        it('returns fallback for non-error types', () => {
-            expect(getErrorMessage(null, 'fallback')).toBe('fallback')
-            expect(getErrorMessage(undefined, 'fallback')).toBe('fallback')
-            expect(getErrorMessage(123, 'fallback')).toBe('fallback')
-        })
+    it('is case insensitive and accepts aliases', () => {
+        expect(matchesHotkey({ ...none, code: 'KeyN', metaKey: true }, 'Cmd+N')).toBe(true)
+        expect(matchesHotkey({ ...none, code: 'KeyN', altKey: true }, 'option+n')).toBe(true)
+        expect(matchesHotkey({ ...none, code: 'KeyN', ctrlKey: true }, 'control+n')).toBe(true)
     })
 
-    describe('isObject', () => {
-        it('correctly identifies objects vs primitives', () => {
-            expect(isObject({})).toBe(true)
-            expect(isObject({ key: 'value' })).toBe(true)
-            expect(isObject([])).toBe(true)
-            expect(isObject(null)).toBe(false)
-            expect(isObject(undefined)).toBe(false)
-            expect(isObject('string')).toBe(false)
-            expect(isObject(123)).toBe(false)
-        })
+    it('requires exactly the listed modifiers', () => {
+        expect(matchesHotkey({ ...none, code: 'KeyT' }, 'alt+t')).toBe(false)
+        expect(
+            matchesHotkey({ ...none, code: 'KeyT', altKey: true, shiftKey: true }, 'alt+t')
+        ).toBe(false)
+        expect(
+            matchesHotkey({ ...none, code: 'KeyT', altKey: true, shiftKey: true }, 'alt+shift+t')
+        ).toBe(true)
     })
 
-    describe('cn', () => {
-        it('merges class names and filters falsy values', () => {
-            expect(cn('foo', 'bar', 'baz')).toBe('foo bar baz')
-            expect(cn('foo', false, 'bar', null, undefined)).toBe('foo bar')
-            const active = true
-            const disabled = false
-            expect(cn('base', active && 'active', disabled && 'disabled')).toBe('base active')
-        })
+    it('matches digits and named keys', () => {
+        expect(matchesHotkey({ ...none, code: 'Digit1', ctrlKey: true }, 'ctrl+1')).toBe(true)
+        expect(matchesHotkey({ ...none, code: 'F8' }, 'f8')).toBe(true)
+        expect(matchesHotkey({ ...none, code: 'Escape' }, 'escape')).toBe(true)
+    })
+
+    it('does not match another key', () => {
+        expect(matchesHotkey({ ...none, code: 'KeyY', altKey: true }, 'alt+t')).toBe(false)
+    })
+})
+
+describe('cx', () => {
+    it('joins truthy parts and returns undefined for none', () => {
+        expect(cx('a', false, null, undefined, 'b')).toBe('a b')
+        expect(cx(false, null)).toBeUndefined()
+    })
+})
+
+describe('kebab', () => {
+    it('turns camel case into kebab case', () => {
+        expect(kebab('controlBorder')).toBe('control-border')
+        expect(kebab('accent')).toBe('accent')
     })
 })

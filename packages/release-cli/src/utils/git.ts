@@ -34,8 +34,6 @@ export async function getGitStatus(git: SimpleGit): Promise<{
 }
 
 export async function getCommitsSinceTag(git: SimpleGit, tag?: string): Promise<GitCommit[]> {
-    const range = tag ? `${tag}..HEAD` : 'HEAD~50..HEAD'
-
     try {
         const log = await git.log({
             from: tag ?? undefined,

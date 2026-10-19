@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Bun-workspaces monorepo for `@remcostoeten/notifier` — a chainable, framework-agnostic-core notification system for React (Sonner-like API, Motion-driven animations). Package manager is **Bun 1.2.0**; do not use npm/yarn for installs.
+Bun-workspaces monorepo for `@remcostoeten/notifier`, composable toast notifications for React: declarative content slots, a `Toast` primitives API for custom layouts, light and dark tones, Motion-driven animation. Package manager is **Bun 1.2.0**; do not use npm/yarn for installs.
 
 - `packages/notifier/` — the published library (`@remcostoeten/notifier`)
 - `packages/release-cli/` — internal AI-changelog release tool (`release` binary), not published as part of the product
@@ -18,9 +18,9 @@ Run from the repo root unless noted.
 bun install              # install all workspaces
 bun run build:packages   # build the two library packages (the demo is NOT covered — see gotcha below)
 bun run typecheck        # tsc --noEmit across the workspace packages
-bun run lint             # eslint . across the repo
+bun run lint             # oxlint across the repo
 bun run lint:fix
-bun run format           # prettier --write . (format:check to verify only)
+bun run format           # oxfmt (format:check to verify only)
 ```
 
 Note on `bun --filter`: this repo's bun (1.3.x) only matches the form `bun run --filter='<glob>' <script>`. The older `bun --filter '<glob>' run <script>` form silently matches nothing — keep the scripts in their current order.
@@ -44,16 +44,18 @@ bun run test src/__tests__/store.test.ts        # one file
 bun run test -t "name of the test case"          # by test name
 ```
 
-### apps/demo is a standalone project — IMPORTANT gotcha
+On this 8 GB machine cap the workers. Vitest 2.1 rejects `--maxWorkers=2` on its own, so pass the minimum too:
 
-`apps/demo` is listed in the root `workspaces`, but it **also has its own committed `apps/demo/bun.lock`**, which makes it behave as a separate project rather than a true workspace member:
+```bash
+bunx vitest run --maxWorkers=2 --minWorkers=1
+```
 
-- ⚠️ **A clean root `bun install` (when root `node_modules`/lockfile is absent) can DELETE the `apps/demo/` working-tree files.** If it happens, restore with `git checkout -- apps/demo`. A subsequent `bun install` (with node_modules present) does not reproduce it.
-- `bun --filter` does **not** match the demo, so `bun run dev` / a root `build:apps` cover only real workspace members (currently none under `apps/*`). Build and run the demo standalone:
-    ```bash
-    cd apps/demo && bun install && bun run dev   # http://localhost:3000
-    ```
-- The demo imports `@remcostoeten/notifier` and consumes its built `dist/` (not `src/`). When iterating on library source with the demo open, run `bun run dev` (tsup watch) inside `packages/notifier` or rebuild it, or the demo won't pick up changes.
+### apps/demo
+
+`apps/demo` is a workspace member with no lockfile of its own, so `bun run --filter='./apps/*'` matches it and the root `bun.lock` covers it. Run it from the root with `bun run dev` or from `apps/demo` with `bun run dev` (http://localhost:3000).
+
+- The demo imports `@remcostoeten/notifier` and consumes its built `dist/` (not `src/`). When iterating on library source with the demo open, run `bun run dev` (tsup watch) inside `packages/notifier` or rebuild it, or the demo won't pick up changes. `bun run build` in `apps/demo` builds the notifier first.
+- Older notes warned that a clean root `bun install` could delete the `apps/demo` working tree. That was seen while the demo still had its own `bun.lock` and has not been re-tested since the lockfile was removed. Keep uncommitted demo work backed up before a clean install.
 
 ## Architecture
 
@@ -61,28 +63,34 @@ bun run test -t "name of the test case"          # by test name
 
 `packages/notifier/src` separates state from rendering:
 
-- `store.ts` — the reactive store. A module-level `Map<string, NotifyItem>` plus a `Set` of listeners and a `Map` of dismiss timeouts. Mutations call `emit()` to notify subscribers. This is plain TS with no React. Key exports: `setState`, `dismiss`/`dismissAll`, `setConfirmState`/`resolveConfirm`, `pauseTimer`/`resumeTimer`, `enforceMaxVisible`, `updateOptions`, `subscribe`, `resetStore`. Auto-dismiss applies only to terminal states (success/error/info) and is skipped when `duration === 0`. Dismissal flips `visible: false`, then deletes after a 300ms animation window.
-- `notify.ts` — the public chainable API. `createNotifyInstance(id, opts)` returns an object whose methods (`loading`/`success`/`error`/`info`/`update`/`promise`/`confirm`) call into the store and return the instance for chaining. `notify(...)` and its static methods (`notify.success`, `notify.promise`, etc.) are the entry points; a module-level `globalConfig` holds defaults set via `notify.configure`.
-- `components/notification.tsx` exports `Notifier` (the container you mount once at app root) and `Notification`. Components `subscribe` to the store and render with Motion. `theme-context.tsx` carries theming; `constants.ts` holds `Defaults`, `NotifyStateType`, `DismissReason`, `AnimationConfig`.
-- `index.tsx` is the public surface — it re-exports `notify`, `Notifier`, all public types, constants, and `resetStore`. Add new public API here.
+- `store.ts` is the reactive store. A module-level `Map<ToastID, ToastRecord>` plus a `Set` of listeners and maps of dismiss timers and pending removals. Mutations call `emit()`, which rebuilds the immutable snapshot that `Notifier` reads through `useSyncExternalStore`. Exports `show`, `showCustom`, `update`, `dismiss`/`dismissAll`, `handleFor`, `pauseTimers`/`resumeTimers` (holds: hover, hidden, focus), `configureStore`, `getSnapshot`, `subscribe` and `resetStore`. `resolveDuration` makes loading toasts and progress below 100 persistent, and `duration: 0` means persistent. Dismissal sets `open: false`, then removes the record after `Defaults.EXIT_MS` (300ms). Opening past `maxVisible` dismisses the oldest toast at that position with reason `replaced`.
+- `notify.ts` is the public API: `notify(title | input)` plus `notify.success/error/warning/info/loading`, `custom`, `promise`, `update` and `dismiss`. Everything returns a toast id and goes through the store. There is no chaining.
+- `types.ts` splits a toast input into `ToastContent` (slots), `ToastSurface` (tone, width, classes) and `ToastBehavior` (id, position, duration, callbacks).
+- `components/notifier.tsx` exports `Notifier`, mounted once at the app root. It groups records by position, anchors each group (`placement.ts`), lays out the stack (`stack.ts`) and handles hover expand, swipe, pause on hover and the `alt+t` hotkey. Mounting two logs a warning.
+- `components/toast.tsx` exports `Toast`, which fills the slots from props or takes children built from the primitives in `components/parts.tsx` (`Toast.Icon`, `Avatar`, `Body`, `Title`, `Description`, `Progress`, `Actions`, `Action`, `Close`). `toast-item.tsx` wraps a record with Motion and gestures. `glyphs.tsx` holds the inline SVG icons.
+- Styling is tokens plus one stylesheet. `tokens.ts` holds the light and dark values, `styles.ts` builds the CSS (`--ntf-*` variables, `.ntf-*` classes) and `style-sheet.tsx` injects it once. `theme.ts` maps a `ToastTheme` prop onto the variables. `constants.ts` holds `Defaults`, `AnimationConfig` and the stack numbers.
+- `index.tsx` is the public surface. Add new public API and types here. The package has a single entry point.
 
-When changing notification behavior, prefer editing `store.ts` (logic) and keep React components as views. Tests in `src/__tests__/` cover the store and notify API directly without rendering.
+When changing behavior, edit the store, `placement.ts`, `stack.ts` or `theme.ts` (pure logic) and keep components as views. Tests in `src/__tests__/` cover those pure modules and the store without rendering, and `toast.test.tsx`, `notifier.test.tsx` and `render-count.test.tsx` cover the components.
 
-### Compat adapters
+### Visual reference
 
-`src/compat/` provides drop-in replacements for other toast libs. `factory.ts` `createToastAdapter()` maps a generic toast interface onto `notify`, and `compat/{sonner,react-hot-toast,shadcn}/` are thin wrappers. These are separate package entry points (`@remcostoeten/notifier/compat/sonner`, etc.) declared in `package.json` `exports` and built as extra tsup entries — update both when adding an adapter.
+The toasts are matched to the Untitled UI toast shot on Dribbble (dark status toast, upload progress, avatar message, update with icon box). A toast is 400px wide, Inter 14px/20px, radius 12, with 8px radius buttons and icon box. Compare changes against that reference at the same scale, not by eye, and compare ink and text widths rather than extreme pixel values.
 
 ### Demo app
 
-Next.js 16 App Router under `apps/demo/src` (`@/*` -> `./src/*`). It imports the library via the workspace dep `@remcostoeten/notifier` (not a path alias). `Notifier` is mounted in `app/layout.tsx`; `app/page.tsx` is the interactive showcase.
+Next.js 16 App Router under `apps/demo/src` (`@/*` -> `./src/*`). It imports the library via the workspace dep `@remcostoeten/notifier` (not a path alias). `app/page.tsx` composes the sections from `components/showcase/`: `gallery.tsx` (the four reference toasts, static `Toast` previews plus a Show button), `playground.tsx`, `api-reference.tsx` and `snippets.ts`. `ui.tsx` has the shared pieces, including `Stage`, the framed window the toasts are shown in. The live `Notifier` is mounted inside `playground.tsx`, so every Show button depends on it. The docs page is a fixed dark theme while the toasts sit on light stages.
 
 ## Conventions
 
-- ESLint enforces `consistent-type-imports` (use `import type`), warns on `no-explicit-any` and unused vars (prefix intentionally-unused with `_`), and bans `var`. `no-console` warns but allows `warn`/`error`.
-- Husky + lint-staged run eslint --fix and prettier on staged `*.{ts,tsx}` at commit time.
+- Oxlint (`.oxlintrc.json`) enforces `func-style` (declarations), `prefer-arrow-callback`, `consistent-type-imports` (use `import type`), `no-empty`, `prefer-const` and `no-var`, and warns on `no-explicit-any` and unused vars (prefix intentionally-unused with `_`). `no-console` warns but allows `warn`/`error`. The `nextjs` plugin only applies under `apps/demo`. oxfmt (`.oxfmtrc.json`) formats, including Tailwind class order. Never add ESLint or Prettier.
+- Husky + lint-staged run `oxlint --fix` and `oxfmt` on staged files at commit time.
+- `release-cli` prints through `console`, so `bun run lint` reports its `no-console` warnings. They are expected.
 - The user's global style rules apply: standalone funcs as `function` declarations, callbacks as arrows, no empty catch (use a `noop`), and no explanatory inline comments (JSDoc on public helpers is fine — the library uses it heavily).
 
 ## Notes
 
-- The `eslint.config.js` global `ignores` use `**/`-prefixed globs so nested `packages/*/dist` is excluded — don't drop the prefix or `bun run lint` will start linting build output.
-- The compat `useToast()` shadcn shim and `toast.custom` in `compat/factory.ts` are intentionally partial (documented limitations), not bugs to "fix" silently.
+- The `.oxlintrc.json` `ignorePatterns` use `**/`-prefixed globs so nested `packages/*/dist` is excluded. Don't drop the prefix or `bun run lint` will start linting build output.
+- `oxlint --rules` prints nothing in the installed version. To check that a rule exists, add it to `.oxlintrc.json` and run `oxlint`, which errors on unknown rules.
+- Headless Chrome on Linux renders Inter with uneven letter spacing unless started with `--font-render-hinting=none --enable-font-subpixel-positioning`. Use those flags when screenshotting toasts, and `--hide-scrollbars` so element clips do not shift.
+- The docs page has `scroll-behavior: smooth`. Set it to `auto` before measuring element rects after a programmatic scroll.

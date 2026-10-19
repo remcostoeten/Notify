@@ -14,12 +14,17 @@ Thank you for considering contributing to this project!
 ```
 packages/notifier/
 ├── src/
-│   ├── components/     # React components
-│   ├── constants.ts    # Configuration constants
-│   ├── store.ts        # State management
-│   ├── notify.ts       # Main API
-│   ├── types.ts        # TypeScript types
-│   └── utils.ts        # Helper functions
+│   ├── components/     # Notifier, Toast and its parts
+│   ├── constants.ts    # Defaults and motion values
+│   ├── notify.ts       # Imperative API
+│   ├── placement.ts    # Position helpers
+│   ├── stack.ts        # Stack geometry
+│   ├── store.ts        # Toasts, timers and subscriptions
+│   ├── styles.ts       # Stylesheet
+│   ├── theme.ts        # Theme prop to CSS variables
+│   ├── tokens.ts       # Light and dark tokens
+│   ├── types.ts        # Public types
+│   └── utils.ts        # Helpers
 ├── package.json
 ├── tsconfig.json
 └── tsup.config.js

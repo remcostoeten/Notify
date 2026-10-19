@@ -1,137 +1,148 @@
-/**
- * @fileoverview Tests for notify API
- */
-
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { notify, configure, getConfig } from '../notify'
-import { getNotification, dismissAll } from '../store'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { notify } from '../notify'
+import { getRecord, getSnapshot, resetStore } from '../store'
 import { Defaults } from '../constants'
+import { noop } from '../utils'
 
 describe('notify', () => {
     beforeEach(() => {
-        // Reset config and notifications
-        configure({
-            position: Defaults.POSITION,
-            maxVisible: Defaults.MAX_VISIBLE,
-            defaultDuration: Defaults.DURATION_MS,
-            swipeToDismiss: true,
-            pauseOnHover: true,
-            clickToDismiss: false
-        })
-        dismissAll()
-        vi.advanceTimersByTime(500)
+        resetStore()
     })
 
-    describe('notify()', () => {
-        it('creates info notification with message and options', () => {
-            const onDismiss = vi.fn()
-            const instance = notify('Hello', { duration: 5000, onDismiss })
+    it('opens a toast from a title and returns its id', () => {
+        const id = notify('Saved')
+        expect(typeof id).toBe('string')
+        expect(getRecord(id)?.input).toMatchObject({ title: 'Saved' })
+    })
 
-            const notification = getNotification(instance.id)
-            expect(notification?.state).toBe('info')
-            expect(notification?.message).toBe('Hello')
-            expect(notification?.options.duration).toBe(5000)
-            expect(notification?.options.onDismiss).toBe(onDismiss)
-        })
-
-        it('accepts options object without message', () => {
-            const instance = notify({ message: 'Hello', duration: 5000 })
-
-            const notification = getNotification(instance.id)
-            expect(notification?.message).toBe('Hello')
+    it('merges extra input into a title toast', () => {
+        const id = notify('Saved', { description: 'All good', tone: 'dark' })
+        expect(getRecord(id)?.input).toMatchObject({
+            title: 'Saved',
+            description: 'All good',
+            tone: 'dark'
         })
     })
 
-    describe('static methods', () => {
-        it('creates notifications with correct states', () => {
-            const loading = notify.loading('Loading...')
-            const success = notify.success('Done!')
-            const error = notify.error('Failed!')
-
-            expect(getNotification(loading.id)?.state).toBe('loading')
-            expect(getNotification(success.id)?.state).toBe('success')
-            expect(getNotification(error.id)?.state).toBe('error')
-        })
+    it('opens a toast from an input object', () => {
+        const id = notify({ title: 'Hi', status: 'info', actions: [{ label: 'Undo' }] })
+        expect(getRecord(id)?.input).toMatchObject({ title: 'Hi', status: 'info' })
     })
 
-    describe('chaining', () => {
-        it('transitions states on same notification', () => {
-            const instance = notify.loading('Loading...')
-            expect(getNotification(instance.id)?.state).toBe('loading')
-
-            const returned = instance.success('Done!')
-            expect(getNotification(instance.id)?.state).toBe('success')
-            expect(returned).toBe(instance)
-        })
+    it('updates the toast that owns the id', () => {
+        notify({ id: 'x', title: 'one' })
+        notify({ id: 'x', title: 'two' })
+        expect(getSnapshot()).toHaveLength(1)
     })
 
-    describe('notify.dismiss()', () => {
-        it('dismisses by ID or all', () => {
-            const first = notify('First')
-            const second = notify('Second')
-
-            notify.dismiss(first.id)
-            expect(getNotification(first.id)?.visible).toBe(false)
-            expect(getNotification(second.id)?.visible).toBe(true)
-
-            notify.dismiss()
-            vi.advanceTimersByTime(500)
-        })
-    })
-
-    describe('notify.promise()', () => {
-        it('tracks promise resolution', async () => {
-            const promise = Promise.resolve('data')
-            const result = await notify.promise(promise, {
-                loading: 'Loading...',
-                success: 'Loaded!'
+    describe('status shortcuts', () => {
+        it.each(['success', 'error', 'warning', 'info', 'loading'] as const)('%s', (status) => {
+            const id = notify[status]('Title', { description: 'Body' })
+            expect(getRecord(id)?.input).toMatchObject({
+                status,
+                title: 'Title',
+                description: 'Body'
             })
-            expect(result).toBe('data')
+        })
+    })
+
+    describe('update and dismiss', () => {
+        it('updates by id', () => {
+            const id = notify({ title: 'Uploading', progress: 10 })
+            notify.update(id, { progress: 60 })
+            expect(getRecord(id)?.input.progress).toBe(60)
         })
 
-        it('tracks promise rejection', async () => {
-            const promise = Promise.reject(new Error('Network error'))
+        it('dismisses by id', () => {
+            const id = notify({ title: 'a', duration: 0 })
+            const other = notify({ title: 'b', duration: 0 })
+            notify.dismiss(id)
+            expect(getRecord(id)?.open).toBe(false)
+            expect(getRecord(other)?.open).toBe(true)
+        })
+
+        it('dismisses everything without an id', () => {
+            const a = notify({ title: 'a', duration: 0 })
+            const b = notify({ title: 'b', duration: 0 })
+            notify.dismiss()
+            expect(getRecord(a)?.open).toBe(false)
+            expect(getRecord(b)?.open).toBe(false)
+        })
+    })
+
+    describe('custom', () => {
+        it('stores the render function', () => {
+            const render = vi.fn(() => null)
+            const id = notify.custom(render, { tone: 'dark', duration: 0 })
+            expect(getRecord(id)?.render).toBe(render)
+            expect(getRecord(id)?.input).toMatchObject({ tone: 'dark', duration: 0 })
+        })
+    })
+
+    describe('promise', () => {
+        it('shows a loading toast that stays until the promise settles', async () => {
+            let resolve: (value: string) => void = noop
+            const pending = new Promise<string>((done) => {
+                resolve = done
+            })
+            const result = notify.promise(pending, {
+                id: 'save',
+                loading: 'Saving',
+                success: 'Saved',
+                error: 'Failed'
+            })
+            expect(getRecord('save')?.input).toMatchObject({ status: 'loading', title: 'Saving' })
+            vi.advanceTimersByTime(60_000)
+            expect(getRecord('save')?.open).toBe(true)
+            resolve('ok')
+            await expect(result).resolves.toBe('ok')
+        })
+
+        it('turns into a success toast and then expires', async () => {
+            await notify.promise(Promise.resolve({ name: 'Ada' }), {
+                id: 'save',
+                loading: {
+                    title: 'Saving',
+                    description: 'Hold on',
+                    actions: [{ label: 'Cancel' }]
+                },
+                success: (data) => ({ title: `Saved ${data.name}` }),
+                error: 'Failed'
+            })
+            expect(getRecord('save')?.input).toMatchObject({
+                status: 'success',
+                title: 'Saved Ada'
+            })
+            expect(getRecord('save')?.input.description).toBeUndefined()
+            expect(getRecord('save')?.input.actions).toBeUndefined()
+            vi.advanceTimersByTime(Defaults.DURATION_MS)
+            expect(getRecord('save')?.open).toBe(false)
+        })
+
+        it('turns into an error toast and rethrows', async () => {
+            const failure = new Error('disk full')
             await expect(
-                notify.promise(promise, { loading: 'Loading...', error: 'Failed' })
-            ).rejects.toThrow('Network error')
+                notify.promise(Promise.reject(failure), {
+                    id: 'save',
+                    loading: 'Saving',
+                    success: 'Saved',
+                    error: (error) => `Failed: ${error.message}`
+                })
+            ).rejects.toBe(failure)
+            expect(getRecord('save')?.input).toMatchObject({
+                status: 'error',
+                title: 'Failed: disk full'
+            })
         })
-    })
 
-    describe('instance.update()', () => {
-        it('updates options and returns instance', () => {
-            const instance = notify('Hello')
-            const action = { label: 'Undo', onClick: vi.fn() }
-
-            const returned = instance.update({ action })
-
-            expect(getNotification(instance.id)?.options.action).toEqual(action)
-            expect(returned).toBe(instance)
-        })
-    })
-
-    describe('configure()', () => {
-        it('updates and merges global configuration', () => {
-            configure({ position: 'top-right' })
-            configure({ maxVisible: 5 })
-
-            const config = getConfig()
-            expect(config.position).toBe('top-right')
-            expect(config.maxVisible).toBe(5)
-        })
-    })
-
-    describe('maxVisible enforcement', () => {
-        it('removes oldest when exceeding limit', () => {
-            configure({ maxVisible: 2 })
-
-            const first = notify('First')
-            vi.advanceTimersByTime(10)
-            const second = notify('Second')
-            vi.advanceTimersByTime(10)
-            notify('Third')
-
-            expect(getNotification(first.id)?.visible).toBe(false)
-            expect(getNotification(second.id)?.visible).toBe(true)
+        it('wraps a non-error rejection in an Error', async () => {
+            await expect(
+                notify.promise(Promise.reject('nope'), {
+                    loading: 'Saving',
+                    success: 'Saved',
+                    error: (error) => error.message
+                })
+            ).rejects.toThrow('nope')
         })
     })
 })

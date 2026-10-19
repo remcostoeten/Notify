@@ -1,16 +1,12 @@
-/**
- * @fileoverview Commit counts for opening a notification and for resize callbacks.
- */
-
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { render, act, cleanup } from '@testing-library/react'
-import * as React from 'react'
-import { Notifier } from '../components/notification'
+import { act, cleanup, render } from '@testing-library/react'
+import { Profiler } from 'react'
+import { Notifier } from '../components/notifier'
 import { notify } from '../notify'
 import { resetStore } from '../store'
+import { Defaults } from '../constants'
 
 const resizeCallbacks: ResizeObserverCallback[] = []
-const measured = { width: 240, height: 44 }
 
 class FakeResizeObserver {
     private callback: ResizeObserverCallback
@@ -29,28 +25,20 @@ class FakeResizeObserver {
     }
 }
 
-function fireResize() {
-    resizeCallbacks.forEach((callback) => callback([], new FakeResizeObserver(() => {})))
-}
-
 const originalResizeObserver = globalThis.ResizeObserver
-const offsetWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetWidth')
 const offsetHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight')
 
-function renderWithProfiler() {
+function renderWithProfiler(element: React.ReactElement) {
     let commits = 0
-    function onRender() {
-        commits += 1
-    }
     render(
-        <React.Profiler id='notifier' onRender={onRender}>
-            <Notifier
-                position='bottom-right'
-                radius='rounded'
-                border={{ enabled: true }}
-                theme={{ background: '#111' }}
-            />
-        </React.Profiler>
+        <Profiler
+            id='notifier'
+            onRender={() => {
+                commits += 1
+            }}
+        >
+            {element}
+        </Profiler>
     )
     return {
         commits: () => commits,
@@ -65,76 +53,92 @@ describe('Notifier render counts', () => {
         cleanup()
         resetStore()
         resizeCallbacks.length = 0
-        measured.width = 240
-        measured.height = 44
         globalThis.ResizeObserver = FakeResizeObserver as unknown as typeof ResizeObserver
-        Object.defineProperty(HTMLElement.prototype, 'offsetWidth', {
-            configurable: true,
-            get: () => measured.width
-        })
         Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
             configurable: true,
-            get: () => measured.height
+            get: () => 120
         })
     })
 
     afterEach(() => {
         cleanup()
         globalThis.ResizeObserver = originalResizeObserver
-        if (offsetWidth) Object.defineProperty(HTMLElement.prototype, 'offsetWidth', offsetWidth)
         if (offsetHeight) Object.defineProperty(HTMLElement.prototype, 'offsetHeight', offsetHeight)
     })
 
-    it('commits once when a notification opens', () => {
-        const profiler = renderWithProfiler()
+    it('commits once when a toast opens', () => {
+        const profiler = renderWithProfiler(<Notifier />)
         profiler.reset()
-
         act(() => {
-            notify('Saved', { action: { label: 'Undo', onClick: () => {} } })
+            notify({ title: 'Saved', actions: [{ label: 'Undo' }] })
         })
-
         expect(profiler.commits()).toBe(1)
     })
 
-    it('does not commit when a resize callback reports an unchanged size', () => {
-        const profiler = renderWithProfiler()
-
+    it('commits once when a stacked toast opens', () => {
+        const profiler = renderWithProfiler(<Notifier stack />)
         act(() => {
-            notify('Saved', { action: { label: 'Undo', onClick: () => {} } })
+            notify({ title: 'first', duration: 0 })
         })
         profiler.reset()
-
         act(() => {
-            fireResize()
+            notify({ title: 'second', duration: 0 })
         })
+        expect(profiler.commits()).toBeLessThanOrEqual(2)
+    })
 
+    it('does not commit when a resize callback reports an unchanged size', () => {
+        const profiler = renderWithProfiler(<Notifier stack />)
+        act(() => {
+            notify({ title: 'Saved', duration: 0 })
+        })
+        profiler.reset()
+        act(() => {
+            resizeCallbacks.forEach((callback) => callback([], new FakeResizeObserver(() => {})))
+        })
         expect(profiler.commits()).toBe(0)
     })
 
-    it('does not re-render a remaining notification when another is dismissed and removed', () => {
-        const infoRenders: string[] = []
-        const icons = {
-            render: (props: { state: string }) => {
-                if (props.state === 'info') infoRenders.push(props.state)
-                return null
-            }
+    it('does not re-render a remaining toast when another is dismissed and removed', () => {
+        const renders: string[] = []
+        function Spy({ label }: { label: string }) {
+            renders.push(label)
+            return null
         }
-        render(<Notifier border={{ enabled: true }} icons={icons} />)
-
-        let second = { dismiss: () => {} }
+        render(<Notifier />)
+        let stays = ''
+        let goes = ''
         act(() => {
-            notify.info('Stays', { duration: 0 })
-            second = notify.success('Goes', { duration: 0 })
+            stays = notify.custom(() => <Spy label='stays' />, { duration: 0 })
+            goes = notify.custom(() => <Spy label='goes' />, { duration: 0 })
         })
-        infoRenders.length = 0
-
+        renders.length = 0
         act(() => {
-            second.dismiss()
+            notify.dismiss(goes)
         })
         act(() => {
-            vi.advanceTimersByTime(400)
+            vi.advanceTimersByTime(Defaults.EXIT_MS + 100)
         })
+        expect(stays).not.toBe('')
+        expect(renders.filter((label) => label === 'stays')).toHaveLength(0)
+    })
 
-        expect(infoRenders).toHaveLength(0)
+    it('does not re-render a toast whose own record did not change', () => {
+        const renders: string[] = []
+        function Spy({ label }: { label: string }) {
+            renders.push(label)
+            return null
+        }
+        render(<Notifier />)
+        let other = ''
+        act(() => {
+            notify.custom(() => <Spy label='static' />, { duration: 0 })
+            other = notify({ title: 'Uploading', progress: 10 })
+        })
+        renders.length = 0
+        act(() => {
+            notify.update(other, { progress: 50 })
+        })
+        expect(renders).toHaveLength(0)
     })
 })

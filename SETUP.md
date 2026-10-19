@@ -255,7 +255,7 @@ bun run lint:fix    # Auto-fix issues
 ### Formatting Code
 
 ```bash
-bun run format        # Auto-fix formatting (prettier --write)
+bun run format        # Auto-fix formatting (oxfmt)
 bun run format:check  # Check formatting without writing
 ```
 

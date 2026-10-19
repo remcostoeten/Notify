@@ -103,7 +103,7 @@ const languageNames: Record<string, string> = {
 }
 
 // Parse highlight lines string into array of line numbers
-const parseHighlightLines = (highlightLines?: string): number[] => {
+function parseHighlightLines(highlightLines?: string): number[] {
     if (!highlightLines) return []
 
     const lines: number[] = []
@@ -162,7 +162,7 @@ export type CodeBlockProps = HTMLAttributes<HTMLDivElement> & {
     children?: ReactNode
 }
 
-export const CodeBlock = ({
+export function CodeBlock({
     code,
     language,
     showLineNumbers = false,
@@ -181,7 +181,7 @@ export const CodeBlock = ({
     className,
     children,
     ...props
-}: CodeBlockProps) => {
+}: CodeBlockProps) {
     const [isExpanded, setIsExpanded] = useState(!defaultCollapsed)
     const [isPartialExpanded, setIsPartialExpanded] = useState(false)
     const [lineNumbersVisible, setLineNumbersVisible] = useState(showLineNumbers)
@@ -214,7 +214,7 @@ export const CodeBlock = ({
         return matches
     }, [code, searchQuery])
 
-    const lineProps = (lineNumber: number) => {
+    function lineProps(lineNumber: number) {
         const isHighlighted = highlightedLines.includes(lineNumber)
         const isSearchMatch = searchMatchLines.includes(lineNumber)
         const shouldHighlight = isHighlighted || isSearchMatch
@@ -233,7 +233,7 @@ export const CodeBlock = ({
     }
 
     // Calculate visible code for partial collapse
-    const getVisibleCode = () => {
+    function getVisibleCode() {
         if (!hasPartialCollapse || isPartialExpanded) return code
         const lines = code.split('\n')
         return lines.slice(0, collapseAfterLine).join('\n')
@@ -438,8 +438,8 @@ export const CodeBlock = ({
 
                         {/* Partial collapse fade overlay */}
                         {hasPartialCollapse && !isPartialExpanded && (
-                            <div className='absolute bottom-0 left-0 right-0'>
-                                <div className='bg-background border-border flex items-center justify-center border-t px-4 pb-3 pt-1'>
+                            <div className='absolute right-0 bottom-0 left-0'>
+                                <div className='bg-background border-border flex items-center justify-center border-t px-4 pt-1 pb-3'>
                                     <Button
                                         variant='ghost'
                                         size='sm'
@@ -470,7 +470,7 @@ export const CodeBlock = ({
                         )}
 
                         {children && (
-                            <div className='absolute right-2 top-2 flex items-center gap-2'>
+                            <div className='absolute top-2 right-2 flex items-center gap-2'>
                                 {children}
                             </div>
                         )}
@@ -487,18 +487,18 @@ export type CodeBlockCopyButtonProps = ComponentProps<typeof Button> & {
     timeout?: number
 }
 
-export const CodeBlockCopyButton = ({
+export function CodeBlockCopyButton({
     onCopy,
     onError,
     timeout = 2000,
     children,
     className,
     ...props
-}: CodeBlockCopyButtonProps) => {
+}: CodeBlockCopyButtonProps) {
     const [isCopied, setIsCopied] = useState(false)
     const { code } = useContext(CodeBlockContext)
 
-    const copyToClipboard = async () => {
+    async function copyToClipboard() {
         if (typeof window === 'undefined' || !navigator.clipboard.writeText) {
             onError?.(new Error('Clipboard API not available'))
             return
