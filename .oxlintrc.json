@@ -1,0 +1,43 @@
+{
+    "$schema": "./node_modules/oxlint/configuration_schema.json",
+    "plugins": ["typescript", "react"],
+    "categories": {
+        "correctness": "error"
+    },
+    "rules": {
+        "func-style": ["error", "declaration"],
+        "prefer-arrow-callback": "error",
+        "typescript/consistent-type-imports": ["error", { "prefer": "type-imports" }],
+        "typescript/no-explicit-any": "warn",
+        "no-unused-vars": [
+            "warn",
+            {
+                "argsIgnorePattern": "^_",
+                "varsIgnorePattern": "^_",
+                "caughtErrorsIgnorePattern": "^_"
+            }
+        ],
+        "no-console": ["warn", { "allow": ["warn", "error"] }],
+        "no-empty": "error",
+        "prefer-const": "error",
+        "no-var": "error",
+        "react/rules-of-hooks": "error",
+        "react/exhaustive-deps": "warn",
+        "react/react-in-jsx-scope": "off"
+    },
+    "overrides": [
+        {
+            "files": ["apps/demo/**"],
+            "plugins": ["nextjs"]
+        }
+    ],
+    "ignorePatterns": [
+        "**/node_modules/**",
+        "**/.next/**",
+        "**/dist/**",
+        "**/coverage/**",
+        "**/*.config.js",
+        "**/*.config.ts",
+        "**/*.config.mjs"
+    ]
+}

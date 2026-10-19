@@ -8,8 +8,8 @@ updates:
           dev-dependencies:
               patterns:
                   - '@types/*'
-                  - 'eslint*'
-                  - 'prettier*'
+                  - 'oxlint'
+                  - 'oxfmt'
                   - 'typescript'
           production-dependencies:
               patterns:

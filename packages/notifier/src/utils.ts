@@ -1,97 +1,60 @@
-/**
- * @fileoverview Utility functions for the notify module.
- * Contains helper functions used across the module.
- */
+import type { CSSProperties } from 'react'
+import type { ToastID } from './types'
 
-let idCounter = 0
+export type CSSVars = CSSProperties & { [name: `--${string}`]: string }
+
+let counter = 0
+
+export function generateId(): ToastID {
+    counter += 1
+    return `ntf_${Date.now().toString(36)}_${counter}`
+}
+
+export function noop() {}
+
+export function cx(...parts: (string | false | null | undefined)[]): string | undefined {
+    const joined = parts.filter(Boolean).join(' ')
+    return joined === '' ? undefined : joined
+}
+
+export function kebab(name: string): string {
+    return name.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)
+}
+
+const modifierFlags = [
+    { names: ['alt', 'option'], flag: 'altKey' },
+    { names: ['ctrl', 'control'], flag: 'ctrlKey' },
+    { names: ['shift'], flag: 'shiftKey' },
+    { names: ['meta', 'cmd', 'command'], flag: 'metaKey' }
+] as const
+
+type HotkeyEvent = Pick<KeyboardEvent, 'code' | 'altKey' | 'ctrlKey' | 'shiftKey' | 'metaKey'>
+
+function codeOf(key: string): string {
+    if (/^[a-z]$/.test(key)) return `key${key}`
+    if (/^[0-9]$/.test(key)) return `digit${key}`
+    return key
+}
 
 /**
- * Generates a unique identifier for notifications.
- *
- * Combines a timestamp with a monotonically increasing counter so that ids
- * created within the same millisecond never collide.
- *
- * @returns A unique string identifier
+ * @name matchesHotkey
+ * @description Whether a keyboard event is the hotkey. A hotkey is modifiers and one key
+ * joined by plus signs, such as `alt+t` or `ctrl+shift+n`. The key is matched by its
+ * physical position, so it works on layouts where Alt changes the typed character.
  *
  * @example
- * ```ts
- * const id = generateId() // "notify_1234567890_0"
- * ```
+ * matchesHotkey({ code: 'KeyT', altKey: true, ctrlKey: false, shiftKey: false, metaKey: false }, 'alt+t') // true
  */
-export function generateId(): string {
-    idCounter += 1
-    return `notify_${Date.now()}_${idCounter}`
-}
-
-/**
- * Safely extracts an error message from an unknown error type.
- * @param error - The error to extract message from
- * @param fallback - Fallback message if extraction fails
- * @returns The error message string
- *
- * @example
- * ```ts
- * try {
- *   throw new Error("Network failed")
- * } catch (e) {
- *   const msg = getErrorMessage(e, "Unknown error")
- *   // msg === "Network failed"
- * }
- * ```
- */
-export function getErrorMessage(error: unknown, fallback: string): string {
-    if (error instanceof Error) {
-        return error.message
-    }
-    if (typeof error === 'string') {
-        return error
-    }
-    return fallback
-}
-
-/**
- * Creates a delay promise for async operations.
- * @param ms - Milliseconds to wait
- * @returns Promise that resolves after the delay
- *
- * @example
- * ```ts
- * await delay(1000) // Wait 1 second
- * ```
- */
-export function delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
-/**
- * Type guard to check if a value is a non-null object.
- * @param value - Value to check
- * @returns True if value is a non-null object
- */
-export function isObject(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null
-}
-
-/**
- * Type guard to check if a value is a React element without importing React.
- * Elements are branded with a `$$typeof` symbol by the JSX runtime.
- * @param value - Value to check
- * @returns True if value looks like a React element
- */
-export function isReactElement(value: unknown): boolean {
-    return isObject(value) && '$$typeof' in value
-}
-
-/**
- * Merges multiple class names, filtering out falsy values.
- * @param classes - Class names to merge
- * @returns Merged class string
- *
- * @example
- * ```ts
- * cn("foo", false && "bar", "baz") // "foo baz"
- * ```
- */
-export function cn(...classes: (string | boolean | undefined | null)[]): string {
-    return classes.filter(Boolean).join(' ')
+export function matchesHotkey(event: HotkeyEvent, hotkey: string): boolean {
+    const parts = hotkey
+        .toLowerCase()
+        .split('+')
+        .map((part) => part.trim())
+    const key = parts[parts.length - 1] ?? ''
+    const modifiers = parts.slice(0, -1)
+    const modifiersMatch = modifierFlags.every(
+        ({ names, flag }) =>
+            event[flag] === modifiers.some((name) => names.some((alias) => alias === name))
+    )
+    return modifiersMatch && event.code.toLowerCase() === codeOf(key)
 }

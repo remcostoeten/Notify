@@ -262,7 +262,7 @@ function parseChangelogResponse(response: string, version: string): ChangelogEnt
     const improvementsMatch = response.match(/### Improvements?\n([\s\S]*?)(?=###|$)/i)
     const docsMatch = response.match(/### Documentation\n([\s\S]*?)(?=###|$)/i)
 
-    const parseItems = (match: RegExpMatchArray | null): string[] | undefined => {
+    function parseItems(match: RegExpMatchArray | null): string[] | undefined {
         if (!match) return undefined
         const items = match[1]
             .split('\n')

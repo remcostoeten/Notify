@@ -1,7 +1,7 @@
 {
     "name": "@remcostoeten/notifier",
     "version": "1.2.1",
-    "description": "Lightweight chainable notification system for React with smooth animations, confirmations, and promise tracking",
+    "description": "Composable toast notifications for React: declarative content slots, a primitives API for custom layouts, light and dark tones, Motion-driven animation",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",
     "types": "./dist/index.d.ts",
@@ -11,22 +11,6 @@
             "types": "./dist/index.d.ts",
             "import": "./dist/index.mjs",
             "require": "./dist/index.js"
-        },
-        "./styles": "./dist/index.css",
-        "./compat/sonner": {
-            "types": "./dist/compat/sonner/index.d.ts",
-            "import": "./dist/compat/sonner/index.mjs",
-            "require": "./dist/compat/sonner/index.js"
-        },
-        "./compat/react-hot-toast": {
-            "types": "./dist/compat/react-hot-toast/index.d.ts",
-            "import": "./dist/compat/react-hot-toast/index.mjs",
-            "require": "./dist/compat/react-hot-toast/index.js"
-        },
-        "./compat/shadcn": {
-            "types": "./dist/compat/shadcn/index.d.ts",
-            "import": "./dist/compat/shadcn/index.mjs",
-            "require": "./dist/compat/shadcn/index.js"
         }
     },
     "files": [
@@ -51,20 +35,14 @@
         "notifications",
         "toast",
         "toaster",
-        "alert",
         "notifier",
+        "composable",
+        "headless-ui",
         "ui",
         "ux",
-        "sonner",
-        "react-hot-toast",
-        "chainable",
-        "promise",
-        "confirm",
-        "confirmation",
         "typescript",
         "motion",
         "animation",
-        "framer-motion",
         "frontend",
         "web",
         "component-library"
@@ -73,7 +51,8 @@
     "license": "MIT",
     "repository": {
         "type": "git",
-        "url": "https://github.com/remcostoeten/Notify"
+        "url": "https://github.com/remcostoeten/Notify",
+        "directory": "packages/notifier"
     },
     "bugs": {
         "url": "https://github.com/remcostoeten/notifier/issues"
