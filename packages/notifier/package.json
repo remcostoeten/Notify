@@ -1,6 +1,6 @@
 {
     "name": "@remcostoeten/notifier",
-    "version": "2.0.0",
+    "version": "3.0.0",
     "description": "Composable toast notifications for React: declarative content slots, a primitives API for custom layouts, light and dark tones, Motion-driven animation",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",
