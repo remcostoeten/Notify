@@ -45,10 +45,10 @@ bun run test src/__tests__/store.test.ts        # one file
 bun run test -t "name of the test case"          # by test name
 ```
 
-On this 8 GB machine cap the workers. Vitest 2.1 rejects `--maxWorkers=2` on its own, so pass the minimum too:
+On this 8 GB machine cap the workers. Vitest 5 has no `--minWorkers` option:
 
 ```bash
-bunx vitest run --maxWorkers=2 --minWorkers=1
+bun run test --maxWorkers=2
 ```
 
 ### apps/demo
