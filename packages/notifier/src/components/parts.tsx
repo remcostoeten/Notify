@@ -1,9 +1,9 @@
 import { useContext } from 'react'
-import type { ReactNode } from 'react'
+import type { MouseEvent, ReactNode } from 'react'
 import { cx } from '../utils'
 import type { CSSVars } from '../utils'
 import { CloseGlyph, StatusGlyph } from './glyphs'
-import { SlotContext, useToast } from './context'
+import { CloseLabelContext, SlotContext, useToast } from './context'
 import type {
     ActionColor,
     ActionVariant,
@@ -202,7 +202,11 @@ export function Action({
     const toast = useToast()
     const classes = useSlot('action', className)
 
-    function handleClick() {
+    function handleClick(event: MouseEvent<HTMLElement>) {
+        if (disabled) {
+            event.preventDefault()
+            return
+        }
         onClick?.(toast)
         if (dismiss) toast.dismiss('action')
     }
@@ -213,8 +217,9 @@ export function Action({
                 className={classes}
                 data-variant={variant}
                 data-color={color}
-                href={href}
-                aria-disabled={disabled}
+                href={disabled ? undefined : href}
+                role={disabled ? 'link' : undefined}
+                aria-disabled={disabled || undefined}
                 onClick={handleClick}
             >
                 {children}
@@ -241,13 +246,14 @@ type CloseProps = {
     className?: string
 }
 
-export function Close({ label = 'Close', className }: CloseProps) {
+export function Close({ label, className }: CloseProps) {
     const toast = useToast()
+    const fallback = useContext(CloseLabelContext)
     return (
         <button
             type='button'
             className={useSlot('close', className)}
-            aria-label={label}
+            aria-label={label ?? fallback}
             onClick={() => toast.dismiss('close')}
         >
             <CloseGlyph />

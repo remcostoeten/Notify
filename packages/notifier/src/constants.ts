@@ -7,7 +7,9 @@ export const Defaults = {
     OFFSET: 24,
     SWIPE_THRESHOLD: 100,
     HOTKEY: 'alt+t',
-    EXIT_MS: 300
+    EXIT_MS: 300,
+    REGION_LABEL: 'Notifications',
+    CLOSE_LABEL: 'Close'
 } as const
 
 export const AnimationConfig = {
@@ -44,6 +46,11 @@ export const AnimationConfig = {
         damping: 69.8,
         mass: 1
     }
+} as const
+
+export const ResizeConfig = {
+    DURATION_MS: 240,
+    EASING: 'cubic-bezier(.23,1,.32,1)'
 } as const
 
 export const EntryConfig = {

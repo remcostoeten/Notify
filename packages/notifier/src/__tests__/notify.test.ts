@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { notify } from '../notify'
-import { getRecord, getSnapshot, resetStore } from '../store'
+import { getRecord, getSnapshot, resetStore, trackShown } from '../store'
 import { Defaults } from '../constants'
 import { noop } from '../utils'
 
@@ -29,10 +29,11 @@ describe('notify', () => {
         expect(getRecord(id)?.input).toMatchObject({ title: 'Hi', status: 'info' })
     })
 
-    it('updates the toast that owns the id', () => {
-        notify({ id: 'x', title: 'one' })
+    it('replaces the content of the toast that owns the id', () => {
+        notify({ id: 'x', title: 'one', description: 'old' })
         notify({ id: 'x', title: 'two' })
         expect(getSnapshot()).toHaveLength(1)
+        expect(getRecord('x')?.input).toEqual({ id: 'x', title: 'two' })
     })
 
     describe('status shortcuts', () => {
@@ -99,7 +100,7 @@ describe('notify', () => {
         })
 
         it('turns into a success toast and then expires', async () => {
-            await notify.promise(Promise.resolve({ name: 'Ada' }), {
+            const result = notify.promise(Promise.resolve({ name: 'Ada' }), {
                 id: 'save',
                 loading: {
                     title: 'Saving',
@@ -109,6 +110,8 @@ describe('notify', () => {
                 success: (data) => ({ title: `Saved ${data.name}` }),
                 error: 'Failed'
             })
+            trackShown('save')
+            await result
             expect(getRecord('save')?.input).toMatchObject({
                 status: 'success',
                 title: 'Saved Ada'
@@ -143,6 +146,39 @@ describe('notify', () => {
                     error: (error) => error.message
                 })
             ).rejects.toThrow('nope')
+        })
+
+        it('leaves no unhandled rejection when the result is not awaited', async () => {
+            vi.useRealTimers()
+            const unhandled = vi.fn()
+            process.on('unhandledRejection', unhandled)
+            notify.promise(Promise.reject(new Error('offline')), {
+                id: 'save',
+                loading: 'Saving',
+                success: 'Saved',
+                error: 'Failed'
+            })
+            await new Promise((resolve) => setTimeout(resolve, 20))
+            process.off('unhandledRejection', unhandled)
+            expect(unhandled).not.toHaveBeenCalled()
+            expect(getRecord('save')?.input.status).toBe('error')
+        })
+
+        it('is not replaced by newer toasts while it is loading', async () => {
+            let resolve: (value: string) => void = noop
+            const result = notify.promise(
+                new Promise<string>((done) => {
+                    resolve = done
+                }),
+                { id: 'save', loading: 'Saving', success: 'Saved', error: 'Failed' }
+            )
+            notify('one')
+            notify('two')
+            notify('three')
+            expect(getRecord('save')?.open).toBe(true)
+            resolve('ok')
+            await result
+            expect(getRecord('save')?.input).toMatchObject({ status: 'success', title: 'Saved' })
         })
     })
 })

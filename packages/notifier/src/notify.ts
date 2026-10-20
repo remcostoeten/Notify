@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { dismiss, dismissAll, show, showCustom, update } from './store'
+import { noop } from './utils'
 import type {
     CustomRender,
     CustomToastOptions,
@@ -40,7 +41,8 @@ function notifyBase(source: string | ToastInput, input: ToastInput = {}): ToastI
  * @name notify.promise
  * @description Shows a loading toast, then turns it into a success or error toast
  * when the promise settles. Resolves with the promise's value and rethrows its
- * error, so it can wrap an existing `await`.
+ * error, so it can wrap an existing `await`. A call that is not awaited does not
+ * leave an unhandled rejection.
  *
  * @example
  * await notify.promise(save(), {
@@ -51,7 +53,7 @@ function notifyBase(source: string | ToastInput, input: ToastInput = {}): ToastI
  */
 function promise<Data>(source: Promise<Data>, messages: PromiseMessages<Data>): Promise<Data> {
     const id = show({ ...asInput(messages.loading), id: messages.id, status: 'loading' })
-    return source.then(
+    const result = source.then(
         (data) => {
             update(id, {
                 ...clearedContent,
@@ -70,6 +72,8 @@ function promise<Data>(source: Promise<Data>, messages: PromiseMessages<Data>): 
             throw error
         }
     )
+    result.catch(noop)
+    return result
 }
 
 /**
@@ -95,7 +99,8 @@ function custom(render: CustomRender, options?: CustomToastOptions): ToastID {
  * @name notify
  * @description Opens a toast and returns its id. Pass a title string for the
  * simple case, or an input object to set any slot. Pass an existing `id` to
- * update that toast in place.
+ * replace that toast's content in place; use `notify.update` to change only
+ * some fields.
  *
  * @example
  * notify('Saved')

@@ -18,9 +18,9 @@ pnpm add @remcostoeten/notifier motion
 yarn add @remcostoeten/notifier motion
 ```
 
-There is no stylesheet to import. `Notifier` renders its own `<style>` element (pass `nonce`
-under a strict CSP). The font is `Inter` when the page loads it, then the system font stack.
-Override it with `theme.font`.
+There is no stylesheet to import. `Notifier` adds one `<style>` element to the document head
+(pass `nonce` under a strict CSP, and `layer` to put it in a cascade layer). The font is `Inter`
+when the page loads it, then the system font stack. Override it with `theme.font`.
 
 ## Setup
 
@@ -57,8 +57,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 | `notify.promise(promise, messages)` | Loading toast that becomes a success or error toast |
 | `notify.custom(render, options?)` | Render your own content. `render` receives `{ id, tone, dismiss, update }` |
 
-Passing an `id` that is already open updates that toast in place instead of opening another.
-`update` on an unknown or closing id does nothing.
+Passing an `id` that is already open replaces that toast's content and restarts its timer
+instead of opening another. Nothing from the earlier call carries over, so use `notify.update`
+to change only some fields. An `id` that is closing reopens with the new content. `update` on an
+unknown or closing id does nothing.
 
 ## ToastInput
 
@@ -131,7 +133,9 @@ An explicit `duration` wins, and `0` means persistent. Otherwise a toast is pers
 `status` is `'loading'` or when `progress` is below 100 or `null`. Every other toast uses the
 `Notifier` duration (default 5000). `update` keeps the running timer unless the patch sets
 `duration` or the toast switches between persistent and timed, in which case the timer
-starts again. Passing `duration` in a patch always restarts it.
+starts again. Passing `duration` in a patch always restarts it. A timer starts when `Notifier`
+first shows the toast, so a toast opened before `Notifier` mounts, or in a tab that is hidden,
+does not run out unseen.
 
 ## Update in place
 
@@ -157,7 +161,8 @@ await notify.promise(save(), {
 
 Each message is a string, a `ToastInput`, or a function of the value or the `Error`. Icon,
 avatar, meta, description, progress and actions from the loading toast are cleared when the
-promise settles. The call resolves with the promise's value and rethrows its error.
+promise settles. The call resolves with the promise's value and rethrows its error. A call that
+is not awaited leaves no unhandled rejection. `maxVisible` never replaces the loading toast.
 
 ## Primitives
 
@@ -197,11 +202,11 @@ notify.custom((toast) => (
 | `Toast.Progress` | `value` (`null` is indeterminate), `label` |
 | `Toast.Actions` | `aside` |
 | `Toast.Action` | `variant`, `color`, `onClick`, `dismiss`, `href`, `disabled` |
-| `Toast.Close` | `label` (aria-label, default `Close`) |
+| `Toast.Close` | `label` (aria-label, default `labels.close` of `Notifier`, else `Close`) |
 
 `useToast()` returns `{ id, tone, dismiss, update }` for the toast it is rendered in. Outside a
 toast it returns no-op handlers, so `Toast` can also be rendered on its own, for example in docs.
-A standalone `Toast` includes its own stylesheet.
+A standalone `Toast` adds the same single stylesheet to the head.
 
 ## Notifier props
 
@@ -209,7 +214,7 @@ A standalone `Toast` includes its own stylesheet.
 | --- | --- | --- |
 | `position` | `'bottom-right'` | `top-left`, `top-center`, `top-right`, `bottom-left`, `bottom-center`, `bottom-right` |
 | `tone` | `'light'` | `'light'`, `'dark'` or `'auto'` (follows `prefers-color-scheme`) |
-| `maxVisible` | `3` | Per position. The oldest open toast is dismissed with reason `replaced` |
+| `maxVisible` | `3` | Per position. The oldest open toast is dismissed with reason `replaced`. Loading toasts, unfinished progress and `duration: 0` are never replaced |
 | `duration` | `5000` | `0` keeps every toast open unless it sets its own |
 | `swipe` | `true` | Swipe towards the screen edge to dismiss |
 | `pauseOnHover` | `true` | Holds every timer while the pointer is over a toast, and while the tab is hidden |
@@ -219,6 +224,8 @@ A standalone `Toast` includes its own stylesheet.
 | `offset` | `24` | Number, or `{ x?, y? }` |
 | `gap` | `12` | Pixels between toasts |
 | `theme` | none | See Theming |
+| `labels` | none | `{ region?, close? }`: the region's `aria-label` (default `Notifications`) and the close button's (default `Close`) |
+| `layer` | `false` | `true` puts the stylesheet in the cascade layer `notifier`, a string names the layer. See Tailwind |
 | `nonce` | none | CSP nonce for the stylesheet |
 | `className` | none | Added to each position container |
 
@@ -260,10 +267,31 @@ Token names: `background`, `foreground`, `body`, `meta`, `muted`, `icon`, `divid
 `shadow`, `accent`, `accentText`, `accentForeground`, `track`, `control`, `controlBorder`,
 `controlForeground`, `controlShadow`, `controlHover`, `success`, `error`, `warning`, `info`.
 The variable for token `accentText` in tone `dark` is `--ntf-dark-accent-text`. Non-tone
-variables: `--ntf-font`, `--ntf-radius`, `--ntf-width`.
+variables: `--ntf-font`, `--ntf-radius`, `--ntf-width`, `--ntf-padding` (default 16px, the
+inner padding, which also places the close button) and `--ntf-gap` (default 16px, between the
+icon and the text).
 
 Inside a toast the active tone's tokens are also available without the tone, such as
 `var(--ntf-foreground)` and `var(--ntf-accent-text)`.
+
+## Tailwind
+
+Tailwind v4 puts its utilities in a cascade layer, and unlayered CSS always beats layered CSS,
+so by default a utility in `className` or `classNames` cannot override a property the toast
+stylesheet sets. Put the stylesheet in a layer and order it below the utilities:
+
+```tsx
+<Notifier layer />
+```
+
+```css
+@layer theme, base, notifier, components, utilities;
+@import "tailwindcss";
+```
+
+Only use `layer` when the page's resets are layered too. Unlayered CSS, such as a
+`button { padding: 0 }` reset or Tailwind v3's preflight, beats a layered stylesheet and
+strips the toast's padding, borders and button backgrounds.
 
 ## Recipes
 
@@ -311,5 +339,6 @@ notify({
 - Use `status: 'loading'` or `progress` for work in flight. Do not set `duration` on them
   unless the toast should close by itself.
 - Use `notify.update` to change an open toast. Do not open a second toast for the same job.
+- Reuse a fixed `id` for one toast per topic. Each call replaces the toast's content.
 - Use `color: 'accent'` with `variant: 'filled'` for the primary action.
 - Put layout the slots cannot express in `notify.custom` with the `Toast` parts.

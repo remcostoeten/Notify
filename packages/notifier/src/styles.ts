@@ -14,7 +14,7 @@ const FONT =
 const TRANSITION = 'cubic-bezier(.23,1,.32,1)'
 
 const rules = [
-    `.ntf-toast{${toneVariables('light')}position:relative;display:flex;align-items:flex-start;gap:15.5px;box-sizing:border-box;width:var(--ntf-width,400px);max-width:100%;padding:16px 16px 15.5px;border-radius:var(--ntf-radius,12px);background:var(--ntf-background);color:var(--ntf-foreground);box-shadow:0 0 0 1px var(--ntf-border),var(--ntf-shadow);font-family:var(--ntf-font,${FONT});font-size:14px;line-height:20px;font-weight:400;font-optical-sizing:auto;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;text-align:left;-webkit-text-size-adjust:100%}`,
+    `.ntf-toast{${toneVariables('light')}position:relative;display:flex;align-items:flex-start;gap:var(--ntf-gap,16px);box-sizing:border-box;width:var(--ntf-width,400px);max-width:100%;padding:var(--ntf-padding,16px);border-radius:var(--ntf-radius,12px);background:var(--ntf-background);color:var(--ntf-foreground);box-shadow:0 0 0 1px var(--ntf-border),var(--ntf-shadow);font-family:var(--ntf-font,${FONT});font-size:14px;line-height:20px;font-weight:400;font-optical-sizing:auto;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;text-align:left;-webkit-text-size-adjust:100%}`,
     `.ntf-toast[data-tone=dark]{${toneVariables('dark')}}`,
     '.ntf-toast *,.ntf-toast *::before,.ntf-toast *::after{box-sizing:border-box}',
     '.ntf-toast[data-compact]{align-items:center}',
@@ -24,7 +24,8 @@ const rules = [
     '.ntf-item:focus-visible>*{outline:2px solid var(--ntf-accent,#5f5afa);outline-offset:2px}',
 
     '.ntf-body{display:flex;flex:1;flex-direction:column;align-items:stretch;min-width:0}',
-    '.ntf-title-row{display:flex;align-items:center;gap:8px;min-width:0;padding-right:28px}',
+    '.ntf-title-row{display:flex;align-items:center;gap:8px;min-width:0}',
+    '.ntf-toast:has(.ntf-close) .ntf-title-row{padding-right:28px}',
     '.ntf-title{min-width:0;margin:0;color:var(--ntf-foreground);font-weight:600;letter-spacing:-.015em;overflow-wrap:anywhere}',
     '.ntf-divider{flex:none;width:1px;height:16px;background:var(--ntf-divider)}',
     '.ntf-meta{color:var(--ntf-meta);font-weight:400;letter-spacing:-.015em;white-space:nowrap}',
@@ -58,8 +59,8 @@ const rules = [
     '.ntf-track{position:relative;height:8px;border-radius:9999px;background:var(--ntf-track);overflow:hidden}',
     `.ntf-fill{height:100%;width:var(--ntf-progress,0%);border-radius:inherit;background:var(--ntf-accent);transition:width .3s ${TRANSITION}}`,
     '.ntf-track[data-indeterminate] .ntf-fill{width:40%;animation:ntf-slide 1.2s ease-in-out infinite}',
-    '.ntf-label{align-self:flex-end;margin-top:8.5px;color:var(--ntf-muted);font-variant-numeric:tabular-nums}',
-    '.ntf-progress:has(.ntf-label)+.ntf-actions{margin-top:-8.5px}',
+    '.ntf-label{align-self:flex-end;margin-top:8px;color:var(--ntf-muted);font-variant-numeric:tabular-nums}',
+    '.ntf-progress:has(.ntf-label)+.ntf-actions{margin-top:-8px}',
 
     '.ntf-actions{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-top:11px}',
     '.ntf-actions-list{display:flex;flex-wrap:wrap;align-items:center;gap:12px}',
@@ -82,7 +83,7 @@ const rules = [
     '.ntf-action:active{transform:scale(.97)}',
     '.ntf-action:disabled,.ntf-action[aria-disabled=true]{opacity:.5;pointer-events:none}',
 
-    `.ntf-close{position:absolute;top:11.4px;right:11.8px;display:flex;align-items:center;justify-content:center;width:24px;height:24px;margin:0;padding:0;border:0;border-radius:6px;background:none;color:var(--ntf-icon);cursor:pointer;transition:color .15s,background-color .15s,transform .1s ${TRANSITION};-webkit-tap-highlight-color:transparent}`,
+    `.ntf-close{position:absolute;top:calc(var(--ntf-padding,16px) - 4px);right:calc(var(--ntf-padding,16px) - 4px);display:flex;align-items:center;justify-content:center;width:24px;height:24px;margin:0;padding:0;border:0;border-radius:6px;background:none;color:var(--ntf-icon);cursor:pointer;transition:color .15s,background-color .15s,transform .1s ${TRANSITION};-webkit-tap-highlight-color:transparent}`,
     '.ntf-close::after{content:"";position:absolute;inset:-6px}',
     '.ntf-close svg{width:20px;height:20px}',
     '.ntf-close:hover{background:var(--ntf-control-hover);color:var(--ntf-foreground)}',
@@ -97,3 +98,16 @@ const rules = [
 ]
 
 export const toastStyles = rules.join('')
+
+/**
+ * @name stylesFor
+ * @description The toast stylesheet, wrapped in a cascade layer when a layer name
+ * is given so that unlayered styles and later layers can override it.
+ *
+ * @example
+ * stylesFor('notifier') // '@layer notifier{.ntf-toast{...}}'
+ * stylesFor(null) // the unlayered stylesheet
+ */
+export function stylesFor(layer: string | null): string {
+    return layer === null ? toastStyles : `@layer ${layer}{${toastStyles}}`
+}

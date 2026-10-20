@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import {
+    useCallback,
+    useEffect,
+    useInsertionEffect,
+    useRef,
+    useState,
+    useSyncExternalStore
+} from 'react'
 import type { CSSProperties, PointerEvent } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import { AnimationConfig, Defaults, StackConfig } from '../constants'
@@ -13,11 +20,11 @@ import {
     subscribe
 } from '../store'
 import { themeVariables } from '../theme'
-import { matchesHotkey } from '../utils'
-import { SheetContext } from './context'
+import { matchesHotkey, resolveLayer } from '../utils'
+import { CloseLabelContext, SheetContext } from './context'
 import { StyleSheet } from './style-sheet'
 import { ToastItem } from './toast-item'
-import type { NotifierProps, ToastPosition, ToastRecord, ToastTone } from '../types'
+import type { NotifierProps, ToastID, ToastPosition, ToastRecord, ToastTone } from '../types'
 
 const SCHEME_QUERY = '(prefers-color-scheme: dark)'
 
@@ -47,6 +54,11 @@ function holderOf(node: Element | null): HTMLElement | null {
     return node?.closest<HTMLElement>('[data-ntf-id]') ?? null
 }
 
+function measuredHeight(item: HTMLElement): number {
+    const target = Number(item.dataset.ntfHeight)
+    return target > 0 ? target : item.offsetHeight
+}
+
 function groupByPosition(
     records: readonly ToastRecord[],
     fallback: ToastPosition
@@ -71,13 +83,14 @@ type StackItemProps = {
     index: number
     total: number
     expanded: boolean
-    heights: readonly number[]
+    heights: readonly (number | undefined)[]
     gap: number
     swipe: boolean
     pauseOnHover: boolean
     close: boolean
     calm: boolean
-    setHeight: (index: number, height: number) => void
+    setHeight: (id: ToastID, height: number) => void
+    forgetHeight: (id: ToastID) => void
     onEnter: () => void
     onHover: (event: PointerEvent<HTMLDivElement>) => void
     onLeave: () => void
@@ -118,6 +131,7 @@ function StackItem({
     close,
     calm,
     setHeight,
+    forgetHeight,
     onEnter,
     onHover,
     onLeave
@@ -125,23 +139,27 @@ function StackItem({
     const ref = useRef<HTMLDivElement>(null)
     const leaving = !record.open
     const placement = placementOf(position)
+    const { id } = record
 
     useEffect(() => {
-        const node = ref.current
-        if (!node) return
+        const item = ref.current?.querySelector<HTMLElement>('.ntf-item')
+        if (!item || leaving) return
         let measured = -1
         function measure() {
-            const height = node?.offsetHeight ?? 0
+            if (!item) return
+            const height = measuredHeight(item)
             if (height === measured) return
             measured = height
-            setHeight(index, height)
+            setHeight(id, height)
         }
         measure()
         if (typeof ResizeObserver === 'undefined') return
         const observer = new ResizeObserver(measure)
-        observer.observe(node)
+        observer.observe(item)
         return () => observer.disconnect()
-    }, [index, setHeight])
+    }, [id, leaving, setHeight])
+
+    useEffect(() => () => forgetHeight(id), [id, forgetHeight])
 
     const away = placement.top ? 1 : -1
     const frontHeight = heights[0] ?? 0
@@ -270,6 +288,7 @@ type GroupProps = {
     swipe: boolean
     pauseOnHover: boolean
     close: boolean
+    label: string
     variables: CSSProperties
     className?: string
 }
@@ -285,20 +304,30 @@ function PositionGroup({
     swipe,
     pauseOnHover,
     close,
+    label,
     variables,
     className
 }: GroupProps) {
     const [hovered, setHovered] = useState(false)
-    const [heights, setHeights] = useState<number[]>([])
+    const [heights, setHeights] = useState<ReadonlyMap<ToastID, number>>(() => new Map())
     const collapseTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
     const calm = useReducedMotion() === true
     const placement = placementOf(position)
 
-    const setHeight = useCallback((index: number, height: number) => {
+    const setHeight = useCallback((id: ToastID, height: number) => {
         setHeights((current) => {
-            if (current[index] === height) return current
-            const next = [...current]
-            next[index] = height
+            if (current.get(id) === height) return current
+            const next = new Map(current)
+            next.set(id, height)
+            return next
+        })
+    }, [])
+
+    const forgetHeight = useCallback((id: ToastID) => {
+        setHeights((current) => {
+            if (!current.has(id)) return current
+            const next = new Map(current)
+            next.delete(id)
             return next
         })
     }, [])
@@ -349,13 +378,14 @@ function PositionGroup({
     if (stack) {
         const front = records.filter((record) => record.open).reverse()
         const indexOf = new Map(front.map((record, index) => [record.id, index]))
-        const expanded = hovered && front.length > 1 && (heights[0] ?? 0) > 0
+        const ordered = front.map((record) => heights.get(record.id))
+        const expanded = hovered && front.length > 1 && (ordered[0] ?? 0) > 0
 
         return (
             <div
                 className={className}
                 role='region'
-                aria-label='Notifications'
+                aria-label={label}
                 aria-live='polite'
                 style={{
                     ...containerStyle,
@@ -371,13 +401,14 @@ function PositionGroup({
                         index={indexOf.get(record.id) ?? 0}
                         total={front.length}
                         expanded={expanded}
-                        heights={heights}
+                        heights={ordered}
                         gap={gap}
                         swipe={swipe}
                         pauseOnHover={false}
                         close={close}
                         calm={calm}
                         setHeight={setHeight}
+                        forgetHeight={forgetHeight}
                         onEnter={expand}
                         onHover={hover}
                         onLeave={collapse}
@@ -391,7 +422,7 @@ function PositionGroup({
         <div
             className={className}
             role='region'
-            aria-label='Notifications'
+            aria-label={label}
             aria-live='polite'
             style={{
                 ...containerStyle,
@@ -431,6 +462,8 @@ export function Notifier({
     offset = Defaults.OFFSET,
     gap = Defaults.GAP,
     theme,
+    labels,
+    layer,
     nonce,
     className
 }: NotifierProps) {
@@ -450,9 +483,18 @@ export function Notifier({
         }
     }, [])
 
-    useEffect(() => {
+    useInsertionEffect(() => {
         configureStore({ position, duration, maxVisible })
     }, [position, duration, maxVisible])
+
+    useEffect(() => {
+        if (process.env.NODE_ENV === 'production') return
+        if (typeof layer === 'string' && resolveLayer(layer) === null) {
+            console.warn(
+                `[notifier] "${layer}" is not a valid cascade layer name, so the stylesheet is not layered.`
+            )
+        }
+    }, [layer])
 
     useEffect(
         () => () => {
@@ -508,6 +550,7 @@ export function Notifier({
             if (document.visibilityState === 'hidden') pauseTimers('hidden')
             else resumeTimers('hidden')
         }
+        handleVisibility()
         document.addEventListener('visibilitychange', handleVisibility)
         return () => document.removeEventListener('visibilitychange', handleVisibility)
     }, [])
@@ -516,27 +559,31 @@ export function Notifier({
     if (!groups.has(position)) groups.set(position, [])
     const { x, y } = resolveOffset(offset)
     const variables = themeVariables(theme)
+    const regionLabel = labels?.region ?? Defaults.REGION_LABEL
 
     return (
         <SheetContext.Provider value>
-            <StyleSheet nonce={nonce} />
-            {Array.from(groups, ([groupPosition, groupRecords]) => (
-                <PositionGroup
-                    key={groupPosition}
-                    position={groupPosition}
-                    records={groupRecords}
-                    tone={resolvedTone}
-                    stack={stack}
-                    gap={gap}
-                    offsetX={x}
-                    offsetY={y}
-                    swipe={swipe}
-                    pauseOnHover={pauseOnHover}
-                    close={close}
-                    variables={variables}
-                    className={className}
-                />
-            ))}
+            <StyleSheet primary nonce={nonce} layer={resolveLayer(layer)} />
+            <CloseLabelContext.Provider value={labels?.close ?? Defaults.CLOSE_LABEL}>
+                {Array.from(groups, ([groupPosition, groupRecords]) => (
+                    <PositionGroup
+                        key={groupPosition}
+                        position={groupPosition}
+                        records={groupRecords}
+                        tone={resolvedTone}
+                        stack={stack}
+                        gap={gap}
+                        offsetX={x}
+                        offsetY={y}
+                        swipe={swipe}
+                        pauseOnHover={pauseOnHover}
+                        close={close}
+                        label={regionLabel}
+                        variables={variables}
+                        className={className}
+                    />
+                ))}
+            </CloseLabelContext.Provider>
         </SheetContext.Provider>
     )
 }
