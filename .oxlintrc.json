@@ -38,6 +38,7 @@
         "**/coverage/**",
         "**/*.config.js",
         "**/*.config.ts",
-        "**/*.config.mjs"
+        "**/*.config.mjs",
+        "apps/docs/**"
     ]
 }

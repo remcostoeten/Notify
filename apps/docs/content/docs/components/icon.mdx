@@ -1,0 +1,65 @@
+---
+title: Toast.Icon
+description: Status glyphs and custom icons.
+icon: Cloud
+sidebarTitle: Icon
+---
+
+<ToastPreview status="success" title="status=success" trigger={false} close={false} />
+<ToastPreview status="error" title="status=error" trigger={false} close={false} />
+<ToastPreview status="warning" title="status=warning" trigger={false} close={false} />
+<ToastPreview status="info" title="status=info" trigger={false} close={false} />
+<ToastPreview status="loading" title="status=loading" trigger={false} close={false} />
+
+## Usage
+
+```tsx
+<Toast.Icon status="success" />
+<Toast.Icon status="warning" shape="circle" />
+<Toast.Icon shape="box">
+  <CloudUpload />
+</Toast.Icon>
+```
+
+From `notify`, set `status`, or `icon` for control over the shape.
+
+```tsx
+notify({ status: "success", title: "Saved" });
+notify({ icon: { shape: "ring", status: "warning" }, title: "Low storage" });
+notify({ icon: <CloudUpload />, title: "Uploading" });
+```
+
+## Shapes
+
+| Shape    | Description                                                  | Default for   |
+| -------- | ------------------------------------------------------------ | ------------- |
+| `ring`   | Glyph with two concentric rings, 20px in the layout.         | Opt-in        |
+| `box`    | 40px square with a border and a fill.                        | Custom icons  |
+| `circle` | 40px circle tinted with the status color, plain mark inside. | Status toasts |
+| `bare`   | The glyph alone, 20px.                                       | Opt-in        |
+
+## Props
+
+<TypeTable
+  type={{
+    shape: {
+      type: '"ring" | "box" | "circle" | "bare"',
+      description: "How the icon is drawn.",
+      default: '"circle" with a status, "box" without one',
+    },
+    status: {
+      type: '"success" | "error" | "warning" | "info" | "loading"',
+      description: "Picks the glyph and its color.",
+    },
+    node: { type: "ReactNode", description: "Replaces the status glyph." },
+    children: { type: "ReactNode", description: "Same as node." },
+  }}
+/>
+
+## Coloring a custom glyph
+
+A custom glyph inherits the text color. Use a token to match the tone.
+
+```tsx
+<CloudUpload style={{ color: "var(--ntf-accent-text)" }} />
+```

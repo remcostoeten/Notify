@@ -1,0 +1,44 @@
+---
+title: Toast.Title and Toast.Body
+sidebarTitle: Title and Body
+description: The title line with meta, and the column that holds the text.
+icon: Route
+---
+
+`Toast.Body` is the column that holds everything right of the media: the title, description, progress and actions. `Toast.Title` is the first line.
+
+<ToastPreview example="update" trigger={false} />
+
+```tsx
+<Toast.Body>
+  <Toast.Title meta="v4.2">A new update is available</Toast.Title>
+  <Toast.Description>Includes the all new dashboard view.</Toast.Description>
+</Toast.Body>
+```
+
+## Meta
+
+`meta` adds a divider and muted text after the title, on the same line. Use it for a timestamp, a version or a source.
+
+<ToastPreview title="Sienna Hewitt" meta="2 mins ago" trigger={false} />
+
+## Props
+
+### Toast.Title
+
+<TypeTable
+  type={{
+    children: { type: "ReactNode", description: "The title.", required: true },
+    meta: { type: "ReactNode", description: "Muted text after a divider." },
+    className: { type: "string", description: "Added to the title text element." },
+  }}
+/>
+
+### Toast.Body
+
+<TypeTable
+  type={{
+    children: { type: "ReactNode", description: "The text, progress and actions.", required: true },
+    className: { type: "string", description: "Added to the column." },
+  }}
+/>

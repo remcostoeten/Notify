@@ -1,0 +1,5 @@
+{
+  "title": "Reference",
+  "icon": "Search",
+  "pages": ["notifier", "notify", "toast-input", "tokens", "types"]
+}

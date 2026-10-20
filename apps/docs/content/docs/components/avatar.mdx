@@ -1,0 +1,73 @@
+---
+title: Toast.Avatar
+description: An image or initials with a presence badge.
+icon: BookOpen
+sidebarTitle: Avatar
+---
+
+<ToastPreview example="message" trigger={false} />
+
+```tsx
+<Toast.Avatar src={sienna.src} alt="Sienna Hewitt" badge="online" />
+<Toast.Avatar fallback="SH" shape="circle" />
+```
+
+From `notify`:
+
+```tsx
+notify({
+  avatar: { src: sienna.src, alt: "Sienna Hewitt", badge: "online" },
+  title: "Sienna Hewitt",
+});
+```
+
+An avatar replaces the icon. It is 40px, with an 8px radius, or round with `shape="circle"`.
+
+## Badge
+
+<ToastPreview
+  avatar={{ fallback: "AL", badge: "online" }}
+  title="online"
+  trigger={false}
+  close={false}
+/>
+<ToastPreview
+  avatar={{ fallback: "AL", badge: "away" }}
+  title="away"
+  trigger={false}
+  close={false}
+/>
+<ToastPreview
+  avatar={{ fallback: "AL", badge: "busy" }}
+  title="busy"
+  trigger={false}
+  close={false}
+/>
+<ToastPreview
+  avatar={{ fallback: "AL", badge: "offline" }}
+  title="offline"
+  trigger={false}
+  close={false}
+/>
+
+## Props
+
+<TypeTable
+  type={{
+    src: { type: "string", description: "Image URL." },
+    alt: { type: "string", description: "Alt text for the image.", default: '""' },
+    fallback: {
+      type: "ReactNode",
+      description: "Shown without a src, for example initials.",
+    },
+    badge: {
+      type: '"online" | "away" | "busy" | "offline"',
+      description: "A 10px dot at the bottom right corner.",
+    },
+    shape: {
+      type: '"square" | "circle"',
+      description: "Corner style.",
+      default: '"square"',
+    },
+  }}
+/>

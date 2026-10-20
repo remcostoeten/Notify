@@ -4,11 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Bun-workspaces monorepo for `@remcostoeten/notifier`, composable toast notifications for React: declarative content slots, a `Toast` primitives API for custom layouts, light and dark tones, Motion-driven animation. Package manager is **Bun 1.2.0**; do not use npm/yarn for installs.
+Bun-workspaces monorepo for `@remcostoeten/notifier`, composable toast notifications for React: declarative content slots, a `Toast` primitives API for custom layouts, light and dark tones, Motion-driven animation. Package manager is **Bun 1.4.3**; do not use npm/yarn for installs.
 
 - `packages/notifier/` — the published library (`@remcostoeten/notifier`)
 - `packages/release-cli/` — internal AI-changelog release tool (`release` binary), not published as part of the product
 - `apps/demo/` — Next.js 16 docs/showcase site (package name `repro-notifier`)
+- `apps/docs/`: Fumadocs documentation site (package name `notifier-docs`), not a workspace member
 
 ## Commands
 
@@ -56,6 +57,10 @@ bunx vitest run --maxWorkers=2 --minWorkers=1
 
 - The demo imports `@remcostoeten/notifier` and consumes its built `dist/` (not `src/`). When iterating on library source with the demo open, run `bun run dev` (tsup watch) inside `packages/notifier` or rebuild it, or the demo won't pick up changes. `bun run build` in `apps/demo` builds the notifier first.
 - Older notes warned that a clean root `bun install` could delete the `apps/demo` working tree. That was seen while the demo still had its own `bun.lock` and has not been re-tested since the lockfile was removed. Keep uncommitted demo work backed up before a clean install.
+
+### apps/docs
+
+`apps/docs` is excluded from the root `workspaces` and has its own `bun.lock`. It depends on `@remcostoeten/notifier` from npm by version, so it documents the published release, not `packages/notifier/src`. Root `oxlint` and `oxfmt` ignore it; inside it, `bun run check` runs `vp` with the settings in `apps/docs/vite.config.ts` (2-space indent, semicolons, double quotes). Its CI is `.github/workflows/docs.yml`. See `apps/docs/README.md`.
 
 ## Architecture
 

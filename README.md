@@ -70,7 +70,7 @@ Toasts use Inter when the page loads it and the system font otherwise.
 
 ## Development
 
-Needs Bun 1.2 or newer. The demo site in `apps/demo` is its own project and reads the built `packages/notifier/dist`.
+Needs Bun 1.4 or newer. The demo site in `apps/demo` is its own project and reads the built `packages/notifier/dist`. The documentation site in `apps/docs` installs the published package from npm and has its own lockfile, see [apps/docs/README.md](apps/docs/README.md).
 
 ```bash
 bun install                                  # install the workspace
@@ -78,6 +78,7 @@ bun run typecheck                            # tsc across the packages
 cd packages/notifier && bun run test         # vitest
 cd packages/notifier && bun run build        # tsup to dist/
 cd apps/demo && bun install && bun run dev   # demo on localhost:3000
+cd apps/docs && bun install && bun dev       # docs on localhost:3000
 ```
 
 Contribution notes are in [packages/notifier/CONTRIBUTING.md](packages/notifier/CONTRIBUTING.md) and the security policy is in [SECURITY.md](SECURITY.md).

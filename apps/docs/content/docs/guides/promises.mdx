@@ -1,0 +1,51 @@
+---
+title: Promises
+description: Turn a loading toast into a success or error toast.
+icon: Rocket
+---
+
+`notify.promise` opens a loading toast, then changes it when the promise settles. It resolves with the promise's value and rethrows its error, so it can wrap an existing `await`.
+
+```tsx
+const project = await notify.promise(saveProject(draft), {
+  loading: "Saving",
+  success: (data) => ({ title: "Saved", description: data.name }),
+  error: (error) => ({ title: "Could not save", description: error.message }),
+});
+```
+
+<ToastButton title="Saving" status="loading" duration={1500}>
+  Loading toast
+</ToastButton>
+
+## Messages
+
+`loading`, `success` and `error` are each a string, a `ToastInput` object or a function. `success` receives the value and `error` receives an `Error`. A rejection that is not an `Error` is wrapped in one.
+
+```tsx
+notify.promise(request, {
+  loading: { title: "Syncing", actions: [{ label: "Cancel", onClick: abort }] },
+  success: "Synced",
+  error: (error) => error.message,
+  id: "sync",
+});
+```
+
+## What is cleared
+
+When the promise settles, the icon, avatar, meta, description, progress and actions of the loading toast are cleared before the new message is applied. The status changes to `success` or `error`, which also ends the loading toast's persistence, so the toast closes after its normal duration.
+
+## Without a promise
+
+`notify.promise` is a convenience over `notify` and `notify.update`. For anything it does not fit, do the same by hand:
+
+```tsx
+const id = notify.loading("Saving");
+
+try {
+  await save();
+  notify.update(id, { status: "success", title: "Saved" });
+} catch (error) {
+  notify.update(id, { status: "error", title: "Could not save" });
+}
+```

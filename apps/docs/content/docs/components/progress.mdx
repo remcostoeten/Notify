@@ -1,0 +1,44 @@
+---
+title: Toast.Progress
+description: Determinate and indeterminate bars with a label.
+icon: Route
+sidebarTitle: Progress
+---
+
+<ToastPreview title="Exporting report" progress={40} trigger={false} />
+
+```tsx
+<Toast.Progress value={40} label />
+<Toast.Progress value={null} />
+```
+
+From `notify`, set `progress` to a number or an object and update it with `notify.update`. See the [Progress guide](/docs/guides/progress).
+
+## Label
+
+<ToastPreview title="Percentage" progress={{ value: 72, label: true }} trigger={false} />
+<ToastPreview title="Custom text" progress={{ value: 3, label: "3 of 10" }} trigger={false} />
+<ToastPreview title="Indeterminate" progress={{ value: null }} trigger={false} />
+
+## Props
+
+<TypeTable
+  type={{
+    value: {
+      type: "number | null",
+      description: "0 to 100. Values outside are clamped. null is indeterminate.",
+      required: true,
+    },
+    label: {
+      type: "boolean | ReactNode",
+      description:
+        "true shows the rounded percentage. A node is shown as is. Indeterminate bars have no percentage.",
+      default: "false",
+    },
+    className: { type: "string", description: "Added to the progress element." },
+  }}
+/>
+
+## Accessibility
+
+The bar has `role="progressbar"` with `aria-valuemin`, `aria-valuemax` and `aria-valuenow`. An indeterminate bar leaves out `aria-valuenow`. With reduced motion the fill stops animating.

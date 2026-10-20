@@ -1,0 +1,64 @@
+---
+title: Toast
+description: The surface that holds the slots.
+icon: FileText
+---
+
+`Toast` draws the background, ring, shadow and padding, and lays its children out in a row. Give it content props for the default layout, or children for your own.
+
+```tsx
+import { Toast } from "@remcostoeten/notifier";
+
+<Toast status="success" title="Saved" description="Your changes are live." />;
+```
+
+<ToastPreview status="success" title="Saved" description="Your changes are live." trigger={false} />
+
+## With children
+
+```tsx
+<Toast tone="light">
+  <Toast.Body>
+    <Toast.Title>Invite sent</Toast.Title>
+  </Toast.Body>
+  <Toast.Close />
+</Toast>
+```
+
+## Props
+
+<TypeTable
+  type={{
+    tone: {
+      type: '"light" | "dark"',
+      description: "Surface. Defaults to the tone of the toast it is inside, then light.",
+    },
+    width: {
+      type: "number | string",
+      description: "Width. A number is pixels.",
+      default: "400",
+    },
+    className: { type: "string", description: "Added to the root element." },
+    classNames: {
+      type: "Partial<Record<ToastSlot, string>>",
+      description: "A class name per slot. See Styling.",
+    },
+    style: { type: "CSSProperties", description: "Inline styles for the root element." },
+    children: {
+      type: "ReactNode",
+      description: "Your own layout. Replaces the slots built from the content props.",
+    },
+    "title, meta, description, status, icon, avatar, progress, actions, close": {
+      type: "ToastContent",
+      description: "The content of the default layout. See the ToastInput reference.",
+    },
+  }}
+/>
+
+## Stylesheet
+
+A `Toast` rendered inside `Notifier` uses its stylesheet. A standalone `Toast` includes its own, so it works on a docs page or in a design review. The stylesheet is about 8 KB, so prefer one `Notifier` over many standalone toasts.
+
+## Tokens inside a toast
+
+The active tone's tokens are CSS variables on the root element, so children can read them: `var(--ntf-accent-text)`, `var(--ntf-foreground)` and the rest. See [Tokens](/docs/reference/tokens).

@@ -19,6 +19,7 @@
         "bun.lockb",
         "package-lock.json",
         "*.min.js",
-        "*.min.css"
+        "*.min.css",
+        "apps/docs/**"
     ]
 }

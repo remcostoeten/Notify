@@ -1,0 +1,59 @@
+---
+title: Components
+sidebarTitle: Overview
+description: The primitives behind every toast, one page each.
+icon: Palette
+---
+
+`notify` builds its toasts from these parts, and you can use them directly inside [`notify.custom`](/docs/guides/custom-toasts). They read their tone, class names and dismiss handler from the `Toast` around them.
+
+<Cards>
+  <Card icon={<PageIcon />} title="Toast" href="/docs/components/toast">
+    The surface. Content props or children.
+  </Card>
+  <Card icon={<CloudIcon />} title="Toast.Icon" href="/docs/components/icon">
+    Status glyphs and custom icons in four shapes.
+  </Card>
+  <Card icon={<BookIcon />} title="Toast.Avatar" href="/docs/components/avatar">
+    An image or initials with a presence badge.
+  </Card>
+  <Card icon={<RouteIcon />} title="Toast.Title and Toast.Body" href="/docs/components/title">
+    The title with meta, and the column that holds the text.
+  </Card>
+  <Card icon={<SearchIcon />} title="Toast.Description" href="/docs/components/description">
+    Body text that wraps at a readable width.
+  </Card>
+  <Card icon={<CompassIcon />} title="Toast.Progress" href="/docs/components/progress">
+    Determinate and indeterminate bars with a label.
+  </Card>
+  <Card
+    icon={<RocketIcon />}
+    title="Toast.Actions and Toast.Action"
+    href="/docs/components/actions"
+  >
+    Text links, outline buttons and filled buttons.
+  </Card>
+  <Card icon={<DownloadIcon />} title="Toast.Close" href="/docs/components/close">
+    The close button.
+  </Card>
+</Cards>
+
+## The compound API
+
+```tsx
+<Toast tone="dark">
+  <Toast.Icon status="success" />
+  <Toast.Body>
+    <Toast.Title meta="v4.2">Details updated</Toast.Title>
+    <Toast.Description>Your team can make edits.</Toast.Description>
+    <Toast.Progress value={60} label />
+    <Toast.Actions>
+      <Toast.Action color="muted">Dismiss</Toast.Action>
+      <Toast.Action>View profile</Toast.Action>
+    </Toast.Actions>
+  </Toast.Body>
+  <Toast.Close />
+</Toast>
+```
+
+Every part takes a `className`, and a class name given to `Toast` through `classNames` is applied to the matching part. See [Styling](/docs/guides/styling).

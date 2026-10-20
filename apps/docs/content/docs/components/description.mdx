@@ -1,0 +1,27 @@
+---
+title: Toast.Description
+description: Body text that wraps at a readable width.
+icon: FileText
+sidebarTitle: Description
+---
+
+<ToastPreview
+  title="Storage almost full"
+  description="You have used 4.8 GB of your 5 GB. Upgrade to keep uploading without interruptions."
+  trigger={false}
+/>
+
+```tsx
+<Toast.Description>Your changes have been saved.</Toast.Description>
+```
+
+The description sits 4px under the title and wraps at about 71% of the toast width, which is 284px at the default 400px. That keeps lines short and clear of the close button. A toast with a different `width` scales the column with it.
+
+## Props
+
+<TypeTable
+  type={{
+    children: { type: "ReactNode", description: "The text.", required: true },
+    className: { type: "string", description: "Added to the element." },
+  }}
+/>

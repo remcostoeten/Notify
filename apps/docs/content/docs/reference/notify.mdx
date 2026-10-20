@@ -1,0 +1,109 @@
+---
+title: notify
+description: Open, update and dismiss toasts.
+icon: Search
+---
+
+`notify` is a function with methods. Every method that opens a toast returns its id, a string.
+
+## notify
+
+```ts
+notify(title: string, input?: ToastInput): ToastID
+notify(input: ToastInput, extra?: ToastInput): ToastID
+```
+
+Opens a toast. A string is the `title`. Passing an `id` that is already open replaces that toast's content and restarts its timer.
+
+```tsx
+notify("Saved");
+notify("Saved", { description: "All good", tone: "dark" });
+notify({ title: "Saved", status: "success" });
+```
+
+## Status shortcuts
+
+```ts
+notify.success(title: ReactNode, input?: ToastInput): ToastID
+notify.error(...)
+notify.warning(...)
+notify.info(...)
+notify.loading(...)
+```
+
+Each sets `status` and `title`. `loading` stays open until it is updated or dismissed.
+
+## notify.update
+
+```ts
+notify.update(id: ToastID, patch: ToastPatch): void
+```
+
+Merges a patch into an open toast. It does nothing for an id that is unknown or closing. See [Lifecycle](/docs/concepts/lifecycle#timers-while-you-update) for what happens to the timer.
+
+## notify.dismiss
+
+```ts
+notify.dismiss(id?: ToastID): void
+```
+
+Closes one toast with the reason `manual`, or every toast without an id.
+
+## notify.promise
+
+```ts
+notify.promise<Data>(promise: Promise<Data>, messages: PromiseMessages<Data>): Promise<Data>
+```
+
+<TypeTable
+  type={{
+    loading: {
+      type: "ToastInput | string",
+      description: "Shown while the promise is pending.",
+      required: true,
+    },
+    success: {
+      type: "ToastInput | string | ((data: Data) => ToastInput | string)",
+      description: "Applied when the promise resolves.",
+      required: true,
+    },
+    error: {
+      type: "ToastInput | string | ((error: Error) => ToastInput | string)",
+      description: "Applied when the promise rejects.",
+      required: true,
+    },
+    id: { type: "string", description: "Id for the toast." },
+  }}
+/>
+
+Resolves with the promise's value and rethrows its error. A call that is not awaited leaves no unhandled rejection. See [Promises](/docs/guides/promises).
+
+## notify.custom
+
+```ts
+notify.custom(render: (toast: ToastRuntime) => ReactNode, options?: CustomToastOptions): ToastID
+```
+
+Opens a toast with content you render. `options` are the behavior fields of a toast (`id`, `position`, `duration`, `swipe`, the callbacks) and `tone`. `render` receives `{ id, tone, dismiss, update }`. See [Custom toasts](/docs/guides/custom-toasts).
+
+## useToast
+
+```ts
+useToast(): ToastRuntime
+```
+
+Returns `{ id, tone, dismiss, update }` for the toast it is rendered in. Outside a toast the handlers do nothing.
+
+## resetStore
+
+```ts
+resetStore(): void
+```
+
+Removes every toast and timer and restores the defaults. A mounted `Notifier` stays connected and shows nothing. It is meant for tests.
+
+```tsx
+import { resetStore } from "@remcostoeten/notifier";
+
+beforeEach(() => resetStore());
+```

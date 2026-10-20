@@ -1,0 +1,73 @@
+---
+title: Positioning
+description: Where toasts appear, how they stack and how to swipe them away.
+icon: Compass
+---
+
+## Positions
+
+`position` is one of six values, set on `Notifier` as a default and on any toast as an override.
+
+| Value           | Anchor                              |
+| --------------- | ----------------------------------- |
+| `top-left`      | Top edge, left corner               |
+| `top-center`    | Top edge, centered                  |
+| `top-right`     | Top edge, right corner              |
+| `bottom-left`   | Bottom edge, left corner            |
+| `bottom-center` | Bottom edge, centered               |
+| `bottom-right`  | Bottom edge, right corner. Default. |
+
+```tsx
+<Notifier position="top-right" />;
+
+notify({ title: "Heads up", position: "top-center" });
+```
+
+Toasts in different positions are independent columns. `maxVisible` counts each position on its own.
+
+<ToastButton title="Top left" position="top-left" status="info">
+  Top left
+</ToastButton>
+<ToastButton title="Top center" position="top-center" status="info">
+  Top center
+</ToastButton>
+<ToastButton title="Top right" position="top-right" status="info">
+  Top right
+</ToastButton>
+<ToastButton title="Bottom left" position="bottom-left" status="info">
+  Bottom left
+</ToastButton>
+<ToastButton title="Bottom center" position="bottom-center" status="info">
+  Bottom center
+</ToastButton>
+<ToastButton title="Bottom right" position="bottom-right" status="info">
+  Bottom right
+</ToastButton>
+
+## Offset and gap
+
+`offset` is the distance from the screen edges in pixels, a number or `{ x, y }`, and defaults to 24. `gap` is the space between toasts and defaults to 12.
+
+```tsx
+<Notifier offset={{ x: 16, y: 24 }} gap={8} />
+```
+
+## Width
+
+A toast is 400px wide and never wider than its container, which is the viewport minus the offset on both sides. Use `width` on a toast or `theme.width` on `Notifier` to change it. The description wraps at about 71% of the width, so a wider toast gets a wider text column.
+
+## Stack
+
+With `stack`, toasts pile up behind the newest one. Each toast behind the front one shows 8px of itself, scaled down, shaded and tilted a little more with depth. The pile pivots on the corner it is anchored to, so the side facing the screen rises out of it. Hovering the stack straightens it and spreads it out to full size, and leaving it collapses it again after a short delay. Toasts behind the front one are clipped to its height, so the peeks line up whatever the heights.
+
+```tsx
+<Notifier stack />
+```
+
+## Swipe
+
+A toast can be swiped towards the screen edge it is anchored to: sideways in the corners, up for `top-center` and down for `bottom-center`. It dismisses with the reason `swipe` when it is dragged past 50 pixels towards that edge, past 100 pixels in any direction, or flicked quickly. Turn it off with `swipe={false}` on `Notifier` or `swipe: false` on a toast.
+
+## Motion
+
+Toasts enter and leave with a short slide and scale from their edge. When an update changes a toast's height, its surface grows or shrinks over 240ms and the toasts around it follow. With `prefers-reduced-motion: reduce` they only fade, height changes are instant, the spinner slows down and the progress bar stops animating.

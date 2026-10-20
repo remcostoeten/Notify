@@ -1,0 +1,108 @@
+---
+title: Theming
+description: Change colors, radius, width and font with tokens.
+icon: Palette
+---
+
+Every color is a **token**, a CSS custom property with one value per tone. Change tokens from the `theme` prop of `Notifier`, or from your own stylesheet.
+
+## The theme prop
+
+```tsx
+<Notifier
+  theme={{
+    font: "Geist, sans-serif",
+    radius: 16,
+    width: 420,
+    dark: { background: "#0b0b0c", accent: "#7c6cff" },
+    light: { accentText: "#4338ca" },
+  }}
+/>
+```
+
+| Key      | Type                  | Effect                                   |
+| -------- | --------------------- | ---------------------------------------- |
+| `light`  | `Partial<ToneTokens>` | Overrides tokens of light toasts.        |
+| `dark`   | `Partial<ToneTokens>` | Overrides tokens of dark toasts.         |
+| `font`   | `string`              | The `font-family` of every toast.        |
+| `radius` | `number \| string`    | Toast corner radius. A number is pixels. |
+| `width`  | `number \| string`    | Toast width. A number is pixels.         |
+
+The theme is written as CSS variables on each toast column, so toasts opened later pick up changes right away.
+
+## Plain CSS
+
+The same tokens are variables named `--ntf-<tone>-<token>`, with the token in kebab case. Set them anywhere that cascades into the toasts.
+
+```css
+:root {
+  --ntf-dark-background: #0b0b0c;
+  --ntf-dark-accent-text: #b6aeff;
+  --ntf-light-accent: #5f5afa;
+  --ntf-radius: 16px;
+  --ntf-width: 420px;
+  --ntf-font: "Geist", sans-serif;
+}
+```
+
+See [Tokens](/docs/reference/tokens) for the full list with defaults.
+
+## Reading tokens inside a toast
+
+Inside a toast the active tone's tokens are also available without the tone, so custom content can match.
+
+```tsx
+<span style={{ color: "var(--ntf-accent-text)" }}>New</span>
+```
+
+Do not set these short variables yourself. They are defined by the stylesheet from the `--ntf-<tone>-<token>` variables, and your value would be replaced.
+
+## Follow your site theme
+
+`tone` on `Notifier` is `"light"`, `"dark"` or `"auto"`. `"auto"` follows the system setting. To follow the theme your site stores, for example with `next-themes`, pass the tone yourself.
+
+```tsx
+"use client";
+
+import { Notifier } from "@remcostoeten/notifier";
+import { useTheme } from "next-themes";
+
+export function SiteNotifier() {
+  const { resolvedTheme } = useTheme();
+
+  return <Notifier tone={resolvedTheme === "dark" ? "dark" : "light"} />;
+}
+```
+
+A toast can still set its own `tone`, which is how a dark toast appears on a light page.
+
+## Status colors
+
+`success`, `error`, `warning` and `info` color the status glyphs, the ring around them and the presence badges. `loading` uses the muted color.
+
+```tsx
+<Notifier theme={{ light: { success: "#0d9488" }, dark: { success: "#5eead4" } }} />
+```
+
+## Spacing
+
+`--ntf-padding` is the inner padding of a toast and also places the close button. `--ntf-gap` is the space between the icon and the text. Both default to 16px.
+
+```css
+.ntf-toast {
+  --ntf-padding: 14px;
+  --ntf-gap: 12px;
+}
+```
+
+## The shadow and ring
+
+A toast has a 1px ring from `border` and a shadow from `shadow`. The dark tone's ring is 10% white, so a dark toast keeps its edge on a dark page. `shadow` is one or more `box-shadow` layers that are added after the ring, so `none` is not valid there. Use `0 0 transparent` to remove the shadow and keep the ring, or pass your own layers.
+
+```tsx
+<Notifier theme={{ light: { shadow: "0 8px 30px rgba(0,0,0,.12)" } }} />
+```
+
+## Contrast
+
+Keep body text and the muted color at 4.5:1 against `background`, and `accentForeground` at 4.5:1 against `accent`. The defaults pass on both tones.

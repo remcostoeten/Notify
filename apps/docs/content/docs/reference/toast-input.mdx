@@ -1,0 +1,167 @@
+---
+title: ToastInput
+description: Every field of a toast.
+icon: Search
+---
+
+`ToastInput` is what you pass to `notify`, and what the content props of `Toast` accept. Every field is optional. A patch for `notify.update` is a `ToastInput` without `id`.
+
+## Content
+
+<TypeTable
+  type={{
+    title: { type: "ReactNode", description: "The first line, semibold." },
+    meta: {
+      type: "ReactNode",
+      description: "Muted text after a divider, on the title line.",
+    },
+    description: {
+      type: "ReactNode",
+      description: "Body text under the title. Wraps at about 71% of the toast width.",
+    },
+    status: {
+      type: '"success" | "error" | "warning" | "info" | "loading"',
+      description:
+        "Adds a status icon. loading keeps the toast open. error and warning are announced as alerts.",
+    },
+    icon: {
+      type: "IconConfig | ReactElement",
+      description: "An element is placed in a box. An object sets the shape, status or glyph.",
+    },
+    avatar: { type: "AvatarConfig", description: "An image or initials. Replaces the icon." },
+    progress: {
+      type: "number | ProgressConfig",
+      description: "A bar. A number also shows a percentage label.",
+    },
+    actions: { type: "ActionConfig[]", description: "Text links or buttons under the text." },
+    close: { type: "boolean", description: "Show the close button.", default: "true" },
+  }}
+/>
+
+## Surface
+
+<TypeTable
+  type={{
+    tone: {
+      type: '"light" | "dark"',
+      description: "The surface.",
+      default: "The tone of Notifier",
+    },
+    width: { type: "number | string", description: "Toast width.", default: "400" },
+    className: { type: "string", description: "Added to the root element." },
+    classNames: {
+      type: "Partial<Record<ToastSlot, string>>",
+      description: "A class name per slot.",
+    },
+    style: { type: "CSSProperties", description: "Inline styles for the root element." },
+  }}
+/>
+
+## Behavior
+
+<TypeTable
+  type={{
+    id: {
+      type: "string",
+      description: "Identifies the toast. Opening an id that is already open replaces its content.",
+      default: "generated",
+    },
+    position: {
+      type: "ToastPosition",
+      description: "Where this toast appears.",
+      default: "The position of Notifier",
+    },
+    duration: {
+      type: "number",
+      description: "Milliseconds before the toast closes. 0 keeps it open.",
+      default: "The duration of Notifier",
+    },
+    swipe: {
+      type: "boolean",
+      description: "Allow swiping this toast away.",
+      default: "The swipe of Notifier",
+    },
+    onOpen: {
+      type: "(id: string) => void",
+      description: "Called once when the toast first opens.",
+    },
+    onDismiss: {
+      type: "(id: string, reason: DismissReason) => void",
+      description: "Called as the toast starts to close.",
+    },
+    onClose: {
+      type: "(id: string) => void",
+      description: "Called after the exit animation, when the toast is removed.",
+    },
+  }}
+/>
+
+## IconConfig
+
+<TypeTable
+  type={{
+    shape: { type: '"ring" | "box" | "circle" | "bare"', description: "How the icon is drawn." },
+    status: {
+      type: "ToastStatus",
+      description: "Glyph and color. Defaults to the status of the toast.",
+    },
+    node: { type: "ReactNode", description: "Replaces the status glyph." },
+  }}
+/>
+
+## AvatarConfig
+
+<TypeTable
+  type={{
+    src: { type: "string", description: "Image URL." },
+    alt: { type: "string", description: "Alt text." },
+    fallback: { type: "ReactNode", description: "Shown without a src, for example initials." },
+    badge: { type: '"online" | "away" | "busy" | "offline"', description: "Presence dot." },
+    shape: { type: '"square" | "circle"', description: "Corner style.", default: '"square"' },
+  }}
+/>
+
+## ProgressConfig
+
+<TypeTable
+  type={{
+    value: {
+      type: "number | null",
+      description: "0 to 100. null is indeterminate.",
+      required: true,
+    },
+    label: {
+      type: "boolean | ReactNode",
+      description: "true shows the percentage.",
+      default: "false",
+    },
+  }}
+/>
+
+## ActionConfig
+
+<TypeTable
+  type={{
+    label: { type: "ReactNode", description: "The label.", required: true },
+    onClick: {
+      type: "(toast: ToastHandle) => void",
+      description: "Called before the toast is dismissed.",
+    },
+    variant: {
+      type: '"text" | "outline" | "filled"',
+      description: "How it is drawn.",
+      default: '"text"',
+    },
+    color: {
+      type: '"default" | "muted" | "accent"',
+      description: "The color role.",
+      default: '"default"',
+    },
+    dismiss: { type: "boolean", description: "Dismiss after onClick.", default: "true" },
+    href: { type: "string", description: "Renders an anchor." },
+    disabled: {
+      type: "boolean",
+      description: "Dims the action and ignores presses. A disabled link has no href.",
+    },
+  }}
+/>
