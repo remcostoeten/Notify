@@ -139,6 +139,11 @@ export type ToastTheme = {
     width?: number | string
 }
 
+export type NotifierLabels = {
+    region?: string
+    close?: string
+}
+
 export type NotifierProps = {
     position?: ToastPosition
     tone?: ToastTone | 'auto'
@@ -152,6 +157,8 @@ export type NotifierProps = {
     offset?: number | { x?: number; y?: number }
     gap?: number
     theme?: ToastTheme
+    labels?: NotifierLabels
+    layer?: boolean | string
     nonce?: string
     className?: string
 }

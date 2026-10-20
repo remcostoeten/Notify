@@ -15,6 +15,7 @@ export type {
     DismissReason,
     IconConfig,
     IconShape,
+    NotifierLabels,
     NotifierProps,
     ProgressConfig,
     PromiseMessages,

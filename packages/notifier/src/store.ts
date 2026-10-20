@@ -32,6 +32,7 @@ const listeners = new Set<() => void>()
 const timers = new Map<ToastID, Timer>()
 const removals = new Map<ToastID, ReturnType<typeof setTimeout>>()
 const holds = new Set<Hold>()
+const views = new Map<ToastID, number>()
 
 const defaultConfig: StoreConfig = {
     position: Defaults.POSITION,
@@ -72,6 +73,20 @@ export function resolveDuration(input: ToastInput, fallback: number): number {
     return fallback > 0 ? fallback : Infinity
 }
 
+/**
+ * @name holdsOpen
+ * @description Whether a toast keeps itself open: it is loading, its progress is
+ * unfinished, or it sets a duration of 0 or less. The default duration of
+ * `Notifier` does not count, so `maxVisible` still applies when it is 0.
+ *
+ * @example
+ * holdsOpen({ status: 'loading' }) // true
+ * holdsOpen({ title: 'Saved' }) // false
+ */
+export function holdsOpen(input: ToastInput): boolean {
+    return !Number.isFinite(resolveDuration(input, Defaults.DURATION_MS))
+}
+
 function schedule(id: ToastID, timer: Timer) {
     if (timer.handle !== null || holds.size > 0 || !Number.isFinite(timer.remaining)) return
     timer.startedAt = Date.now()
@@ -91,9 +106,20 @@ function startTimer(id: ToastID, total: number) {
     schedule(id, timer)
 }
 
-function retime(id: ToastID, input: ToastInput, restart: boolean) {
+function isShown(id: ToastID): boolean {
+    return (views.get(id) ?? 0) > 0
+}
+
+function arm(id: ToastID) {
+    const record = records.get(id)
+    if (!record?.open || !isShown(id)) return
+    startTimer(id, resolveDuration(record.input, config.duration))
+}
+
+function retime(id: ToastID, input: ToastInput) {
+    if (!isShown(id)) return
     const total = resolveDuration(input, config.duration)
-    if (restart || timers.get(id)?.total !== total) startTimer(id, total)
+    if (timers.get(id)?.total !== total) startTimer(id, total)
 }
 
 function cancelRemoval(id: ToastID) {
@@ -107,7 +133,10 @@ function enforceMaxVisible(position: ToastPosition) {
         (record) => record.open && positionOf(record.input) === position
     )
     const overflow = open.length - config.maxVisible + 1
-    if (overflow > 0) open.slice(0, overflow).forEach((record) => dismiss(record.id, 'replaced'))
+    if (overflow <= 0) return
+    open.filter((record) => !holdsOpen(record.input))
+        .slice(0, overflow)
+        .forEach((record) => dismiss(record.id, 'replaced'))
 }
 
 function open(id: ToastID, input: ToastInput, render: CustomRender | null) {
@@ -115,14 +144,11 @@ function open(id: ToastID, input: ToastInput, render: CustomRender | null) {
     const existing = records.get(id)
 
     if (existing) {
-        const merged = { ...existing.input, ...input }
-        records.set(id, {
-            ...existing,
-            input: merged,
-            render: render ?? existing.render,
-            open: true
-        })
-        retime(id, merged, !existing.open)
+        if (!existing.open || positionOf(existing.input) !== positionOf(input)) {
+            enforceMaxVisible(positionOf(input))
+        }
+        records.set(id, { ...existing, input, render, open: true })
+        arm(id)
         emit()
         return
     }
@@ -130,7 +156,6 @@ function open(id: ToastID, input: ToastInput, render: CustomRender | null) {
     enforceMaxVisible(positionOf(input))
     records.set(id, { id, input, render, open: true, createdAt: Date.now() })
     input.onOpen?.(id)
-    startTimer(id, resolveDuration(input, config.duration))
     emit()
 }
 
@@ -168,7 +193,7 @@ export function getRecord(id: ToastID): ToastRecord | undefined {
 /**
  * @name show
  * @description Opens a toast from declarative content. Passing the id of an
- * existing toast updates it instead.
+ * existing toast replaces its content and restarts its timer.
  *
  * @example
  * const id = show({ title: 'Saved', status: 'success' })
@@ -205,7 +230,8 @@ export function update(id: ToastID, patch: ToastPatch) {
     if (!existing || !existing.open) return
     const merged = { ...existing.input, ...patch }
     records.set(id, { ...existing, input: merged })
-    retime(id, merged, 'duration' in patch)
+    if ('duration' in patch) arm(id)
+    else retime(id, merged)
     emit()
 }
 
@@ -248,6 +274,30 @@ export function handleFor(id: ToastID): ToastHandle {
 }
 
 /**
+ * @name trackShown
+ * @description Marks a toast as on screen and starts its timer, so a toast only
+ * counts down once a `Notifier` renders it. Returns the function that marks it
+ * off screen again, which stops its timer once no view shows it.
+ *
+ * @example
+ * useEffect(() => trackShown(id), [id])
+ */
+export function trackShown(id: ToastID): () => void {
+    const count = (views.get(id) ?? 0) + 1
+    views.set(id, count)
+    if (count === 1) arm(id)
+    return () => {
+        const remaining = (views.get(id) ?? 0) - 1
+        if (remaining > 0) {
+            views.set(id, remaining)
+            return
+        }
+        views.delete(id)
+        clearTimer(id)
+    }
+}
+
+/**
  * @name pauseTimers
  * @description Holds every auto-dismiss timer, remembering the time each had left.
  * Timers resume once every hold has been released.
@@ -274,16 +324,25 @@ export function resumeTimers(hold: Hold) {
     timers.forEach((timer, id) => schedule(id, timer))
 }
 
+/**
+ * @name resetStore
+ * @description Removes every toast at once, clears timers and holds, and restores
+ * the defaults. Subscribers stay connected, so a mounted `Notifier` keeps
+ * working and simply shows nothing.
+ *
+ * @example
+ * beforeEach(() => resetStore())
+ */
 export function resetStore() {
     timers.forEach((timer) => {
         if (timer.handle) clearTimeout(timer.handle)
     })
     removals.forEach((removal) => clearTimeout(removal))
     records.clear()
-    listeners.clear()
     timers.clear()
     removals.clear()
     holds.clear()
+    views.clear()
     config = { ...defaultConfig }
-    snapshot = []
+    emit()
 }

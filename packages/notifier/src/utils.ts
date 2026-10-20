@@ -12,6 +12,26 @@ export function generateId(): ToastID {
 
 export function noop() {}
 
+// A CSS layer name: identifiers joined by dots, such as `notifier` or `vendor.toasts`
+const LAYER_NAME = /^-?[_a-zA-Z][\w-]*(\.-?[_a-zA-Z][\w-]*)*$/
+
+/**
+ * @name resolveLayer
+ * @description The cascade layer the stylesheet goes in, from the `layer` prop of
+ * `Notifier`: `notifier` for true, the name itself when it is a valid layer
+ * name, and null (no layer) for false, nothing or an invalid name.
+ *
+ * @example
+ * resolveLayer(true) // 'notifier'
+ * resolveLayer('vendor.toasts') // 'vendor.toasts'
+ * resolveLayer('two words') // null
+ */
+export function resolveLayer(layer: boolean | string | undefined): string | null {
+    if (layer === true) return 'notifier'
+    if (typeof layer === 'string' && LAYER_NAME.test(layer)) return layer
+    return null
+}
+
 export function cx(...parts: (string | false | null | undefined)[]): string | undefined {
     const joined = parts.filter(Boolean).join(' ')
     return joined === '' ? undefined : joined

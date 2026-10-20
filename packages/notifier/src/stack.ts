@@ -18,7 +18,11 @@ export type StackPlacement = {
  * @example
  * expandedOffset([100, 80, 60], 2, 12) // 204
  */
-export function expandedOffset(heights: readonly number[], index: number, gap: number): number {
+export function expandedOffset(
+    heights: readonly (number | undefined)[],
+    index: number,
+    gap: number
+): number {
     let total = 0
     for (let position = 0; position < index; position++) {
         total += (heights[position] ?? heights[0] ?? 0) + gap
@@ -42,7 +46,7 @@ export function expandedOffset(heights: readonly number[], index: number, gap: n
 export function stackPlacement(
     index: number,
     expanded: boolean,
-    heights: readonly number[],
+    heights: readonly (number | undefined)[],
     gap: number
 ): StackPlacement {
     if (expanded) {

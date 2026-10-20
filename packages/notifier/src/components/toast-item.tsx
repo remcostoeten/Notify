@@ -1,10 +1,10 @@
-import { memo, useEffect, useMemo, useRef } from 'react'
+import { memo, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import type { FocusEvent } from 'react'
 import { motion, useMotionValue, useReducedMotion, useTransform } from 'motion/react'
 import type { PanInfo } from 'motion/react'
-import { AnimationConfig, Defaults, EntryConfig } from '../constants'
+import { AnimationConfig, Defaults, EntryConfig, ResizeConfig } from '../constants'
 import { placementOf } from '../placement'
-import { dismiss, handleFor, pauseTimers, resumeTimers } from '../store'
+import { dismiss, handleFor, pauseTimers, resumeTimers, trackShown } from '../store'
 import { RuntimeContext } from './context'
 import { Toast } from './toast'
 import type { ToastPosition, ToastRecord, ToastRuntime, ToastTone } from '../types'
@@ -40,6 +40,58 @@ function ToastItemView({ record, position, tone, swipe, pauseOnHover, close, sta
     )
     const assertive = input.status === 'error' || input.status === 'warning'
     const hovering = useRef(false)
+    const itemRef = useRef<HTMLDivElement>(null)
+    const lastHeight = useRef<number | null>(null)
+    const resize = useRef<Animation | null>(null)
+
+    useEffect(() => trackShown(id), [id])
+
+    useEffect(() => {
+        const item = itemRef.current
+        if (!item || typeof ResizeObserver === 'undefined') return
+        const observer = new ResizeObserver(() => {
+            const surface = item.querySelector<HTMLElement>('.ntf-toast')
+            if (surface && resize.current === null) lastHeight.current = surface.offsetHeight
+        })
+        observer.observe(item)
+        return () => observer.disconnect()
+    }, [])
+
+    useLayoutEffect(() => {
+        const item = itemRef.current
+        const surface = item?.querySelector<HTMLElement>('.ntf-toast')
+        if (!item || !surface) return
+        const running = resize.current
+        const from = running ? surface.offsetHeight : lastHeight.current
+        running?.cancel()
+        resize.current = null
+        delete item.dataset.ntfHeight
+        const to = surface.offsetHeight
+        lastHeight.current = to
+        if (
+            from === null ||
+            from === to ||
+            calm ||
+            !open ||
+            typeof surface.animate !== 'function'
+        ) {
+            return
+        }
+        item.dataset.ntfHeight = String(to)
+        const animation = surface.animate(
+            [
+                { height: `${from}px`, overflow: 'hidden' },
+                { height: `${to}px`, overflow: 'hidden' }
+            ],
+            { duration: ResizeConfig.DURATION_MS, easing: ResizeConfig.EASING }
+        )
+        resize.current = animation
+        animation.onfinish = () => {
+            if (resize.current !== animation) return
+            resize.current = null
+            delete item.dataset.ntfHeight
+        }
+    }, [record, calm, open])
 
     function handleEnter() {
         if (!pauseOnHover) return
@@ -99,6 +151,7 @@ function ToastItemView({ record, position, tone, swipe, pauseOnHover, close, sta
 
     return (
         <motion.div
+            ref={itemRef}
             layout={stacked ? undefined : 'position'}
             className='ntf-item'
             data-ntf-id={id}

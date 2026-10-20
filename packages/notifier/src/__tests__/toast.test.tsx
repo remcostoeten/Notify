@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { cleanup, fireEvent, render } from '@testing-library/react'
 import { Toast } from '../components/toast'
-import { RuntimeContext } from '../components/context'
+import { CloseLabelContext, RuntimeContext } from '../components/context'
 import type { ToastRuntime } from '../types'
 
 afterEach(() => {
@@ -90,9 +90,21 @@ describe('Toast from content', () => {
         expect(container.querySelector('.ntf-close')?.className).toContain('close-x')
     })
 
-    it('includes its own stylesheet when no Notifier supplies one', () => {
-        const { container } = render(<Toast title='a' />)
-        expect(container.querySelector('style[data-ntf]')?.textContent).toContain('.ntf-toast')
+    it('adds the stylesheet to the head when no Notifier supplies one', () => {
+        render(<Toast title='a' />)
+        expect(document.head.querySelector('style[data-ntf]')?.textContent).toContain('.ntf-toast')
+    })
+
+    it('adds one stylesheet however many standalone toasts render', () => {
+        const { container } = render(
+            <>
+                <Toast title='a' />
+                <Toast title='b' />
+                <Toast title='c' />
+            </>
+        )
+        expect(container.querySelectorAll('style')).toHaveLength(0)
+        expect(document.querySelectorAll('style[data-ntf]')).toHaveLength(1)
     })
 })
 
@@ -279,6 +291,26 @@ describe('actions', () => {
         expect(container.querySelector<HTMLButtonElement>('.ntf-action')?.disabled).toBe(true)
     })
 
+    it('turns a disabled link into an inert link', () => {
+        const toast = runtime()
+        const onClick = vi.fn()
+        const { container } = render(
+            <RuntimeContext.Provider value={toast}>
+                <Toast
+                    title='a'
+                    actions={[{ label: 'Open', href: '/inbox', disabled: true, onClick }]}
+                />
+            </RuntimeContext.Provider>
+        )
+        const link = container.querySelector('a.ntf-action') as HTMLElement
+        expect(link.hasAttribute('href')).toBe(false)
+        expect(link.getAttribute('role')).toBe('link')
+        expect(link.getAttribute('aria-disabled')).toBe('true')
+        fireEvent.click(link)
+        expect(onClick).not.toHaveBeenCalled()
+        expect(toast.dismiss).not.toHaveBeenCalled()
+    })
+
     it('puts the progress label above the actions row', () => {
         const { container } = render(
             <Toast title='a' progress={60} actions={[{ label: 'Cancel' }]} />
@@ -299,6 +331,26 @@ describe('close', () => {
         )
         fireEvent.click(getByLabelText('Close'))
         expect(toast.dismiss).toHaveBeenCalledWith('close')
+    })
+
+    it('takes its label from the surrounding Notifier', () => {
+        const { getByLabelText } = render(
+            <CloseLabelContext.Provider value='Sluiten'>
+                <Toast title='a' />
+            </CloseLabelContext.Provider>
+        )
+        expect(getByLabelText('Sluiten')).not.toBeNull()
+    })
+
+    it('prefers its own label', () => {
+        const { getByLabelText } = render(
+            <CloseLabelContext.Provider value='Sluiten'>
+                <Toast>
+                    <Toast.Close label='Fermer' />
+                </Toast>
+            </CloseLabelContext.Provider>
+        )
+        expect(getByLabelText('Fermer')).not.toBeNull()
     })
 })
 

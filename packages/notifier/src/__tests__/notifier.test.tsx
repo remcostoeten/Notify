@@ -1,10 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { useEffect } from 'react'
 import { act, cleanup, fireEvent, render } from '@testing-library/react'
 import { Notifier } from '../components/notifier'
 import { Toast } from '../components/toast'
 import { useToast } from '../components/context'
 import { notify } from '../notify'
-import { getRecord, resetStore } from '../store'
+import { getRecord, getSnapshot, resetStore } from '../store'
 import { Defaults } from '../constants'
 
 describe('Notifier', () => {
@@ -20,7 +21,7 @@ describe('Notifier', () => {
     it('renders only its stylesheet and an empty live region while there are no toasts', () => {
         const { container } = render(<Notifier />)
         expect(container.querySelector('.ntf-toast')).toBeNull()
-        expect(container.querySelector('style[data-ntf]')).not.toBeNull()
+        expect(document.head.querySelector('style[data-ntf]')).not.toBeNull()
         expect(container.querySelectorAll('[role=region]')).toHaveLength(1)
     })
 
@@ -53,7 +54,8 @@ describe('Notifier', () => {
             notify('one')
             notify('two')
         })
-        expect(container.querySelectorAll('style[data-ntf]')).toHaveLength(1)
+        expect(container.querySelectorAll('style')).toHaveLength(0)
+        expect(document.querySelectorAll('style[data-ntf]')).toHaveLength(1)
     })
 
     it('announces toasts in a polite live region', () => {
@@ -152,8 +154,111 @@ describe('Notifier', () => {
     })
 
     it('sets the nonce on the stylesheet', () => {
-        const { container } = render(<Notifier nonce='abc' />)
-        expect(container.querySelector('style[data-ntf]')?.getAttribute('nonce')).toBe('abc')
+        render(<Notifier nonce='abc' />)
+        expect(document.head.querySelector('style[data-ntf]')?.getAttribute('nonce')).toBe('abc')
+    })
+
+    it('leaves the stylesheet unlayered by default', () => {
+        render(<Notifier />)
+        expect(
+            document.head.querySelector('style[data-ntf]')?.textContent?.startsWith('.ntf-toast')
+        ).toBe(true)
+    })
+
+    it('wraps the stylesheet in a cascade layer when asked', () => {
+        const { rerender } = render(<Notifier layer />)
+        function sheet() {
+            return document.head.querySelector('style[data-ntf]')?.textContent ?? ''
+        }
+        expect(sheet().startsWith('@layer notifier{')).toBe(true)
+        rerender(<Notifier layer='vendor.toasts' />)
+        expect(sheet().startsWith('@layer vendor.toasts{')).toBe(true)
+    })
+
+    it('warns about an invalid layer name and leaves the stylesheet unlayered', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+        render(<Notifier layer='two words' />)
+        expect(warn).toHaveBeenCalledTimes(1)
+        expect(
+            document.head.querySelector('style[data-ntf]')?.textContent?.startsWith('.ntf-toast')
+        ).toBe(true)
+        warn.mockRestore()
+    })
+
+    it('labels the regions and close buttons from labels', () => {
+        const { container, getByLabelText } = render(
+            <Notifier labels={{ region: 'Meldingen', close: 'Sluiten' }} />
+        )
+        act(() => {
+            notify({ title: 'a', duration: 0 })
+        })
+        expect(container.querySelector('[role=region]')?.getAttribute('aria-label')).toBe(
+            'Meldingen'
+        )
+        expect(getByLabelText('Sluiten')).not.toBeNull()
+    })
+
+    it('starts the timer when it shows a toast, not when the toast was opened', () => {
+        let id = ''
+        act(() => {
+            id = notify({ title: 'Welcome' })
+            vi.advanceTimersByTime(Defaults.DURATION_MS * 2)
+        })
+        expect(getRecord(id)?.open).toBe(true)
+        render(<Notifier />)
+        act(() => {
+            vi.advanceTimersByTime(Defaults.DURATION_MS)
+        })
+        expect(getRecord(id)?.open).toBe(false)
+    })
+
+    it('applies its props to toasts opened in a sibling mount effect', () => {
+        function Burst() {
+            useEffect(() => {
+                notify({ id: 'one', title: 'one' })
+                notify({ id: 'two', title: 'two' })
+            }, [])
+            return null
+        }
+        render(
+            <>
+                <Burst />
+                <Notifier duration={10_000} maxVisible={1} />
+            </>
+        )
+        expect(
+            getSnapshot()
+                .filter((record) => record.open)
+                .map((record) => record.id)
+        ).toEqual(['two'])
+        act(() => {
+            vi.advanceTimersByTime(Defaults.DURATION_MS + 1)
+        })
+        expect(getRecord('two')?.open).toBe(true)
+        act(() => {
+            vi.advanceTimersByTime(10_000 - Defaults.DURATION_MS - 1)
+        })
+        expect(getRecord('two')?.open).toBe(false)
+    })
+
+    it('holds timers when the tab is hidden as it mounts', () => {
+        const visibility = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden')
+        render(<Notifier />)
+        let id = ''
+        act(() => {
+            id = notify({ title: 'Opened in a background tab' })
+        })
+        act(() => {
+            vi.advanceTimersByTime(Defaults.DURATION_MS * 2)
+        })
+        expect(getRecord(id)?.open).toBe(true)
+        visibility.mockReturnValue('visible')
+        act(() => {
+            document.dispatchEvent(new Event('visibilitychange'))
+            vi.advanceTimersByTime(Defaults.DURATION_MS)
+        })
+        expect(getRecord(id)?.open).toBe(false)
+        visibility.mockRestore()
     })
 
     it('hands the configured defaults to the store', () => {
@@ -259,8 +364,14 @@ describe('Notifier', () => {
             )
         })
         unmount()
-        const later = notify({ title: 'b', duration: 1000 })
-        vi.advanceTimersByTime(1000)
+        render(<Notifier />)
+        let later = ''
+        act(() => {
+            later = notify({ title: 'b', duration: 1000 })
+        })
+        act(() => {
+            vi.advanceTimersByTime(1000)
+        })
         expect(getRecord(later)?.open).toBe(false)
     })
 

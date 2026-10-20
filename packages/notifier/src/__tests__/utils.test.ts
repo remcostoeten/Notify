@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { cx, kebab, matchesHotkey } from '../utils'
+import { cx, kebab, matchesHotkey, resolveLayer } from '../utils'
 
 const none = { altKey: false, ctrlKey: false, shiftKey: false, metaKey: false }
 
@@ -39,6 +39,27 @@ describe('cx', () => {
     it('joins truthy parts and returns undefined for none', () => {
         expect(cx('a', false, null, undefined, 'b')).toBe('a b')
         expect(cx(false, null)).toBeUndefined()
+    })
+})
+
+describe('resolveLayer', () => {
+    it('uses notifier for true and nothing for false or undefined', () => {
+        expect(resolveLayer(true)).toBe('notifier')
+        expect(resolveLayer(false)).toBeNull()
+        expect(resolveLayer(undefined)).toBeNull()
+    })
+
+    it('accepts valid layer names, dotted ones included', () => {
+        expect(resolveLayer('toasts')).toBe('toasts')
+        expect(resolveLayer('vendor.toasts')).toBe('vendor.toasts')
+        expect(resolveLayer('_private-layer')).toBe('_private-layer')
+    })
+
+    it('rejects names that are not layer names', () => {
+        expect(resolveLayer('two words')).toBeNull()
+        expect(resolveLayer('1st')).toBeNull()
+        expect(resolveLayer('a{}b')).toBeNull()
+        expect(resolveLayer('')).toBeNull()
     })
 })
 
