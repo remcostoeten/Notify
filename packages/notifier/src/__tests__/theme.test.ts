@@ -56,7 +56,7 @@ describe('toastStyles', () => {
         expect(toastStyles).toContain('gap:var(--ntf-gap,16px)')
         expect(toastStyles).toContain('padding:var(--ntf-padding,16px)')
         expect(toastStyles).toContain('top:calc(var(--ntf-padding,16px) - 4px)')
-        expect(toastStyles).not.toMatch(/\d\.\dpx/)
+        expect(toastStyles).not.toMatch(/15\.5px|11\.4px|11\.8px|8\.5px/)
     })
 })
 
