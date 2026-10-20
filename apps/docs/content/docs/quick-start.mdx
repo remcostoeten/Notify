@@ -1,0 +1,82 @@
+---
+title: Quick start guide
+sidebarTitle: Quick start
+description: Open a toast, update it and dismiss it.
+icon: Rocket
+---
+
+<Steps>
+<Step>
+
+### Mount Notifier
+
+Add `<Notifier />` to your root layout, as shown in [Installation](/docs/installation).
+
+</Step>
+<Step>
+
+### Open a toast
+
+A string is a title.
+
+```tsx
+import { notify } from "@remcostoeten/notifier";
+
+notify("Saved");
+```
+
+<ToastButton title="Saved">Try it</ToastButton>
+
+</Step>
+<Step>
+
+### Fill more slots
+
+Pass an object to set any slot. `status` adds an icon and `actions` adds buttons.
+
+```tsx
+notify({
+  tone: "dark",
+  status: "success",
+  title: "Details updated",
+  description: "Your changes have been saved.",
+  actions: [{ label: "Dismiss", color: "muted" }, { label: "View profile" }],
+});
+```
+
+<ToastButton example="profile">Try it</ToastButton>
+
+</Step>
+<Step>
+
+### Update it by id
+
+`notify` returns the toast id. Keep it to change the toast later.
+
+```tsx
+const id = notify({ title: "Uploading", progress: 0 });
+
+notify.update(id, { progress: 60 });
+notify.update(id, { title: "Done", progress: 100 });
+```
+
+A toast with `progress` below 100 stays open. At 100 it starts its timer and closes.
+
+</Step>
+<Step>
+
+### Dismiss it
+
+```tsx
+notify.dismiss(id); // one toast
+notify.dismiss(); // all of them
+```
+
+</Step>
+</Steps>
+
+## Next
+
+- [Anatomy](/docs/concepts/anatomy) explains the slots.
+- [Custom toasts](/docs/guides/custom-toasts) shows how to build a layout from the primitives.
+- [Theming](/docs/guides/theming) covers tokens and tones.

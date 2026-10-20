@@ -1,0 +1,275 @@
+---
+title: Lifecycle
+description: How long a toast stays, and what pauses, replaces or closes it.
+icon: Route
+---
+
+A toast opens, optionally changes while it is open, then closes. It stays in the DOM for 300ms after it closes so its exit animation can play.
+
+```tsx
+const id = notify.loading("Saving");
+
+notify.update(id, { status: "success", title: "Saved" });
+
+notify.dismiss(id);
+```
+
+## Duration
+
+`duration` is the number of milliseconds a toast stays open. These rules decide it, in order:
+
+1. An explicit `duration` wins. `0` means the toast stays until it is dismissed.
+2. A toast with `status: "loading"` stays open.
+3. A toast with `progress` below 100, or with an indeterminate `progress`, stays open.
+4. Anything else uses the `duration` of `Notifier`, which defaults to 5000.
+
+```tsx
+notify({ title: "Saved", duration: 2000 }); // rule 1: closes after 2 seconds
+notify({ title: "Pinned", duration: 0 }); // rule 1: stays until dismissed
+
+notify.loading("Saving"); // rule 2: stays open
+notify({ title: "Uploading", progress: 40 }); // rule 3: stays open
+notify({ title: "Preparing", progress: { value: null } }); // rule 3: stays open
+
+notify("Saved"); // rule 4: uses the duration of Notifier
+```
+
+<ToastButton title="Closes after 2 seconds" duration={2000}>
+  duration: 2000
+</ToastButton>
+<ToastButton title="Stays until dismissed" duration={0}>
+  duration: 0
+</ToastButton>
+<ToastButton title="Saving" status="loading">
+  status: "loading"
+</ToastButton>
+
+A timer starts when `Notifier` first shows the toast, not when `notify` runs. A toast opened before `Notifier` mounts, or in a tab that is hidden, does not run out before anyone sees it.
+
+The default for rule 4 is set once on `Notifier`. `0` keeps every toast open unless it sets its own.
+
+```tsx
+<Notifier duration={8000} />
+```
+
+<Callout type="info" title="Persistent toasts finish by themselves">
+  When a loading toast becomes a success toast, or progress reaches 100, rule 4 applies and the
+  timer starts.
+</Callout>
+
+```tsx
+const id = notify({ title: "Uploading", progress: 0 });
+
+notify.update(id, { progress: 60 }); // still open
+notify.update(id, { progress: 100 }); // the 5000ms timer starts now
+```
+
+## Timers while you update
+
+`notify.update` keeps the running timer when the effective duration is unchanged.
+
+```tsx
+const id = notify({ title: "Exporting", duration: 4000 });
+
+notify.update(id, { description: "2 of 10" }); // the timer keeps running
+notify.update(id, { description: "9 of 10" }); // still the same timer
+```
+
+The timer starts again in two cases. The first is a patch that includes `duration`, even with the same value.
+
+```tsx
+notify.update(id, { duration: 4000 }); // 4 seconds again from now
+```
+
+The second is a toast that switches between persistent and timed, as a promise toast does.
+
+```tsx
+const id = notify.loading("Saving"); // persistent, no timer
+
+notify.update(id, { status: "success", title: "Saved" }); // timed, the timer starts
+
+notify.update(id, { status: "loading", title: "Saving again" }); // persistent, the timer stops
+```
+
+## Pausing
+
+Every timer is held while:
+
+- the pointer is over a toast, unless `pauseOnHover` is `false`. In a stack, hovering the stack counts.
+- focus is inside a toast. This is always on.
+- the browser tab is hidden, including a page that loads in a background tab.
+
+Timers resume with the time they had left. A toast with 5000ms that is hovered after 2000ms has 3000ms left when the pointer leaves, not 5000.
+
+```tsx
+<Notifier pauseOnHover={false} />
+```
+
+With `stack`, hovering anywhere on the stack holds the timers, not only the toast under the pointer.
+
+```tsx
+<Notifier stack />
+```
+
+A hold is also released when the hovered or focused toast is dismissed or removed, so a swipe or a close never freezes the others.
+
+```tsx
+const id = notify({ title: "Pointer is here", duration: 3000 });
+
+notify.dismiss(id); // releases the hold, so the other toasts keep counting down
+```
+
+## Replacing
+
+`maxVisible` limits open toasts per position. Opening one more dismisses the oldest in that position with the reason `replaced`.
+
+Toasts that keep themselves open are never replaced: a loading toast, a toast with unfinished progress and a toast with `duration: 0`. A promise or an upload always gets to show its result. When every open toast is one of those, the column grows past the limit.
+
+```tsx
+<Notifier maxVisible={2} />;
+
+notify.promise(save(), { loading: "Saving", success: "Saved", error: "Failed" });
+notify("One");
+notify("Two"); // "One" is replaced, the loading toast stays
+```
+
+```tsx
+<Notifier maxVisible={2} />;
+
+notify("One");
+notify("Two");
+notify("Three"); // "One" is dismissed with the reason "replaced"
+```
+
+Positions are counted on their own, so a toast in another position never replaces this one.
+
+```tsx
+notify({ title: "Bottom right" });
+notify({ title: "Bottom right again" });
+notify({ title: "Top right", position: "top-right" }); // replaces nothing
+```
+
+To find out which toast was replaced, read the reason in `onDismiss`.
+
+```tsx
+notify({
+  title: "One",
+  onDismiss: (id, reason) => {
+    if (reason === "replaced") console.log(`${id} made room for a newer toast`);
+  },
+});
+```
+
+## Ids
+
+`notify` returns the id of the toast. Keep it to update or dismiss that toast later.
+
+```tsx
+const id = notify("Saving");
+
+notify.update(id, { title: "Saved" });
+notify.dismiss(id);
+```
+
+Passing an `id` that is already open replaces that toast's content instead of opening another, and an `id` that is closing reopens it. Nothing from the earlier call carries over and the timer starts again. To change only some fields, use `notify.update`.
+
+```tsx
+notify({ id: "sync", title: "Syncing", status: "loading" });
+notify({ id: "sync", title: "Synced", status: "success" });
+```
+
+This makes a fixed id a way to keep one toast per topic. Calling it in a loop never stacks duplicates.
+
+```tsx
+function onOffline() {
+  notify({ id: "network", title: "You are offline", status: "warning", duration: 0 });
+}
+
+function onOnline() {
+  notify({ id: "network", title: "Back online", status: "success" }); // closes after 5000ms
+}
+```
+
+Opening an id right after dismissing it reopens the same toast instead of adding a second one.
+
+```tsx
+notify.dismiss("network");
+notify({ id: "network", title: "You are offline again", status: "warning" });
+```
+
+## Dismissing
+
+| Reason     | Trigger                                      |
+| ---------- | -------------------------------------------- |
+| `timeout`  | The timer ran out.                           |
+| `swipe`    | The toast was swiped towards its edge.       |
+| `close`    | The close button was pressed.                |
+| `action`   | An action was pressed and `dismiss` is true. |
+| `manual`   | `notify.dismiss` or `toast.dismiss()`.       |
+| `replaced` | `maxVisible` made room for a newer toast.    |
+
+Each reason comes from a different place in your code, or from the user.
+
+```tsx
+notify({ title: "Saved", duration: 3000 }); // timeout
+
+notify({ title: "Saved", close: true }); // close, when the button is pressed
+
+notify({ title: "Saved" }); // swipe, when it is dragged towards its edge
+
+notify({
+  title: "Message deleted",
+  actions: [{ label: "Undo", onClick: restore }], // action, because dismiss defaults to true
+});
+
+notify({
+  title: "Update available",
+  actions: [{ label: "Details", onClick: openDetails, dismiss: false }], // stays open
+});
+```
+
+`manual` is what you call yourself. `notify.dismiss` takes an id, or nothing to close every toast.
+
+```tsx
+notify.dismiss(id); // one toast
+notify.dismiss(); // every toast
+
+notify.custom((toast) => <button onClick={() => toast.dismiss()}>Got it</button>);
+```
+
+Use the reason to tell a user choice from a timeout.
+
+```tsx
+notify({
+  title: "Message deleted",
+  actions: [{ label: "Undo", onClick: restore }],
+  onDismiss: (id, reason) => {
+    if (reason !== "action") commitDelete();
+  },
+});
+```
+
+## Callbacks
+
+```tsx
+notify({
+  title: "Saved",
+  onOpen: (id) => track("toast_open", id),
+  onDismiss: (id, reason) => track("toast_dismiss", reason),
+  onClose: (id) => cleanup(id),
+});
+```
+
+`onOpen` fires once, when the toast first opens. `onDismiss` fires as the toast starts to close. `onClose` fires after the exit animation, when the toast is removed.
+
+A toast with a 1 second duration calls them in this order:
+
+```tsx
+notify({
+  title: "Saved",
+  duration: 1000,
+  onOpen: () => console.log("open"), // at 0ms
+  onDismiss: (id, reason) => console.log("dismiss", reason), // at 1000ms, reason "timeout"
+  onClose: () => console.log("close"), // at about 1300ms, after the exit animation
+});
+```

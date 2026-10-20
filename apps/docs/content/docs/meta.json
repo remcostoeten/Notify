@@ -1,0 +1,16 @@
+{
+  "title": "Notifier",
+  "root": true,
+  "pages": [
+    "index",
+    "installation",
+    "quick-start",
+    "concepts",
+    "guides",
+    "components",
+    "reference",
+    "---Links---",
+    "[GitHub](https://github.com/remcostoeten/Notify)",
+    "[npm](https://www.npmjs.com/package/@remcostoeten/notifier)"
+  ]
+}

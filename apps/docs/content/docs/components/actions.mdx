@@ -1,0 +1,139 @@
+---
+title: Toast.Actions and Toast.Action
+sidebarTitle: Actions
+description: Text links, outline buttons and filled buttons.
+icon: Rocket
+---
+
+`Toast.Actions` is the row under the text. `Toast.Action` is one button or link in it, in three variants and three colors.
+
+## Variants
+
+<ToastPreview
+  title="text"
+  actions={[
+    { label: "Dismiss", color: "muted" },
+    { label: "View profile", color: "default" },
+  ]}
+  trigger={false}
+/>
+
+<ToastPreview
+  title="outline"
+  actions={[
+    { label: "Dismiss", variant: "outline" },
+    { label: "Review", variant: "outline", color: "muted" },
+  ]}
+  trigger={false}
+/>
+
+<ToastPreview
+  title="filled"
+  actions={[
+    { label: "Dismiss", variant: "filled" },
+    { label: "Reply", variant: "filled", color: "accent" },
+  ]}
+  trigger={false}
+/>
+
+| Variant   | Description                                               |
+| --------- | --------------------------------------------------------- |
+| `text`    | No padding, no border. 20px tall and flush with the text. |
+| `outline` | 34px tall button with a border.                           |
+| `filled`  | 34px tall button. The accent color is the primary button. |
+
+| Color     | Text                                                         |
+| --------- | ------------------------------------------------------------ |
+| `default` | The strong text color.                                       |
+| `muted`   | The muted text color, which turns strong on hover for text.  |
+| `accent`  | The accent text color. With `filled` it is the fill instead. |
+
+## Usage
+
+```tsx
+<Toast.Actions>
+  <Toast.Action color="muted">Dismiss</Toast.Action>
+  <Toast.Action variant="filled" color="accent" onClick={reply}>
+    Reply
+  </Toast.Action>
+</Toast.Actions>
+```
+
+From `notify`:
+
+```tsx
+notify({
+  title: "File moved to trash",
+  actions: [{ label: "Undo", color: "accent", onClick: restore }],
+});
+```
+
+## Dismissing
+
+Pressing an action calls `onClick` with the toast handle, then dismisses the toast with the reason `action`. Pass `dismiss: false` to keep it open, for example for a retry button.
+
+```tsx
+actions: [
+  {
+    label: "Retry",
+    dismiss: false,
+    onClick: (toast) => {
+      toast.update({ status: "loading", title: "Retrying" });
+      retry();
+    },
+  },
+];
+```
+
+## Links and disabled
+
+An action with an `href` renders an anchor. `disabled` dims it and ignores presses, and a disabled link drops its `href`, so Enter does not follow it either.
+
+```tsx
+actions: [{ label: "Open inbox", href: "/inbox" }];
+```
+
+## Props
+
+### Toast.Action
+
+<TypeTable
+  type={{
+    children: { type: "ReactNode", description: "The label.", required: true },
+    variant: {
+      type: '"text" | "outline" | "filled"',
+      description: "How the action is drawn.",
+      default: '"text"',
+    },
+    color: {
+      type: '"default" | "muted" | "accent"',
+      description: "The color role.",
+      default: '"default"',
+    },
+    onClick: {
+      type: "(toast: ToastHandle) => void",
+      description: "Called before the toast is dismissed. The handle has id, dismiss and update.",
+    },
+    dismiss: {
+      type: "boolean",
+      description: "Dismiss the toast after onClick.",
+      default: "true",
+    },
+    href: { type: "string", description: "Renders an anchor instead of a button." },
+    disabled: { type: "boolean", description: "Dims the action and ignores presses." },
+    className: { type: "string", description: "Added to the action." },
+  }}
+/>
+
+### Toast.Actions
+
+<TypeTable
+  type={{
+    children: { type: "ReactNode", description: "The actions.", required: true },
+    aside: {
+      type: "ReactNode",
+      description: "Trailing content on the right, top aligned. Muted and tabular.",
+    },
+    className: { type: "string", description: "Added to the row." },
+  }}
+/>

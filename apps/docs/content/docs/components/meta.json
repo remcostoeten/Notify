@@ -1,0 +1,15 @@
+{
+  "title": "Components",
+  "icon": "Palette",
+  "pages": [
+    "index",
+    "toast",
+    "icon",
+    "avatar",
+    "title",
+    "description",
+    "progress",
+    "actions",
+    "close"
+  ]
+}

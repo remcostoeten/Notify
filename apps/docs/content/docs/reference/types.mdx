@@ -1,0 +1,61 @@
+---
+title: Types
+description: The exported TypeScript types.
+icon: FileText
+---
+
+Everything is exported from `@remcostoeten/notifier`.
+
+```ts
+import type { ToastInput, ToastPatch, ToastTheme } from "@remcostoeten/notifier";
+```
+
+## Values
+
+| Type            | Definition                                                                                                                                                        |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ToastID`       | `string`                                                                                                                                                          |
+| `ToastTone`     | `"light" \| "dark"`                                                                                                                                               |
+| `ToastStatus`   | `"success" \| "error" \| "warning" \| "info" \| "loading"`                                                                                                        |
+| `ToastPosition` | `"top-left" \| "top-center" \| "top-right" \| "bottom-left" \| "bottom-center" \| "bottom-right"`                                                                 |
+| `DismissReason` | `"timeout" \| "swipe" \| "close" \| "action" \| "manual" \| "replaced"`                                                                                           |
+| `IconShape`     | `"ring" \| "box" \| "circle" \| "bare"`                                                                                                                           |
+| `AvatarBadge`   | `"online" \| "away" \| "busy" \| "offline"`                                                                                                                       |
+| `AvatarShape`   | `"square" \| "circle"`                                                                                                                                            |
+| `ActionVariant` | `"text" \| "outline" \| "filled"`                                                                                                                                 |
+| `ActionColor`   | `"default" \| "muted" \| "accent"`                                                                                                                                |
+| `ToastSlot`     | `"root" \| "icon" \| "avatar" \| "badge" \| "body" \| "title" \| "meta" \| "description" \| "progress" \| "label" \| "actions" \| "action" \| "aside" \| "close"` |
+
+## Input
+
+| Type                 | Description                                                                                 |
+| -------------------- | ------------------------------------------------------------------------------------------- |
+| `ToastInput`         | `ToastContent & ToastSurface & ToastBehavior`. What `notify` takes.                         |
+| `ToastContent`       | `status`, `icon`, `avatar`, `title`, `meta`, `description`, `progress`, `actions`, `close`. |
+| `ToastSurface`       | `tone`, `width`, `className`, `classNames`, `style`.                                        |
+| `ToastBehavior`      | `id`, `position`, `duration`, `swipe`, `onOpen`, `onDismiss`, `onClose`.                    |
+| `ToastPatch`         | `Partial<Omit<ToastInput, "id">>`. What `notify.update` takes.                              |
+| `IconConfig`         | `{ shape?, status?, node? }`                                                                |
+| `AvatarConfig`       | `{ src?, alt?, fallback?, badge?, shape? }`                                                 |
+| `ProgressConfig`     | `{ value: number \| null; label?: boolean \| ReactNode }`                                   |
+| `ActionConfig`       | `{ label, onClick?, variant?, color?, dismiss?, href?, disabled? }`                         |
+| `ToastClassNames`    | `Partial<Record<ToastSlot, string>>`                                                        |
+| `PromiseMessages<T>` | `{ loading, success, error, id? }`                                                          |
+
+## Runtime
+
+| Type                 | Description                                                                     |
+| -------------------- | ------------------------------------------------------------------------------- |
+| `ToastHandle`        | `{ id, dismiss(reason?), update(patch) }`. Passed to action handlers.           |
+| `ToastRuntime`       | `ToastHandle & { tone }`. Passed to `notify.custom` and returned by `useToast`. |
+| `CustomRender`       | `(toast: ToastRuntime) => ReactNode`                                            |
+| `CustomToastOptions` | `ToastBehavior & { tone? }`                                                     |
+
+## Notifier
+
+| Type             | Description                                                               |
+| ---------------- | ------------------------------------------------------------------------- |
+| `NotifierProps`  | The props of `Notifier`.                                                  |
+| `NotifierLabels` | `{ region?, close? }`, the `labels` prop of `Notifier`.                   |
+| `ToastTheme`     | `{ light?, dark?, font?, radius?, width? }`                               |
+| `ToneTokens`     | The token names with string values. See [Tokens](/docs/reference/tokens). |

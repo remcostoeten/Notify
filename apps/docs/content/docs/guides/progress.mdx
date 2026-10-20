@@ -1,0 +1,59 @@
+---
+title: Progress
+description: Show work in flight and update the toast as it moves.
+icon: Route
+---
+
+A toast with `progress` shows a bar. `progress` is a number from 0 to 100, or `{ value, label }`. Keep the id that `notify` returns and call `notify.update` as the work moves.
+
+<ToastPreview example="upload" label="Plays a simulated upload" />
+
+```tsx
+const id = notify({
+  icon: <CloudUpload />,
+  title: "Uploading ‘toasts-FINAL06.fig’",
+  description: "Please wait while we upload your file.",
+  progress: 0,
+  actions: [{ label: "Cancel", color: "muted", onClick: () => upload.abort() }],
+});
+
+upload.on("progress", (percent) => notify.update(id, { progress: percent }));
+
+upload.on("done", () =>
+  notify.update(id, { title: "Upload complete", progress: 100, actions: undefined }),
+);
+```
+
+## Staying open
+
+A toast with `progress` below 100 stays open until you update or dismiss it. At 100 the normal timer starts and the toast closes. Pass `duration` to choose when.
+
+## The label
+
+A number shows a percentage label. The label sits under the bar on the right, and when the toast has actions it tucks into the row above them.
+
+```tsx
+progress: 60; // bar and "60%"
+progress: { value: 60, label: false }; // bar only
+progress: { value: 3, label: "3 of 10" }; // your own text
+```
+
+## Indeterminate
+
+Use `null` when you cannot measure. The bar slides back and forth and the toast stays open.
+
+<ToastPreview title="Preparing export" progress={{ value: null }} trigger={false} />
+
+```tsx
+const id = notify({ title: "Preparing export", progress: { value: null } });
+
+notify.update(id, { title: "Export ready", progress: 100 });
+```
+
+## Clearing slots
+
+An update merges into the toast. To remove a slot, patch it with `undefined`.
+
+```tsx
+notify.update(id, { actions: undefined, description: undefined });
+```

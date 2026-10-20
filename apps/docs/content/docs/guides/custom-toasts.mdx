@@ -1,0 +1,94 @@
+---
+title: Custom toasts
+description: Build a layout from the Toast primitives.
+icon: Palette
+---
+
+`notify.custom` opens a toast whose content you render. Positioning, motion, swipe, timers and the live region still apply. Inside, use `Toast` and its parts to keep the look.
+
+```tsx
+import { notify, Toast } from "@remcostoeten/notifier";
+
+notify.custom((toast) => (
+  <Toast tone="light">
+    <Toast.Avatar src={sienna.src} badge="online" />
+    <Toast.Body>
+      <Toast.Title meta="2 mins ago">Sienna Hewitt</Toast.Title>
+      <Toast.Description>I’ve finished adding my notes.</Toast.Description>
+      <Toast.Actions>
+        <Toast.Action variant="outline">Dismiss</Toast.Action>
+        <Toast.Action variant="filled" color="accent" onClick={reply}>
+          Reply
+        </Toast.Action>
+      </Toast.Actions>
+    </Toast.Body>
+    <Toast.Close />
+  </Toast>
+));
+```
+
+The render function receives `{ id, tone, dismiss, update }`. A `Toast` without a `tone` takes the tone of the toast it is in.
+
+<ToastPreview example="message" label="The same layout from the primitives" />
+
+## Anything inside
+
+`Toast` is only a surface when you pass children. Put your own markup in it and mix it with the parts.
+
+```tsx
+notify.custom(
+  (toast) => (
+    <Toast width={320}>
+      <Toast.Body>
+        <Toast.Title>Invite sent</Toast.Title>
+        <MemberPicker onDone={() => toast.dismiss()} />
+      </Toast.Body>
+    </Toast>
+  ),
+  { duration: 0 },
+);
+```
+
+Options are the behavior fields of a toast: `id`, `position`, `duration`, `swipe`, the callbacks, and `tone`.
+
+## useToast
+
+Parts and your own components read the toast they are in with `useToast`.
+
+```tsx
+import { useToast } from "@remcostoeten/notifier";
+
+function UndoButton({ onUndo }: { onUndo: () => void }) {
+  const toast = useToast();
+
+  return (
+    <button
+      onClick={() => {
+        onUndo();
+        toast.dismiss("action");
+      }}
+    >
+      Undo
+    </button>
+  );
+}
+```
+
+`useToast` returns `{ id, tone, dismiss, update }`. Outside a toast it returns handlers that do nothing, so a `Toast` also renders on its own, which is how the previews on this site work.
+
+## Standalone Toast
+
+A `Toast` outside `Notifier` includes its own stylesheet and has no timers or positioning. Use it for docs, a settings page or a design review.
+
+```tsx
+<Toast tone="dark" status="success" title="Saved" description="Your changes are live." />
+```
+
+## Content from props or children
+
+`Toast` takes either the content props of `notify` or children. With children it adds no slots of its own.
+
+| Passing                | Result                                     |
+| ---------------------- | ------------------------------------------ |
+| `title`, `status`, ... | The default layout built from the slots.   |
+| children               | Exactly your children, inside the surface. |

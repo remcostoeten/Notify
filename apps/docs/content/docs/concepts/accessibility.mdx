@@ -1,0 +1,62 @@
+---
+title: Accessibility
+description: Live regions, alerts, focus and reduced motion.
+icon: BookOpen
+---
+
+## Announcements
+
+Each position renders a `role="region"` labelled `Notifications` with `aria-live="polite"`. The region of the default position is mounted before any toast opens, so screen readers announce its toasts as they are added. A region for another position is created when its first toast opens, which some screen readers announce less reliably, so prefer one position for toasts that matter.
+
+Toasts with `status: "error"` or `status: "warning"` get `role="alert"`, which interrupts. Everything else is announced politely.
+
+## Keyboard
+
+`Notifier` sits at the end of the page, so tabbing to a toast would mean tabbing through everything before it. Press the hotkey to jump there instead.
+
+| Key                 | Effect                                                                                 |
+| ------------------- | -------------------------------------------------------------------------------------- |
+| `Alt+T`             | Moves focus to the newest open toast. Press Tab to reach its actions and close button. |
+| `Escape`            | Dismisses the focused toast and returns focus to where it was before the hotkey.       |
+| `Enter` and `Space` | Activate the action or close button that has focus.                                    |
+
+The hotkey is the `hotkey` prop of `Notifier`. It is a list of modifiers and one key joined by plus signs, such as `ctrl+shift+n`, and it matches the physical key, so it works on layouts where Alt changes the typed character. Pass `false` to turn it off.
+
+```tsx
+<Notifier hotkey="ctrl+shift+n" />
+```
+
+A focused toast shows a focus ring. Focus returns to where it was when the toast closes by Escape, by its close button or by an action.
+
+### Timers and focus
+
+A toast does not close while focus is inside it. The timer holds when focus enters the toast and resumes with the time it had left when focus leaves, so someone tabbing through the actions is never cut off. This holds even when `pauseOnHover` is `false`.
+
+A toast that asks for a decision should not rely on a timer at all, so give it `duration: 0`.
+
+```tsx
+notify({
+  title: "Delete this project?",
+  duration: 0,
+  actions: [
+    { label: "Cancel", color: "muted" },
+    { label: "Delete", variant: "filled", onClick: remove },
+  ],
+});
+```
+
+## Names and roles
+
+- The close button has `aria-label="Close"` and each region is labelled `Notifications`. Translate both with the `labels` prop of `Notifier`, or pass a `label` to one `Toast.Close`.
+- A disabled link action has no `href` and `aria-disabled="true"`, so neither a click nor Enter follows it.
+- A progress bar has `role="progressbar"` with `aria-valuemin`, `aria-valuemax` and `aria-valuenow`. An indeterminate bar leaves out `aria-valuenow`.
+- Icons are `aria-hidden`. If the icon carries meaning, say it in the title, for example "Upload failed".
+- Give avatars an `alt`.
+
+## Motion
+
+Motion respects `prefers-reduced-motion`. See [Positioning](/docs/concepts/positioning#motion).
+
+## Contrast
+
+The default text colors are chosen for the surfaces they sit on. If you change tokens, keep body text and the muted color at 4.5:1 against the surface, because muted actions and the progress label are text. See [Theming](/docs/guides/theming).

@@ -1,0 +1,104 @@
+---
+title: Notifier
+description: The component that renders every toast.
+icon: Search
+---
+
+Mount `Notifier` once near the root of your app. It renders the toasts, one column per position, and the stylesheet.
+
+```tsx
+import { Notifier } from "@remcostoeten/notifier";
+
+<Notifier position="bottom-right" tone="light" />;
+```
+
+## Props
+
+<TypeTable
+  type={{
+    position: {
+      type: '"top-left" | "top-center" | "top-right" | "bottom-left" | "bottom-center" | "bottom-right"',
+      description: "Where toasts appear when they do not set a position.",
+      default: '"bottom-right"',
+    },
+    tone: {
+      type: '"light" | "dark" | "auto"',
+      description: "Tone for toasts that do not set one. auto follows prefers-color-scheme.",
+      default: '"light"',
+    },
+    maxVisible: {
+      type: "number",
+      description:
+        "Open toasts per position. The oldest is dismissed with the reason replaced. Loading toasts, unfinished progress and duration 0 are never replaced.",
+      default: "3",
+    },
+    duration: {
+      type: "number",
+      description:
+        "Milliseconds before a toast closes. 0 keeps every toast open unless it sets its own.",
+      default: "5000",
+    },
+    swipe: {
+      type: "boolean",
+      description: "Swipe a toast towards its edge to dismiss it.",
+      default: "true",
+    },
+    pauseOnHover: {
+      type: "boolean",
+      description: "Hold every timer while the pointer is over a toast, or over the stack.",
+      default: "true",
+    },
+    close: {
+      type: "boolean",
+      description: "Show the close button on toasts that do not set close.",
+      default: "true",
+    },
+    hotkey: {
+      type: "string | false",
+      description:
+        "Moves focus to the newest open toast. Modifiers and one key joined by plus signs. false turns it off.",
+      default: '"alt+t"',
+    },
+    stack: {
+      type: "boolean",
+      description: "Overlap toasts into a stack that expands on hover.",
+      default: "false",
+    },
+    offset: {
+      type: "number | { x?: number; y?: number }",
+      description: "Distance from the screen edges in pixels.",
+      default: "24",
+    },
+    gap: { type: "number", description: "Space between toasts in pixels.", default: "12" },
+    theme: {
+      type: "ToastTheme",
+      description: "Token overrides per tone, plus font, radius and width.",
+    },
+    labels: {
+      type: "{ region?: string; close?: string }",
+      description: "The aria-label of each region and of every close button.",
+      default: '{ region: "Notifications", close: "Close" }',
+    },
+    layer: {
+      type: "boolean | string",
+      description:
+        "Puts the stylesheet in a cascade layer: true for notifier, or a layer name. See Styling.",
+      default: "false",
+    },
+    nonce: { type: "string", description: "CSP nonce for the stylesheet." },
+    className: { type: "string", description: "Added to each position column." },
+  }}
+/>
+
+## Behavior
+
+- `Notifier` writes `position`, `duration` and `maxVisible` to the store before any effect in the tree runs, so toasts opened in mount effects already use them. A toast's timer starts when `Notifier` first shows it.
+- Each position renders a `role="region"` labelled `Notifications`, or `labels.region`, with `aria-live="polite"`. The region of the default position is always mounted.
+- Timers are also held while focus is inside a toast and while the browser tab is hidden.
+- The hotkey focuses the newest open toast, and Escape dismisses the focused toast. See [Accessibility](/docs/concepts/accessibility#keyboard).
+- Mounting more than one `Notifier` logs a warning in development.
+- A hover or focus hold is released when its toast leaves, and when `Notifier` unmounts.
+
+## Server rendering
+
+`Notifier` renders its stylesheet inline and an empty region on the server. After hydration the stylesheet moves to one `<style>` element in the document head, shared with any standalone `Toast`. Toasts are client state, so none are rendered until the browser opens one.

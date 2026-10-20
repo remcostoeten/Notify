@@ -1,0 +1,109 @@
+---
+title: Styling
+description: Class names, inline styles and CSS selectors for every slot.
+icon: Palette
+---
+
+Tokens cover color, radius, width and font. For anything else, every slot takes a class name and has stable class names and data attributes to select.
+
+## className and classNames
+
+`className` and `style` apply to the root element of a toast. `classNames` adds a class to each slot by name.
+
+```tsx
+notify({
+  title: "Saved",
+  className: "shadow-2xl",
+  classNames: {
+    title: "tracking-tight",
+    action: "uppercase",
+    close: "opacity-60",
+  },
+});
+```
+
+The same props work on a standalone `Toast`. In compound toasts, `classNames` on the `Toast` reaches the parts inside it, and each part also takes its own `className`.
+
+## Slots
+
+| Slot          | Element                              | Class             |
+| ------------- | ------------------------------------ | ----------------- |
+| `root`        | The toast surface.                   | `ntf-toast`       |
+| `icon`        | The icon.                            | `ntf-icon`        |
+| `avatar`      | The avatar.                          | `ntf-avatar`      |
+| `badge`       | The presence badge.                  | `ntf-badge`       |
+| `body`        | The text column.                     | `ntf-body`        |
+| `title`       | The title text.                      | `ntf-title`       |
+| `meta`        | The text after the divider.          | `ntf-meta`        |
+| `description` | The body text.                       | `ntf-description` |
+| `progress`    | The progress block, bar and label.   | `ntf-progress`    |
+| `label`       | The progress label.                  | `ntf-label`       |
+| `actions`     | The actions row.                     | `ntf-actions`     |
+| `action`      | One action.                          | `ntf-action`      |
+| `aside`       | Trailing content in the actions row. | `ntf-aside`       |
+| `close`       | The close button.                    | `ntf-close`       |
+
+## Selecting from CSS
+
+The stylesheet uses these class names with attribute selectors, so you can target a state without a prop.
+
+```css
+.ntf-toast[data-tone="dark"] .ntf-title {
+  letter-spacing: -0.02em;
+}
+
+.ntf-action[data-variant="filled"][data-color="accent"] {
+  border-radius: 999px;
+}
+
+.ntf-icon[data-status="error"] {
+  --ntf-hue: orange;
+}
+```
+
+| Element  | Attributes                           |
+| -------- | ------------------------------------ |
+| Root     | `data-tone`, `data-status`           |
+| Icon     | `data-shape`, `data-status`          |
+| Avatar   | `data-shape`                         |
+| Badge    | `data-badge`                         |
+| Action   | `data-variant`, `data-color`         |
+| Progress | `data-indeterminate` on `.ntf-track` |
+
+<Callout type="info" title="Specificity">
+  The stylesheet uses single class selectors, with attribute selectors for variants, and sits at the
+  end of the document head. A rule with one more class always wins. With `layer` set on `Notifier`,
+  any unlayered rule wins.
+</Callout>
+
+## Width and size
+
+```tsx
+notify({ title: "Wide", width: 520 });
+notify({ title: "Fluid", width: "min(32rem, 100%)" });
+```
+
+A toast is never wider than its container, so on a narrow screen it shrinks to the viewport minus the offset.
+
+## Tailwind
+
+Class names given to `className` and `classNames` are plain strings. Make sure Tailwind scans the files that contain them, as it does for any other component.
+
+Tailwind v4 puts its utilities in a cascade layer, and unlayered CSS beats layered CSS whatever the specificity. So by default a utility cannot change a property the stylesheet sets: `tracking-tight` on the title or `shadow-2xl` on the root does nothing, while `uppercase` works because the stylesheet never sets `text-transform`. Put the stylesheet in a layer below the utilities:
+
+```tsx
+<Notifier layer />
+```
+
+```css
+@layer theme, base, notifier, components, utilities;
+@import "tailwindcss";
+```
+
+`layer` takes `true` for a layer named `notifier`, or a layer name of your own. The order line keeps Tailwind's preflight in `base` below the toasts and the utilities above them.
+
+<Callout type="warn" title="Only with layered resets">
+  Unlayered CSS beats a layered stylesheet, including element resets such as `button { padding: 0 }`,
+  normalize.css and Tailwind v3's preflight. With those on the page, leave `layer` off, or the toasts
+  lose their padding, borders and button backgrounds.
+</Callout>

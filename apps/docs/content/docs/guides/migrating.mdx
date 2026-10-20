@@ -1,0 +1,123 @@
+---
+title: Migrating from 1.x
+description: What changed in the rewrite and how to move over.
+icon: Route
+---
+
+Version 2 replaces the state machine of 1.x with slots. A toast no longer has a state such as loading or success. It has content, and `status` is one of the things it can show. Most calls keep working, but the instance chaining, confirmations and adapters are gone.
+
+<Callout type="warn" title="Breaking changes">
+  The `confirm` helper, chainable instances, the Sonner, react-hot-toast and shadcn adapters, and
+  the `@remcostoeten/notifier/styles` export are removed.
+</Callout>
+
+## Calls that still work
+
+```tsx
+notify("Saved");
+notify.success("Saved");
+notify.error("Failed");
+notify.promise(request, { loading: "Saving", success: "Saved", error: "Failed" });
+notify.dismiss(id);
+```
+
+`notify` now returns the id as a string. In 1.x it returned an instance.
+
+## Chaining becomes update
+
+```tsx
+// 1.x
+const n = notify.loading("Saving");
+n.success("Saved");
+
+// 2.x
+const id = notify.loading("Saving");
+notify.update(id, { status: "success", title: "Saved" });
+```
+
+## Confirm becomes actions
+
+```tsx
+// 1.x
+const confirmed = await notify.confirm("Delete this item?");
+
+// 2.x
+notify({
+  title: "Delete this item?",
+  duration: 0,
+  actions: [
+    { label: "Cancel", color: "muted" },
+    { label: "Delete", variant: "filled", onClick: remove },
+  ],
+});
+```
+
+If you need the answer as a promise, wrap it yourself:
+
+```tsx
+function confirmToast(title: string) {
+  return new Promise<boolean>((resolve) => {
+    notify({
+      title,
+      duration: 0,
+      actions: [
+        { label: "Cancel", color: "muted", onClick: () => resolve(false) },
+        { label: "Confirm", variant: "filled", onClick: () => resolve(true) },
+      ],
+      onDismiss: () => resolve(false),
+    });
+  });
+}
+```
+
+## Renamed and removed options
+
+| 1.x                          | 2.x                                                       |
+| ---------------------------- | --------------------------------------------------------- |
+| `<Notifier colorMode>`       | `tone`, now per toast as well                             |
+| `<Notifier radius>`          | `theme.radius`                                            |
+| `<Notifier iconColor>`       | Removed. Choose `icon.shape` per toast.                   |
+| `<Notifier border>`          | `theme.light.border` and `theme.dark.border`              |
+| `<Notifier icons>`           | `icon` on a toast                                         |
+| `<Notifier theme>` palette   | `theme.light` and `theme.dark` tokens                     |
+| `swipeToDismiss`             | `swipe`                                                   |
+| `dismissible`                | `close`, now on by default                                |
+| `clickToDismiss`             | Removed                                                   |
+| `action: { label, onClick }` | `actions: [{ label, onClick }]`, with variants and colors |
+| `description`                | Unchanged                                                 |
+| `onUpdate`                   | Removed                                                   |
+
+## New defaults
+
+| Setting      | 1.x      | 2.x            |
+| ------------ | -------- | -------------- |
+| `position`   | `bottom` | `bottom-right` |
+| `duration`   | 3000     | 5000           |
+| `maxVisible` | 5        | 3              |
+| `offset`     | 16       | 24             |
+| `gap`        | 8        | 12             |
+
+Positions `top` and `bottom` are gone. Use `top-center` and `bottom-center`.
+
+## Stylesheet
+
+Remove the stylesheet import. `Notifier` renders its own.
+
+```tsx
+// remove
+import "@remcostoeten/notifier/styles";
+```
+
+## Adapters
+
+The `compat/sonner`, `compat/react-hot-toast` and `compat/shadcn` entry points are removed. Replace their imports with `notify`:
+
+```tsx
+// before
+import { toast } from "@remcostoeten/notifier/compat/sonner";
+toast.success("Saved");
+
+// after
+import { notify } from "@remcostoeten/notifier";
+notify.success("Saved");
+```

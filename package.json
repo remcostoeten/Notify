@@ -4,7 +4,7 @@
     "private": true,
     "author": "Remco Stoeten",
     "workspaces": [
-        "apps/*",
+        "apps/demo",
         "packages/*"
     ],
     "scripts": {
@@ -21,7 +21,7 @@
     },
     "lint-staged": {
         "*.{ts,tsx}": [
-            "oxlint --fix",
+            "oxlint --fix --no-error-on-unmatched-pattern",
             "oxfmt --no-error-on-unmatched-pattern"
         ],
         "*.{json,md,yml,yaml,css}": [
@@ -38,5 +38,5 @@
         "oxlint": "^1.89.0",
         "typescript": "^5"
     },
-    "packageManager": "bun@1.2.0"
+    "packageManager": "bun@1.4.3"
 }

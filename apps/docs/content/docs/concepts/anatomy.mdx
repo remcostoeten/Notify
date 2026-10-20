@@ -1,0 +1,124 @@
+---
+title: Anatomy
+description: A toast is a surface with slots.
+icon: Lightbulb
+---
+
+A toast has a **surface** and up to six **slots**. The surface is 400px wide, has a 12px radius, a hairline ring and a soft shadow, and picks a **tone**. The slots sit inside it in a fixed layout.
+
+<ToastPreview example="message" trigger={false} />
+
+| Slot        | Input field                | Part                         | Notes                                          |
+| ----------- | -------------------------- | ---------------------------- | ---------------------------------------------- |
+| Media       | `icon`, `avatar`, `status` | `Toast.Icon`, `Toast.Avatar` | Left of the text. An avatar replaces the icon. |
+| Title       | `title`                    | `Toast.Title`                | First line, semibold.                          |
+| Meta        | `meta`                     | `Toast.Title meta`           | Muted text after a divider, on the title line. |
+| Description | `description`              | `Toast.Description`          | Wraps at about 71% of the toast width.         |
+| Progress    | `progress`                 | `Toast.Progress`             | An 8px bar, with an optional label under it.   |
+| Actions     | `actions`                  | `Toast.Actions`              | Text links or buttons, under everything else.  |
+| Close       | `close`                    | `Toast.Close`                | A 24px button in the top right corner.         |
+
+## Two ways to fill the slots
+
+Pass the slots as one object and Notifier lays them out:
+
+```tsx
+notify({
+  avatar: { src: sienna.src, badge: "online" },
+  title: "Sienna Hewitt",
+  meta: "2 mins ago",
+  description: "I’ve finished adding my notes.",
+});
+```
+
+Or compose the parts yourself when the layout is different. Both produce the same markup and use the same tokens.
+
+```tsx
+notify.custom(() => (
+  <Toast>
+    <Toast.Avatar src={sienna.src} badge="online" />
+    <Toast.Body>
+      <Toast.Title meta="2 mins ago">Sienna Hewitt</Toast.Title>
+      <Toast.Description>I’ve finished adding my notes.</Toast.Description>
+    </Toast.Body>
+    <Toast.Close />
+  </Toast>
+));
+```
+
+See [Custom toasts](/docs/guides/custom-toasts).
+
+## Tone
+
+`tone` is `"light"` or `"dark"` and belongs to each toast, so a dark toast can sit on a light page. Set a default on `Notifier` with its `tone` prop, which also accepts `"auto"` to follow `prefers-color-scheme`.
+
+<ToastPreview
+  tone="light"
+  stock
+  title="Light tone"
+  description="White surface with a hairline ring."
+  trigger={false}
+/>
+
+<ToastPreview
+  tone="dark"
+  stock
+  title="Dark tone"
+  description="Near black surface with no ring."
+  trigger={false}
+/>
+
+## Status and icons
+
+`status` is `"success"`, `"error"`, `"warning"`, `"info"` or `"loading"`. It picks the glyph and its color, and has two more effects: `loading` keeps the toast open, and `error` and `warning` are announced as alerts.
+
+An icon has a **shape**:
+
+| Shape    | Looks like                                     | Slot size |
+| -------- | ---------------------------------------------- | --------- |
+| `ring`   | The glyph with two concentric rings around it. | 20px      |
+| `box`    | A 40px bordered square.                        | 40px      |
+| `circle` | A 40px circle tinted with the status color.    | 40px      |
+| `bare`   | The glyph alone.                               | 20px      |
+
+A status toast uses `circle`, with a plain check, cross or mark inside the tinted disc, and so does a loading toast, so the text does not move when a loading toast becomes a success toast. A custom icon element uses `box`. `ring` and `bare` are opt-in. The rings of `ring` are drawn outside its 20px slot, so they do not push the text.
+
+<ToastPreview
+  icon={{ shape: "ring", status: "success" }}
+  title="ring"
+  trigger={false}
+  close={false}
+/>
+
+<ToastPreview
+  icon={{ shape: "circle", status: "warning" }}
+  title="circle"
+  trigger={false}
+  close={false}
+/>
+
+<ToastPreview
+  icon={{ shape: "bare", status: "loading" }}
+  title="bare"
+  trigger={false}
+  close={false}
+/>
+
+## Actions
+
+An action is a text link, an outline button or a filled button, in a default, muted or accent color. Text actions have no padding and sit flush with the text, so they take 20px of height. Buttons take 34px.
+
+<ToastPreview
+  title="Text actions"
+  actions={[{ label: "Dismiss", color: "muted" }, { label: "View profile" }]}
+  trigger={false}
+/>
+
+<ToastPreview
+  title="Buttons"
+  actions={[
+    { label: "Dismiss", variant: "outline" },
+    { label: "Reply", variant: "filled", color: "accent" },
+  ]}
+  trigger={false}
+/>

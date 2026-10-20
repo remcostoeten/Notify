@@ -1,0 +1,48 @@
+---
+title: Tokens
+description: Every theme token with its light and dark default.
+icon: Palette
+---
+
+A token is a CSS custom property per tone. The variable for token `accentText` in the dark tone is `--ntf-dark-accent-text`: the prefix `--ntf-`, the tone, then the token in kebab case. Set them with the `theme` prop of `Notifier` or in your own CSS. See [Theming](/docs/guides/theming).
+
+## Tone tokens
+
+| Token               | Used for                                                             | Light                                                              | Dark                               |
+| ------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------- |
+| `background`        | The toast surface.                                                   | `#ffffff`                                                          | `#161618`                          |
+| `foreground`        | Titles and strong text, and the default action color.                | `#000000`                                                          | `#ffffff`                          |
+| `body`              | Description text.                                                    | `#404040`                                                          | `#b4b4b8`                          |
+| `meta`              | Text after the title divider.                                        | `#595959`                                                          | `#b2b2b5`                          |
+| `muted`             | Muted actions, the progress label, the aside and the loading glyph.  | `#6e6e72`                                                          | `#9b9b9f`                          |
+| `icon`              | The close button and the offline badge.                              | `#737378`                                                          | `#a1a1a6`                          |
+| `divider`           | The line between the title and its meta.                             | `#cbcbcb`                                                          | `#656567`                          |
+| `border`            | The 1px ring around the toast.                                       | `#d4d4d4`                                                          | `rgba(255,255,255,.1)`             |
+| `shadow`            | Shadow layers, added after the ring.                                 | `0 4px 8px -1px rgba(0,0,0,.08), 0 30px 25px -9px rgba(0,0,0,.12)` | `0 16px 32px -12px rgba(0,0,0,.8)` |
+| `accent`            | The progress fill, filled accent buttons and the focus ring.         | `#5f5afa`                                                          | `#5f5afa`                          |
+| `accentText`        | Accent text actions.                                                 | `#4f46e5`                                                          | `#a5a2ff`                          |
+| `accentForeground`  | Text on filled accent buttons.                                       | `#ffffff`                                                          | `#ffffff`                          |
+| `track`             | The progress track and the avatar fallback.                          | `#eae9ee`                                                          | `#27272b`                          |
+| `control`           | The icon box and neutral filled buttons.                             | `#ffffff`                                                          | `#29282b`                          |
+| `controlBorder`     | Borders of outline buttons, neutral filled buttons and the icon box. | `#cfcfd2`                                                          | `#3d3c3f`                          |
+| `controlForeground` | Label color of outline and filled buttons.                           | `#2b2b2e`                                                          | `#ffffff`                          |
+| `controlShadow`     | Shadow of outline and filled buttons.                                | `0 1px 2px rgba(10,13,18,.05), inset 0 -2px 0 rgba(10,13,18,.05)`  | `none`                             |
+| `controlHover`      | Background of buttons and the close button on hover.                 | `#f6f6f7`                                                          | `#323134`                          |
+| `success`           | Success glyph, ring and the online badge.                            | `#15803d`                                                          | `#82c88c`                          |
+| `error`             | Error glyph and ring, and the busy badge.                            | `#d92d20`                                                          | `#f0827a`                          |
+| `warning`           | Warning glyph and ring, and the away badge.                          | `#dc6803`                                                          | `#f5b342`                          |
+| `info`              | Info glyph and ring.                                                 | `#1570ef`                                                          | `#7fa8f5`                          |
+
+## Other variables
+
+| Variable        | Effect                                             | Default                             |
+| --------------- | -------------------------------------------------- | ----------------------------------- |
+| `--ntf-font`    | The `font-family` of every toast.                  | `Inter`, then the system font stack |
+| `--ntf-radius`  | Toast corner radius.                               | `12px`                              |
+| `--ntf-width`   | Toast width.                                       | `400px`                             |
+| `--ntf-padding` | Inner padding, which also places the close button. | `16px`                              |
+| `--ntf-gap`     | Space between the icon and the text.               | `16px`                              |
+
+## Inside a toast
+
+The active tone's tokens are available as `--ntf-<token>` on the toast root, without the tone, such as `--ntf-foreground` and `--ntf-accent-text`. Read them in custom content, but set the tone variables above.

@@ -1,0 +1,34 @@
+---
+title: Toast.Close
+description: The close button.
+icon: FileText
+sidebarTitle: Close
+---
+
+A 24px button in the top right corner that dismisses the toast with the reason `close`. Its touch target extends 6px past the button on every side.
+
+```tsx
+<Toast.Close />
+<Toast.Close label="Sluiten" />
+```
+
+From `notify`, `close` is `true` by default. Turn it off for one toast or for all of them:
+
+```tsx
+notify({ title: "Saved", close: false });
+
+<Notifier close={false} />;
+```
+
+## Props
+
+<TypeTable
+  type={{
+    label: {
+      type: "string",
+      description: "The aria-label. Falls back to labels.close of Notifier.",
+      default: '"Close"',
+    },
+    className: { type: "string", description: "Added to the button." },
+  }}
+/>

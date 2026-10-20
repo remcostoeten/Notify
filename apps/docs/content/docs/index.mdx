@@ -1,0 +1,46 @@
+---
+title: Introduction
+description: Toast notifications for React, built from slots.
+icon: House
+---
+
+Notifier renders toasts from a small set of slots: an icon or avatar, a title with meta, a description, progress, actions and a close button. Pass the slots as one object to `notify`, or compose the same parts yourself for layouts the slots do not cover.
+
+<ToastPreview example="profile" label="Status, description and two text actions" />
+
+<ToastPreview example="upload" label="A progress bar that you update while the work runs" />
+
+<ToastPreview example="message" label="Avatar with a presence badge and two buttons" />
+
+<ToastPreview example="update" label="Icon box, meta next to the title and two buttons" />
+
+## What it gives you
+
+- **Slots.** Icon or avatar, title with meta, description, progress and actions, in a light or dark tone.
+- **Updates in place.** `notify.update` and `notify.promise` change an open toast, so a progress toast stays one element.
+- **Primitives.** `Toast` and its parts render any layout through `notify.custom`.
+- **Tokens.** Colors, radius, width and font are CSS variables, set from the `theme` prop or your own stylesheet.
+- **Behavior.** Six positions, hover pause, swipe to dismiss, an expanding stack and reduced motion.
+
+## Where to go next
+
+<Cards>
+  <Card icon={<DownloadIcon />} title="Installation" href="/docs/installation">
+    Add the package and mount `Notifier` once.
+  </Card>
+  <Card icon={<RocketIcon />} title="Quick start" href="/docs/quick-start">
+    Open a toast, update it and dismiss it in five steps.
+  </Card>
+  <Card icon={<BookIcon />} title="Concepts" href="/docs/concepts/anatomy">
+    How a toast is built, how long it lives and where it appears.
+  </Card>
+  <Card icon={<CompassIcon />} title="Guides" href="/docs/guides/progress">
+    Progress, promises, custom toasts, theming and migrating from 1.x.
+  </Card>
+  <Card icon={<PaletteIcon />} title="Components" href="/docs/components">
+    Every primitive with live examples.
+  </Card>
+  <Card icon={<SearchIcon />} title="Reference" href="/docs/reference/notifier">
+    Every prop, function, type and token.
+  </Card>
+</Cards>

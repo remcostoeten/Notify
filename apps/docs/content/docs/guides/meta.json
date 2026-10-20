@@ -1,0 +1,15 @@
+{
+  "title": "Guides",
+  "icon": "Compass",
+  "pages": [
+    "progress",
+    "promises",
+    "state-swaps",
+    "custom-toasts",
+    "---Style---",
+    "theming",
+    "styling",
+    "---Upgrade---",
+    "migrating"
+  ]
+}

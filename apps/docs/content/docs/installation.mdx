@@ -1,0 +1,134 @@
+---
+title: Installation
+description: Add the package and mount Notifier once.
+icon: Download
+---
+
+## Requirements
+
+- React and React DOM 18 or newer
+- `motion` 12 or newer. The package imports `motion/react`, so do not install `framer-motion` for it.
+- TypeScript is supported but not required.
+
+## Install
+
+<Tabs items={["bun", "npm", "pnpm", "yarn"]} groupId="package-manager" persist>
+  <Tab value="bun">
+
+```bash
+bun add @remcostoeten/notifier motion
+```
+
+  </Tab>
+  <Tab value="npm">
+
+```bash
+npm install @remcostoeten/notifier motion
+```
+
+  </Tab>
+  <Tab value="pnpm">
+
+```bash
+pnpm add @remcostoeten/notifier motion
+```
+
+  </Tab>
+  <Tab value="yarn">
+
+```bash
+yarn add @remcostoeten/notifier motion
+```
+
+  </Tab>
+</Tabs>
+
+## Mount Notifier once
+
+Place `Notifier` near the root of your app. It renders every toast and its own stylesheet, so there is nothing to import.
+
+<Tabs items={["Next.js", "Vite", "Remix"]}>
+  <Tab value="Next.js">
+
+```tsx title="app/layout.tsx"
+import { Notifier } from "@remcostoeten/notifier";
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        {children}
+        <Notifier />
+      </body>
+    </html>
+  );
+}
+```
+
+  </Tab>
+  <Tab value="Vite">
+
+```tsx title="src/main.tsx"
+import { Notifier } from "@remcostoeten/notifier";
+import { createRoot } from "react-dom/client";
+import { App } from "./app";
+
+createRoot(document.getElementById("root")!).render(
+  <>
+    <App />
+    <Notifier />
+  </>,
+);
+```
+
+  </Tab>
+  <Tab value="Remix">
+
+```tsx title="app/root.tsx"
+import { Notifier } from "@remcostoeten/notifier";
+import { Outlet } from "@remix-run/react";
+
+export default function App() {
+  return (
+    <>
+      <Outlet />
+      <Notifier />
+    </>
+  );
+}
+```
+
+  </Tab>
+</Tabs>
+
+<Callout type="warn" title="Mount it once">
+  A second `Notifier` renders every toast twice and logs a warning in development.
+</Callout>
+
+## Calling notify
+
+`notify` runs in client code, such as an event handler or a Client Component. It does not run during server rendering.
+
+```tsx
+"use client";
+
+import { notify } from "@remcostoeten/notifier";
+
+export function SaveButton() {
+  return <button onClick={() => notify.success("Saved")}>Save</button>;
+}
+```
+
+## Fonts and CSP
+
+Toasts use `Inter` when the page loads it and fall back to the system font stack. Set `theme.font` or the `--ntf-font` variable to use another font.
+
+Under a strict Content Security Policy, pass your nonce so the stylesheet is allowed:
+
+```tsx
+<Notifier nonce={nonce} />
+```
+
+## Browser support
+
+The stylesheet uses `color-mix()` and `:has()`, so it needs Chrome 111, Safari 16.2 or Firefox 121 and newer.
