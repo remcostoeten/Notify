@@ -8,7 +8,6 @@ Bun-workspaces monorepo for `@remcostoeten/notifier`, composable toast notificat
 
 - `packages/notifier/` — the published library (`@remcostoeten/notifier`)
 - `packages/release-cli/` — internal AI-changelog release tool (`release` binary), not published as part of the product
-- `apps/demo/` — Next.js 16 docs/showcase site (package name `repro-notifier`)
 - `apps/docs/`: Fumadocs documentation site (package name `notifier-docs`), not a workspace member
 
 ## Commands
@@ -17,7 +16,9 @@ Run from the repo root unless noted.
 
 ```bash
 bun install              # install all workspaces
-bun run build:packages   # build the two library packages (the demo is NOT covered — see gotcha below)
+bun run build            # build the two library packages
+bun run dev              # install and start apps/docs (http://localhost:3000)
+bun run dev:lib          # tsup watch for packages/notifier
 bun run typecheck        # tsc --noEmit across the workspace packages
 bun run lint             # oxlint across the repo
 bun run lint:fix
@@ -51,13 +52,6 @@ On this 8 GB machine cap the workers. Vitest 5 has no `--minWorkers` option:
 bun run test --maxWorkers=2
 ```
 
-### apps/demo
-
-`apps/demo` is a workspace member with no lockfile of its own, so `bun run --filter='./apps/*'` matches it and the root `bun.lock` covers it. Run it from the root with `bun run dev` or from `apps/demo` with `bun run dev` (http://localhost:3000).
-
-- The demo imports `@remcostoeten/notifier` and consumes its built `dist/` (not `src/`). When iterating on library source with the demo open, run `bun run dev` (tsup watch) inside `packages/notifier` or rebuild it, or the demo won't pick up changes. `bun run build` in `apps/demo` builds the notifier first.
-- Older notes warned that a clean root `bun install` could delete the `apps/demo` working tree. That was seen while the demo still had its own `bun.lock` and has not been re-tested since the lockfile was removed. Keep uncommitted demo work backed up before a clean install.
-
 ### apps/docs
 
 `apps/docs` is excluded from the root `workspaces` and has its own `bun.lock`. It depends on `@remcostoeten/notifier` from npm by version, so it documents the published release, not `packages/notifier/src`. Root `oxlint` and `oxfmt` ignore it; inside it, `bun run check` runs `vp` with the settings in `apps/docs/vite.config.ts` (2-space indent, semicolons, double quotes). Its CI is `.github/workflows/docs.yml`. See `apps/docs/README.md`.
@@ -73,6 +67,7 @@ bun run test --maxWorkers=2
 - `types.ts` splits a toast input into `ToastContent` (slots), `ToastSurface` (tone, width, classes) and `ToastBehavior` (id, position, duration, callbacks).
 - `components/notifier.tsx` exports `Notifier`, mounted once at the app root. It groups records by position, anchors each group (`placement.ts`), lays out the stack (`stack.ts`) and handles hover expand, swipe, pause on hover and the `alt+t` hotkey. It configures the store in `useInsertionEffect`, so toasts opened in children's mount effects already see its props. Stack heights are keyed by toast id and measured from each `.ntf-item` (or its `data-ntf-height` while it resizes), never from the animated wrapper. `labels` sets the region and close labels. Mounting two logs a warning.
 - `components/toast.tsx` exports `Toast`, which fills the slots from props or takes children built from the primitives in `components/parts.tsx` (`Toast.Icon`, `Avatar`, `Body`, `Title`, `Description`, `Progress`, `Actions`, `Action`, `Close`). `toast-item.tsx` wraps a record with Motion and gestures, tracks it as shown, and animates the surface height with WAAPI when an update changes it. `glyphs.tsx` holds the inline SVG icons.
+- Number animation is opt-in (`animateNumbers` on `Notifier` or a toast, provided through `NumbersContext`) and dependency-free. `number-flow.ts` holds the pure parts (`splitNumbers`, `cellsOf`, `trendOf`, `formatNumber`), `components/flow.tsx` wraps the text slots in `Flowed` and exports `Toast.Number`, and `useDigitRoll` in `play-motion.ts` rolls a changed digit with a WAAPI ghost.
 - Styling is tokens plus one stylesheet. `tokens.ts` holds the light and dark values, `styles.ts` builds the CSS (`--ntf-*` variables, `.ntf-*` classes, `stylesFor(layer)` for the optional cascade layer) and `style-sheet.tsx` keeps one `<style data-ntf=sheet>` in the head. It renders the sheet inline only on the server and during hydration, so server-rendered toasts are styled at first paint. `theme.ts` maps a `ToastTheme` prop onto the variables. `constants.ts` holds `Defaults`, `AnimationConfig` and the stack numbers.
 - `index.tsx` is the public surface. Add new public API and types here. The package has a single entry point.
 
@@ -82,13 +77,9 @@ When changing behavior, edit the store, `placement.ts`, `stack.ts` or `theme.ts`
 
 The toasts are matched to the Untitled UI toast shot on Dribbble (dark status toast, upload progress, avatar message, update with icon box). A toast is 400px wide, Inter 14px/20px, radius 12, with 8px radius buttons and icon box. Compare changes against that reference at the same scale, not by eye, and compare ink and text widths rather than extreme pixel values.
 
-### Demo app
-
-Next.js 16 App Router under `apps/demo/src` (`@/*` -> `./src/*`). It imports the library via the workspace dep `@remcostoeten/notifier` (not a path alias). `app/page.tsx` composes the sections from `components/showcase/`: `gallery.tsx` (the four reference toasts, static `Toast` previews plus a Show button), `playground.tsx`, `api-reference.tsx` and `snippets.ts`. `ui.tsx` has the shared pieces, including `Stage`, the framed window the toasts are shown in. The live `Notifier` is mounted inside `playground.tsx`, so every Show button depends on it. The docs page is a fixed dark theme while the toasts sit on light stages.
-
 ## Conventions
 
-- Oxlint (`.oxlintrc.json`) enforces `func-style` (declarations), `prefer-arrow-callback`, `consistent-type-imports` (use `import type`), `no-empty`, `prefer-const` and `no-var`, and warns on `no-explicit-any` and unused vars (prefix intentionally-unused with `_`). `no-console` warns but allows `warn`/`error`. The `nextjs` plugin only applies under `apps/demo`. oxfmt (`.oxfmtrc.json`) formats, including Tailwind class order. Never add ESLint or Prettier.
+- Oxlint (`.oxlintrc.json`) enforces `func-style` (declarations), `prefer-arrow-callback`, `consistent-type-imports` (use `import type`), `no-empty`, `prefer-const` and `no-var`, and warns on `no-explicit-any` and unused vars (prefix intentionally-unused with `_`). `no-console` warns but allows `warn`/`error`. oxfmt (`.oxfmtrc.json`) formats, including Tailwind class order. Never add ESLint or Prettier.
 - Husky + lint-staged run `oxlint --fix` and `oxfmt` on staged files at commit time.
 - `release-cli` prints through `console`, so `bun run lint` reports its `no-console` warnings. They are expected.
 - The user's global style rules apply: standalone funcs as `function` declarations, callbacks as arrows, no empty catch (use a `noop`), and no explanatory inline comments (JSDoc on public helpers is fine — the library uses it heavily).

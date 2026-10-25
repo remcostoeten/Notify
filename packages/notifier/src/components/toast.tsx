@@ -2,7 +2,8 @@ import { isValidElement, useContext } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { cx } from '../utils'
 import type { CSSVars } from '../utils'
-import { SheetContext, SlotContext, useToast } from './context'
+import { NumbersContext, SheetContext, SlotContext, useToast } from './context'
+import { Digits } from './flow'
 import { Action, Actions, Avatar, Body, Close, Description, Icon, Progress, Title } from './parts'
 import { StyleSheet } from './style-sheet'
 import type { IconConfig, ToastClassNames, ToastContent, ToastStatus, ToastSurface } from '../types'
@@ -53,11 +54,13 @@ function ToastContentView({
                             <Action
                                 key={index}
                                 onClick={action.onClick}
+                                labels={action.labels}
                                 variant={action.variant}
                                 color={action.color}
                                 dismiss={action.dismiss}
                                 href={action.href}
                                 disabled={action.disabled}
+                                pending={action.pending}
                             >
                                 {action.label}
                             </Action>
@@ -70,9 +73,19 @@ function ToastContentView({
     )
 }
 
-function ToastRoot({ tone, width, className, classNames, style, children, ...content }: Props) {
+function ToastRoot({
+    tone,
+    width,
+    className,
+    classNames,
+    style,
+    animateNumbers,
+    children,
+    ...content
+}: Props) {
     const runtime = useToast()
     const hasSheet = useContext(SheetContext)
+    const inheritedNumbers = useContext(NumbersContext)
     const rootStyle: CSSVars = { ...style }
     const compact =
         children === undefined &&
@@ -84,16 +97,18 @@ function ToastRoot({ tone, width, className, classNames, style, children, ...con
 
     return (
         <SlotContext.Provider value={classNames ?? noClassNames}>
-            {!hasSheet && <StyleSheet />}
-            <div
-                className={cx('ntf-toast', classNames?.root, className)}
-                data-tone={tone ?? runtime.tone}
-                data-status={content.status}
-                data-compact={compact ? '' : undefined}
-                style={rootStyle}
-            >
-                {children ?? <ToastContentView {...content} />}
-            </div>
+            <NumbersContext.Provider value={animateNumbers ?? inheritedNumbers}>
+                {!hasSheet && <StyleSheet />}
+                <div
+                    className={cx('ntf-toast', classNames?.root, className)}
+                    data-tone={tone ?? runtime.tone}
+                    data-status={content.status}
+                    data-compact={compact ? '' : undefined}
+                    style={rootStyle}
+                >
+                    {children ?? <ToastContentView {...content} />}
+                </div>
+            </NumbersContext.Provider>
         </SlotContext.Provider>
     )
 }
@@ -105,6 +120,7 @@ export const Toast = Object.assign(ToastRoot, {
     Title,
     Description,
     Progress,
+    Number: Digits,
     Actions,
     Action,
     Close

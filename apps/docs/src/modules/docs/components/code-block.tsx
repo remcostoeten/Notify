@@ -34,6 +34,7 @@ export function CodeBlock({
   "data-language": language,
   "data-line-numbers": lineNumbers,
   "data-line-numbers-start": lineNumbersStart,
+  tabIndex: _tabIndex,
   ...props
 }: Props) {
   const label = languageLabel(language);

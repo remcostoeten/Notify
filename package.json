@@ -4,15 +4,14 @@
     "private": true,
     "author": "Remco Stoeten",
     "workspaces": [
-        "apps/demo",
         "packages/*"
     ],
     "scripts": {
-        "build": "bun run build:packages && bun run build:apps",
+        "build": "bun run build:packages",
         "build:packages": "bun run --filter='./packages/*' build",
-        "build:apps": "bun run --filter='./apps/*' build",
         "typecheck": "bun run --filter='*' typecheck",
-        "dev": "bun run --filter='./apps/*' dev",
+        "dev": "cd apps/docs && bun install && bun run dev",
+        "dev:lib": "bun run --filter='./packages/notifier' dev",
         "format": "oxfmt",
         "format:check": "oxfmt --check",
         "lint": "oxlint",

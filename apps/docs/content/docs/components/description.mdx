@@ -11,8 +11,16 @@ sidebarTitle: Description
   trigger={false}
 />
 
+## Usage
+
 ```tsx
 <Toast.Description>Your changes have been saved.</Toast.Description>
+```
+
+From `notify`, set `description`:
+
+```tsx
+notify({ title: "Saved", description: "Your changes have been saved." });
 ```
 
 The description sits 4px under the title and wraps at about 71% of the toast width, which is 284px at the default 400px. That keeps lines short and clear of the close button. A toast with a different `width` scales the column with it.

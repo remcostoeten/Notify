@@ -79,6 +79,7 @@ All fields are optional.
 | `close` | `boolean` | Close button. Default `true` |
 | `tone` | `'light' \| 'dark'` | Default is the `Notifier` tone |
 | `width` | `number \| string` | Default 400px |
+| `animateNumbers` | `boolean` | Default is the `Notifier` setting. See Number animation |
 | `className`, `style` | `string`, `CSSProperties` | Root element |
 | `classNames` | `Partial<Record<ToastSlot, string>>` | Slots: root, icon, avatar, badge, body, title, meta, description, progress, label, actions, action, aside, close |
 | `id` | `string` | Generated when omitted |
@@ -92,15 +93,34 @@ Dismiss reasons: `timeout`, `swipe`, `close`, `action`, `manual`, `replaced`.
 ### Status
 
 `status` picks the glyph and color of the icon. Every status, loading included, defaults to
-the `circle` shape, so the text does not move when a loading toast becomes a success toast.
+the `bare` shape, so the text does not move when a loading toast becomes a success toast.
+A status change crossfades the glyph: the old one shrinks out, the new one fades in.
 `error` and `warning` are announced as alerts, the rest politely. A custom icon with no
 status defaults to the `box` shape.
 
+### Number animation
+
+With `animateNumbers` on `Notifier` or on one toast, every number in the title, meta, description,
+progress label and actions aside rolls digit by digit when an update changes it. Digits roll up when
+the number grows and down when it shrinks, and a digit added on the left slides in. It needs no
+extra package: the effect is plain DOM and the Web Animations API, and it is off by default. It
+reads text and number children, so `Uploading ${done} of ${total}` and `{done}` both work, but not
+numbers inside a nested element. A toast's own `animateNumbers` overrides the `Notifier` setting.
+Nothing animates on first render or under `prefers-reduced-motion`. Use `Toast.Number` in a custom
+layout for one number that always rolls.
+
+```tsx
+<Notifier animateNumbers />
+
+const id = notify({ title: 'Uploading 0 of 120', progress: 0, duration: 0 })
+notify.update(id, { title: 'Uploading 45 of 120', progress: 37 })
+```
+
 ### Icon
 
-`shape`: `'circle'` (tinted 40px circle with a plain mark, the status default), `'box'` (40px
+`shape`: `'bare'` (20px glyph colored by the status, the status default), `'box'` (36px
 bordered square, the custom icon default), `'ring'` (glyph with two concentric rings, opt-in)
-or `'bare'` (20px glyph, opt-in). `node` replaces the glyph.
+or `'circle'` (28px tinted circle with a plain mark, opt-in). `node` replaces the glyph.
 Inside a toast, tokens are readable as CSS variables, so a custom glyph can use
 `style={{ color: 'var(--ntf-accent-text)' }}`.
 
@@ -114,13 +134,21 @@ avatar (for example initials). `shape`: `'square'` (default) or `'circle'`.
 ```ts
 type ActionConfig = {
     label: ReactNode
-    onClick?: (toast: { id; dismiss; update }) => void
+    onClick?: (toast: { id; dismiss; update }) => void | Promise<unknown>
     variant?: 'text' | 'outline' | 'filled' // default 'text'
     color?: 'default' | 'muted' | 'accent' // default 'default'
     dismiss?: boolean // default true: the toast closes after onClick
     href?: string // renders an anchor
     disabled?: boolean
+    pending?: boolean // keeps the loading state, aria-busy, ignores presses
+    labels?: { loading?: ReactNode; success?: ReactNode; error?: ReactNode }
 }
+
+An `onClick` that returns a promise makes the action stateful: `loading` with a spinner while it
+runs, then `success` with a check for 900ms before the toast dismisses (when `dismiss` is true),
+or `error` with a cross for 1.6s before it returns to idle with the toast still open. `labels`
+sets the text per state; the label, glyph and width crossfade. Presses during a state are
+ignored. A sync `onClick` dismisses right away as before.
 ```
 
 Text actions have no padding and sit flush with the text. Outline and filled actions are
@@ -193,7 +221,7 @@ notify.custom((toast) => (
 
 | Part | Props |
 | --- | --- |
-| `Toast` | `tone`, `width`, `className`, `classNames`, `style`, `children`, and every content field |
+| `Toast` | `tone`, `width`, `className`, `classNames`, `style`, `animateNumbers`, `children`, and every content field |
 | `Toast.Icon` | `shape`, `status`, `node`, `children` |
 | `Toast.Avatar` | `src`, `alt`, `fallback`, `badge`, `shape` |
 | `Toast.Body` | Column for text, progress and actions |
@@ -201,7 +229,8 @@ notify.custom((toast) => (
 | `Toast.Description` | none |
 | `Toast.Progress` | `value` (`null` is indeterminate), `label` |
 | `Toast.Actions` | `aside` |
-| `Toast.Action` | `variant`, `color`, `onClick`, `dismiss`, `href`, `disabled` |
+| `Toast.Action` | `variant`, `color`, `onClick` (may return a promise), `labels`, `dismiss`, `href`, `disabled`, `pending` |
+| `Toast.Number` | `value`, `locales`, `format` (`Intl.NumberFormatOptions`), `className`. Always rolls, whatever `animateNumbers` is |
 | `Toast.Close` | `label` (aria-label, default `labels.close` of `Notifier`, else `Close`) |
 
 `useToast()` returns `{ id, tone, dismiss, update }` for the toast it is rendered in. Outside a
@@ -225,6 +254,7 @@ A standalone `Toast` adds the same single stylesheet to the head.
 | `gap` | `12` | Pixels between toasts |
 | `theme` | none | See Theming |
 | `labels` | none | `{ region?, close? }`: the region's `aria-label` (default `Notifications`) and the close button's (default `Close`) |
+| `animateNumbers` | `false` | Rolls the digits of numbers in the title, meta, description, progress label and actions aside when they change. See Number animation |
 | `layer` | `false` | `true` puts the stylesheet in the cascade layer `notifier`, a string names the layer. See Tailwind |
 | `nonce` | none | CSP nonce for the stylesheet |
 | `className` | none | Added to each position container |

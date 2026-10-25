@@ -16,6 +16,7 @@ import {
   RouteIcon,
   SearchIcon,
 } from "@/shared/icons/icons";
+import { IconGallery } from "@/modules/notifier/components/icon-gallery";
 import { SwapDemo } from "@/modules/notifier/components/swap-demos";
 import { ToastButton, ToastPreview } from "@/modules/notifier/components/toast-preview";
 import { CodeBlock } from "./components/code-block";
@@ -47,6 +48,7 @@ export const mdxComponents: MDXComponents = {
   Tab,
   Tabs,
   TypeTable,
+  IconGallery,
   SwapDemo,
   ToastButton,
   ToastPreview,

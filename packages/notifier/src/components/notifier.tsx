@@ -21,7 +21,7 @@ import {
 } from '../store'
 import { themeVariables } from '../theme'
 import { matchesHotkey, resolveLayer } from '../utils'
-import { CloseLabelContext, SheetContext } from './context'
+import { CloseLabelContext, NumbersContext, SheetContext } from './context'
 import { StyleSheet } from './style-sheet'
 import { ToastItem } from './toast-item'
 import type { NotifierProps, ToastID, ToastPosition, ToastRecord, ToastTone } from '../types'
@@ -172,6 +172,7 @@ function StackItem({
     const exitPose = calm
         ? poseOf(0, 0, 1)
         : poseOf(-away * StackConfig.EXIT_TRAVEL, 0, StackConfig.EXIT_SCALE)
+    const revealDelay = Math.min(index, StackConfig.REVEAL_STAGGER_MAX) * StackConfig.REVEAL_STAGGER
     const restTarget = {
         opacity: rest.opacity,
         transform: poseOf(away * rest.offset, tilt, rest.scale),
@@ -204,7 +205,7 @@ function StackItem({
                 leaving
                     ? AnimationConfig.STACK_EXIT
                     : expanded
-                      ? AnimationConfig.STACK_REVEAL
+                      ? { ...AnimationConfig.STACK_REVEAL, delay: calm ? 0 : revealDelay }
                       : AnimationConfig.STACK_SETTLE
             }
             onPointerEnter={leaving ? undefined : onHover}
@@ -463,6 +464,7 @@ export function Notifier({
     gap = Defaults.GAP,
     theme,
     labels,
+    animateNumbers = false,
     layer,
     nonce,
     className
@@ -565,24 +567,26 @@ export function Notifier({
         <SheetContext.Provider value>
             <StyleSheet primary nonce={nonce} layer={resolveLayer(layer)} />
             <CloseLabelContext.Provider value={labels?.close ?? Defaults.CLOSE_LABEL}>
-                {Array.from(groups, ([groupPosition, groupRecords]) => (
-                    <PositionGroup
-                        key={groupPosition}
-                        position={groupPosition}
-                        records={groupRecords}
-                        tone={resolvedTone}
-                        stack={stack}
-                        gap={gap}
-                        offsetX={x}
-                        offsetY={y}
-                        swipe={swipe}
-                        pauseOnHover={pauseOnHover}
-                        close={close}
-                        label={regionLabel}
-                        variables={variables}
-                        className={className}
-                    />
-                ))}
+                <NumbersContext.Provider value={animateNumbers}>
+                    {Array.from(groups, ([groupPosition, groupRecords]) => (
+                        <PositionGroup
+                            key={groupPosition}
+                            position={groupPosition}
+                            records={groupRecords}
+                            tone={resolvedTone}
+                            stack={stack}
+                            gap={gap}
+                            offsetX={x}
+                            offsetY={y}
+                            swipe={swipe}
+                            pauseOnHover={pauseOnHover}
+                            close={close}
+                            label={regionLabel}
+                            variables={variables}
+                            className={className}
+                        />
+                    ))}
+                </NumbersContext.Provider>
             </CloseLabelContext.Provider>
         </SheetContext.Provider>
     )

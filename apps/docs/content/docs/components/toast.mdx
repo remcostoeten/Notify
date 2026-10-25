@@ -4,6 +4,8 @@ description: The surface that holds the slots.
 icon: FileText
 ---
 
+## Usage
+
 `Toast` draws the background, ring, shadow and padding, and lays its children out in a row. Give it content props for the default layout, or children for your own.
 
 ```tsx
@@ -13,6 +15,12 @@ import { Toast } from "@remcostoeten/notifier";
 ```
 
 <ToastPreview status="success" title="Saved" description="Your changes are live." trigger={false} />
+
+From `notify`, the same content props build a `Notifier` toast. `Toast` itself is for custom layouts and standalone previews:
+
+```tsx
+notify({ status: "success", title: "Saved", description: "Your changes are live." });
+```
 
 ## With children
 
@@ -38,6 +46,11 @@ import { Toast } from "@remcostoeten/notifier";
       description: "Width. A number is pixels.",
       default: "400",
     },
+    animateNumbers: {
+      type: "boolean",
+      description:
+        "Rolls the digits of changing numbers in the slots. Defaults to the setting of Notifier.",
+    },
     className: { type: "string", description: "Added to the root element." },
     classNames: {
       type: "Partial<Record<ToastSlot, string>>",
@@ -52,6 +65,26 @@ import { Toast } from "@remcostoeten/notifier";
       type: "ToastContent",
       description: "The content of the default layout. See the ToastInput reference.",
     },
+  }}
+/>
+
+## Toast.Number
+
+`Toast.Number` renders one number and rolls its digits when `value` changes, whatever `animateNumbers` is. See [Number animation](/docs/guides/number-animation).
+
+<TypeTable
+  type={{
+    value: { type: "number", description: "The number to show." },
+    locales: {
+      type: "string | string[]",
+      description:
+        "Locale passed to Intl.NumberFormat. Without locales and format the number is shown as written by String.",
+    },
+    format: {
+      type: "Intl.NumberFormatOptions",
+      description: "Options passed to Intl.NumberFormat.",
+    },
+    className: { type: "string", description: "Added to the number." },
   }}
 />
 

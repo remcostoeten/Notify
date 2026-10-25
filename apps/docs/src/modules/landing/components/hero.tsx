@@ -6,8 +6,7 @@ import { ShowToastButton } from "./show-toast-button";
 export async function Hero() {
   return (
     <section className="border-b border-foreground/5 px-6 py-20 md:py-28">
-      <p className="font-mono text-xs text-foreground/45">@remcostoeten/notifier</p>
-      <h1 className="mt-5 max-w-2xl text-4xl leading-[1.1] font-semibold tracking-tight md:text-6xl">
+      <h1 className="max-w-2xl text-4xl leading-[1.1] font-semibold tracking-tight md:text-6xl">
         Toasts, composed.
       </h1>
       <p className="mt-5 max-w-xl text-base leading-relaxed text-foreground/65">

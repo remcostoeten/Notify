@@ -1,11 +1,17 @@
-import { useContext } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
 import type { MouseEvent, ReactNode } from 'react'
+import { glyphMotions } from '../glyph-motion'
 import { cx } from '../utils'
 import type { CSSVars } from '../utils'
-import { CloseGlyph, StatusGlyph } from './glyphs'
+import { Defaults } from '../constants'
+import { CheckMark, CloseGlyph, CrossMark, SpinnerGlyph, StatusGlyph } from './glyphs'
 import { CloseLabelContext, SlotContext, useToast } from './context'
+import { Flowed } from './flow'
+import { useGlyphSwap, useHoverMotion, useIconMotion, useWidthMotion } from './play-motion'
 import type {
     ActionColor,
+    ActionLabels,
+    ActionState,
     ActionVariant,
     AvatarBadge,
     AvatarShape,
@@ -21,7 +27,7 @@ function useSlot(slot: ToastSlot, className?: string): string | undefined {
 }
 
 function defaultShape(status: ToastStatus | undefined): IconShape {
-    return status === undefined ? 'box' : 'circle'
+    return status === undefined ? 'box' : 'bare'
 }
 
 type IconProps = {
@@ -33,17 +39,35 @@ type IconProps = {
 }
 
 export function Icon({ shape, status, node, children, className }: IconProps) {
+    const ref = useRef<HTMLSpanElement>(null)
     const resolvedShape = shape ?? defaultShape(status)
-    const glyph =
-        node ?? children ?? (status ? <StatusGlyph status={status} shape={resolvedShape} /> : null)
+    const custom = node ?? children
+    const builtIn = custom == null
+    const glyph = builtIn && status ? <StatusGlyph status={status} shape={resolvedShape} /> : custom
+    const glyphKey = builtIn ? (status ?? 'none') : 'custom'
+    useIconMotion(ref, { shape: resolvedShape, status, builtIn })
+    useGlyphSwap(ref, glyphKey)
     return (
         <span
+            ref={ref}
             className={useSlot('icon', className)}
             data-shape={resolvedShape}
             data-status={status}
+            data-ntf-part='frame'
             aria-hidden='true'
         >
-            {glyph}
+            {resolvedShape === 'ring' && (
+                <>
+                    <span className='ntf-ring' data-ring='outer' data-ntf-part='ringOuter' />
+                    <span className='ntf-ring' data-ring='inner' data-ntf-part='ringInner' />
+                </>
+            )}
+            {(resolvedShape === 'circle' || resolvedShape === 'ring') && (
+                <span className='ntf-halo' data-ntf-part='halo' />
+            )}
+            <span key={glyphKey} className='ntf-glyph'>
+                {glyph}
+            </span>
         </span>
     )
 }
@@ -97,11 +121,15 @@ export function Title({ children, meta, className }: TitleProps) {
     const metaClass = useSlot('meta')
     return (
         <div className='ntf-title-row'>
-            <span className={useSlot('title', className)}>{children}</span>
+            <span className={useSlot('title', className)}>
+                <Flowed>{children}</Flowed>
+            </span>
             {meta != null && (
                 <>
                     <span className='ntf-divider' aria-hidden='true' />
-                    <span className={metaClass}>{meta}</span>
+                    <span className={metaClass}>
+                        <Flowed>{meta}</Flowed>
+                    </span>
                 </>
             )}
         </div>
@@ -114,7 +142,11 @@ type DescriptionProps = {
 }
 
 export function Description({ children, className }: DescriptionProps) {
-    return <div className={useSlot('description', className)}>{children}</div>
+    return (
+        <div className={useSlot('description', className)}>
+            <Flowed>{children}</Flowed>
+        </div>
+    )
 }
 
 type ProgressProps = {
@@ -157,7 +189,11 @@ export function Progress({ value, label, className }: ProgressProps) {
             >
                 <div className='ntf-fill' style={fillStyle} />
             </div>
-            {text != null && <div className={labelClass}>{text}</div>}
+            {text != null && (
+                <div className={labelClass}>
+                    <Flowed>{text}</Flowed>
+                </div>
+            )}
         </div>
     )
 }
@@ -173,70 +209,172 @@ export function Actions({ children, aside, className }: ActionsProps) {
     return (
         <div className={useSlot('actions', className)}>
             <div className='ntf-actions-list'>{children}</div>
-            {aside != null && <div className={asideClass}>{aside}</div>}
+            {aside != null && (
+                <div className={asideClass}>
+                    <Flowed>{aside}</Flowed>
+                </div>
+            )}
         </div>
     )
 }
 
 type ActionProps = {
     children: ReactNode
-    onClick?: (toast: ToastHandle) => void
+    onClick?: (toast: ToastHandle) => void | Promise<unknown>
+    labels?: ActionLabels
     variant?: ActionVariant
     color?: ActionColor
     dismiss?: boolean
     href?: string
     disabled?: boolean
+    pending?: boolean
     className?: string
+}
+
+const SettleMs: Record<Exclude<ActionState, 'idle' | 'loading'>, number> = {
+    success: Defaults.ACTION_SUCCESS_MS,
+    error: Defaults.ACTION_ERROR_MS
+}
+
+function isThenable(value: unknown): value is PromiseLike<unknown> {
+    return typeof value === 'object' && value !== null && 'then' in value
+}
+
+function stateGlyph(state: ActionState): ReactNode {
+    if (state === 'loading') return <SpinnerGlyph />
+    if (state === 'success') return <CheckMark />
+    if (state === 'error') return <CrossMark />
+    return null
+}
+
+/**
+ * @name useActionState
+ * @description Tracks an action whose press returns a promise. The action is
+ * `loading` while it runs, then `success` or `error` for a short hold, after
+ * which `onSettled` runs for a success and the state returns to idle. A
+ * controlled `pending` keeps it `loading`.
+ *
+ * @example
+ * const { state, run } = useActionState(false, () => toast.dismiss('action'))
+ * run(() => save())
+ */
+export function useActionState(pending: boolean, onSettled: () => void) {
+    const [own, setOwn] = useState<ActionState>('idle')
+    const mounted = useRef(true)
+    const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
+    const settled = useRef(onSettled)
+
+    useEffect(() => {
+        settled.current = onSettled
+    })
+
+    useEffect(() => {
+        mounted.current = true
+        return () => {
+            mounted.current = false
+            clearTimeout(timer.current)
+        }
+    }, [])
+
+    function settle(next: Exclude<ActionState, 'idle' | 'loading'>) {
+        if (!mounted.current) return
+        setOwn(next)
+        timer.current = setTimeout(() => {
+            if (!mounted.current) return
+            if (next === 'success') settled.current()
+            setOwn('idle')
+        }, SettleMs[next])
+    }
+
+    function run(work: () => void | Promise<unknown>): boolean {
+        const result = work()
+        if (!isThenable(result)) return false
+        setOwn('loading')
+        Promise.resolve(result).then(
+            () => settle('success'),
+            () => settle('error')
+        )
+        return true
+    }
+
+    return { state: pending ? 'loading' : own, run }
 }
 
 export function Action({
     children,
     onClick,
+    labels,
     variant = 'text',
     color = 'default',
     dismiss = true,
     href,
     disabled,
+    pending = false,
     className
 }: ActionProps) {
     const toast = useToast()
+    const ref = useRef<HTMLButtonElement & HTMLAnchorElement>(null)
     const classes = useSlot('action', className)
+    const { state, run } = useActionState(pending, () => {
+        if (dismiss) toast.dismiss('action')
+    })
+    const busy = state === 'loading'
+    const label = (state !== 'idle' && labels?.[state]) || children
+    useGlyphSwap(ref, state, ':scope > .ntf-action-glyph > *')
+    useGlyphSwap(ref, state, ':scope > .ntf-action-label > *')
+    useWidthMotion(ref, state)
+    const content = (
+        <>
+            <span className='ntf-action-glyph' aria-hidden='true'>
+                {state !== 'idle' && <span key={state}>{stateGlyph(state)}</span>}
+            </span>
+            <span className='ntf-action-label'>
+                <span key={state}>{label}</span>
+            </span>
+        </>
+    )
 
     function handleClick(event: MouseEvent<HTMLElement>) {
-        if (disabled) {
+        if (disabled || state !== 'idle') {
             event.preventDefault()
             return
         }
-        onClick?.(toast)
-        if (dismiss) toast.dismiss('action')
+        const async = run(() => onClick?.(toast))
+        if (!async && dismiss) toast.dismiss('action')
     }
 
     if (href) {
         return (
             <a
+                ref={ref}
                 className={classes}
                 data-variant={variant}
                 data-color={color}
+                data-state={state}
                 href={disabled ? undefined : href}
                 role={disabled ? 'link' : undefined}
                 aria-disabled={disabled || undefined}
+                aria-busy={busy || undefined}
                 onClick={handleClick}
             >
-                {children}
+                {content}
             </a>
         )
     }
 
     return (
         <button
+            ref={ref}
             type='button'
             className={classes}
             data-variant={variant}
             data-color={color}
+            data-state={state}
             disabled={disabled}
+            aria-busy={busy || undefined}
             onClick={handleClick}
         >
-            {children}
+            {content}
         </button>
     )
 }
@@ -249,8 +387,11 @@ type CloseProps = {
 export function Close({ label, className }: CloseProps) {
     const toast = useToast()
     const fallback = useContext(CloseLabelContext)
+    const ref = useRef<HTMLButtonElement>(null)
+    useHoverMotion(ref, glyphMotions.close)
     return (
         <button
+            ref={ref}
             type='button'
             className={useSlot('close', className)}
             aria-label={label ?? fallback}

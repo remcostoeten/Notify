@@ -79,6 +79,12 @@ import { Notifier } from "@remcostoeten/notifier";
       description: "The aria-label of each region and of every close button.",
       default: '{ region: "Notifications", close: "Close" }',
     },
+    animateNumbers: {
+      type: "boolean",
+      description:
+        "Rolls the digits of numbers in the title, meta, description, progress label and actions aside when an update changes them. See Number animation.",
+      default: "false",
+    },
     layer: {
       type: "boolean | string",
       description:

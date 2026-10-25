@@ -45,10 +45,10 @@ export const toneTokens: Record<ToastTone, ToneTokens> = {
         controlForeground: '#2b2b2e',
         controlShadow: '0 1px 2px rgba(10,13,18,.05), inset 0 -2px 0 rgba(10,13,18,.05)',
         controlHover: '#f6f6f7',
-        success: '#15803d',
-        error: '#d92d20',
-        warning: '#dc6803',
-        info: '#1570ef'
+        success: '#1a9e5c',
+        error: '#e2504a',
+        warning: '#d98a0c',
+        info: '#2f7fe0'
     },
     dark: {
         background: '#161618',
@@ -69,9 +69,9 @@ export const toneTokens: Record<ToastTone, ToneTokens> = {
         controlForeground: '#ffffff',
         controlShadow: 'none',
         controlHover: '#323134',
-        success: '#82c88c',
-        error: '#f0827a',
-        warning: '#f5b342',
-        info: '#7fa8f5'
+        success: '#3ecf8e',
+        error: '#f0636a',
+        warning: '#f5b324',
+        info: '#5aa9f5'
     }
 }

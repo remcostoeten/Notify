@@ -1,0 +1,71 @@
+---
+title: Number animation
+description: Roll the digits of a number when an update changes it.
+icon: Rocket
+---
+
+Turn on `animateNumbers` and every number in a toast rolls digit by digit when `notify.update` changes it. Digits roll up when the number grows and down when it shrinks. A digit added on the left, as in 99 to 100, slides in. It needs no extra package. The effect is plain DOM and the Web Animations API, and it is off by default.
+
+<ToastPreview example="sync" label="Plays a simulated sync" />
+
+```tsx
+<Notifier animateNumbers />;
+
+const id = notify({
+  status: "loading",
+  title: "Syncing 0 of 120 files",
+  description: "0 MB of 480 MB",
+  progress: 0,
+});
+
+notify.update(id, {
+  title: "Syncing 45 of 120 files",
+  description: "180 MB of 480 MB",
+  progress: 37,
+});
+```
+
+## What rolls
+
+Numbers in the `title`, `meta`, `description`, the progress label and the `aside` of `Toast.Actions` roll. Each number is found in the text, so `Uploaded ${done} of ${total}` rolls both counts and leaves the words alone. A number child rolls too:
+
+```tsx
+notify({ title: "Unread", description: unread });
+```
+
+Numbers inside a nested element do not roll. Wrap the text of that element in `Toast.Number` or move it into the slot.
+
+The text keeps its own formatting, so `1,200` and `3.5` roll as written. A number rolls only when its text changes. Nothing animates when a toast first opens, or when the visitor prefers reduced motion.
+
+## Per toast
+
+`Notifier` sets the default. A toast can turn it on or off for itself.
+
+```tsx
+<Notifier animateNumbers />;
+
+notify({ title: "Build 482 passed", animateNumbers: false });
+```
+
+```tsx
+<Notifier />;
+
+notify({ title: "Syncing 3 of 8 files", animateNumbers: true });
+```
+
+## One number in a custom layout
+
+`Toast.Number` rolls one number, whatever `animateNumbers` is. It takes `locales` and `format`, the same arguments as `Intl.NumberFormat`.
+
+```tsx
+<Toast.Title>
+  Balance{" "}
+  <Toast.Number value={balance} locales="en-US" format={{ style: "currency", currency: "USD" }} />
+</Toast.Title>
+```
+
+Pass `locales` when the page is rendered on a server, so the server and the browser format the number the same way.
+
+## Numbers keep their width
+
+Rolling numbers use tabular figures, so a digit is as wide as every other digit and the text beside it does not shift while they roll. When the number gains or loses a digit, its box grows or shrinks to the new width.

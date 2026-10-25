@@ -1,8 +1,9 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { cleanup, fireEvent, render } from '@testing-library/react'
+import { act, cleanup, fireEvent, render } from '@testing-library/react'
 import { Toast } from '../components/toast'
 import { CloseLabelContext, RuntimeContext } from '../components/context'
 import type { ToastRuntime } from '../types'
+import { noop } from '../utils'
 
 afterEach(() => {
     cleanup()
@@ -109,16 +110,16 @@ describe('Toast from content', () => {
 })
 
 describe('icons', () => {
-    it('derives a circle icon from the status', () => {
+    it('derives a bare icon from the status', () => {
         const { container } = render(<Toast status='success' title='a' />)
         const icon = container.querySelector('.ntf-icon')
-        expect(icon?.getAttribute('data-shape')).toBe('circle')
+        expect(icon?.getAttribute('data-shape')).toBe('bare')
         expect(icon?.getAttribute('data-status')).toBe('success')
         expect(icon?.querySelector('svg')).not.toBeNull()
     })
 
     it('draws a plain mark in a circle and the full glyph in a ring', () => {
-        const circle = render(<Toast status='success' title='a' />)
+        const circle = render(<Toast icon={{ shape: 'circle', status: 'success' }} title='a' />)
         expect(circle.container.querySelector('.ntf-icon svg circle')).toBeNull()
         cleanup()
         const ring = render(<Toast icon={{ shape: 'ring', status: 'success' }} title='a' />)
@@ -130,6 +131,38 @@ describe('icons', () => {
         const loading = container.querySelector('.ntf-icon')?.getAttribute('data-shape')
         rerender(<Toast status='success' title='a' />)
         expect(container.querySelector('.ntf-icon')?.getAttribute('data-shape')).toBe(loading)
+    })
+
+    it('keeps the old glyph as a fading ghost when the status changes', () => {
+        const { container, rerender } = render(<Toast status='loading' title='a' />)
+        const icon = container.querySelector<HTMLElement>('.ntf-icon')
+        if (!icon) throw new Error('no icon')
+        const animate = vi.fn(() => ({ finished: new Promise(() => {}) }))
+        Object.assign(Element.prototype, { animate })
+        try {
+            rerender(<Toast status='success' title='a' />)
+            expect(icon.querySelectorAll('.ntf-glyph').length).toBe(2)
+            expect(icon.querySelector('.ntf-glyph[data-ghost] .ntf-spin')).not.toBeNull()
+            const ghost = icon.querySelector('.ntf-glyph[data-ghost]')
+            const fresh = icon.querySelector('.ntf-glyph:not([data-ghost])')
+            const targets = animate.mock.contexts
+            expect(targets).toContain(ghost)
+            expect(targets).toContain(fresh)
+        } finally {
+            Reflect.deleteProperty(Element.prototype, 'animate')
+        }
+    })
+
+    it('marks a pending action busy and ignores its clicks', () => {
+        const onClick = vi.fn()
+        const { getByRole } = render(
+            <Toast title='a' actions={[{ label: 'Accept', pending: true, onClick }]} />
+        )
+        const button = getByRole('button', { name: 'Accept' })
+        expect(button.getAttribute('aria-busy')).toBe('true')
+        expect(button.querySelector('.ntf-spin')).not.toBeNull()
+        fireEvent.click(button)
+        expect(onClick).not.toHaveBeenCalled()
     })
 
     it('shows a spinner for loading', () => {
@@ -263,6 +296,89 @@ describe('actions', () => {
         fireEvent.click(container.querySelector('.ntf-action') as HTMLElement)
         expect(onClick).toHaveBeenCalledWith(toast)
         expect(toast.dismiss).toHaveBeenCalledWith('action')
+    })
+
+    it('runs an async action through loading and success, then dismisses', async () => {
+        vi.useFakeTimers()
+        try {
+            const toast = runtime()
+            let finish = noop
+            const onClick = vi.fn(() => new Promise<void>((resolve) => (finish = resolve)))
+            const { container } = render(
+                <RuntimeContext.Provider value={toast}>
+                    <Toast
+                        title='a'
+                        actions={[
+                            {
+                                label: 'Send',
+                                onClick,
+                                labels: { loading: 'Sending', success: 'Sent' }
+                            }
+                        ]}
+                    />
+                </RuntimeContext.Provider>
+            )
+            const button = container.querySelector('.ntf-action') as HTMLElement
+            fireEvent.click(button)
+            expect(button.getAttribute('aria-busy')).toBe('true')
+            expect(button.getAttribute('data-state')).toBe('loading')
+            expect(button.textContent).toBe('Sending')
+            expect(button.querySelector('.ntf-spin')).not.toBeNull()
+            fireEvent.click(button)
+            expect(onClick).toHaveBeenCalledTimes(1)
+            expect(toast.dismiss).not.toHaveBeenCalled()
+            await act(async () => {
+                finish()
+                await Promise.resolve()
+            })
+            expect(button.getAttribute('data-state')).toBe('success')
+            expect(button.textContent).toBe('Sent')
+            expect(button.getAttribute('aria-busy')).toBeNull()
+            act(() => {
+                vi.advanceTimersByTime(900)
+            })
+            expect(toast.dismiss).toHaveBeenCalledWith('action')
+            expect(button.getAttribute('data-state')).toBe('idle')
+        } finally {
+            vi.useRealTimers()
+        }
+    })
+
+    it('shows the error state for a rejected action and stays open', async () => {
+        vi.useFakeTimers()
+        try {
+            const toast = runtime()
+            const { container } = render(
+                <RuntimeContext.Provider value={toast}>
+                    <Toast
+                        title='a'
+                        actions={[
+                            {
+                                label: 'Send',
+                                onClick: () => Promise.reject(new Error('offline')),
+                                labels: { error: 'Failed' }
+                            }
+                        ]}
+                    />
+                </RuntimeContext.Provider>
+            )
+            const button = container.querySelector('.ntf-action') as HTMLElement
+            await act(async () => {
+                fireEvent.click(button)
+                await Promise.resolve()
+                await Promise.resolve()
+            })
+            expect(button.getAttribute('data-state')).toBe('error')
+            expect(button.textContent).toBe('Failed')
+            act(() => {
+                vi.advanceTimersByTime(1600)
+            })
+            expect(button.getAttribute('data-state')).toBe('idle')
+            expect(button.textContent).toBe('Send')
+            expect(toast.dismiss).not.toHaveBeenCalled()
+        } finally {
+            vi.useRealTimers()
+        }
     })
 
     it('keeps the toast open when dismiss is false', () => {

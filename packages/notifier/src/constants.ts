@@ -8,6 +8,8 @@ export const Defaults = {
     SWIPE_THRESHOLD: 100,
     HOTKEY: 'alt+t',
     EXIT_MS: 300,
+    ACTION_SUCCESS_MS: 900,
+    ACTION_ERROR_MS: 1600,
     REGION_LABEL: 'Notifications',
     CLOSE_LABEL: 'Close'
 } as const
@@ -32,19 +34,25 @@ export const AnimationConfig = {
     },
     STACK_REVEAL: {
         type: 'tween' as const,
-        duration: 0.22,
-        ease: [0.23, 1, 0.32, 1] as [number, number, number, number]
+        duration: 0.36,
+        ease: [0.32, 0.72, 0, 1] as [number, number, number, number]
     },
     STACK_SETTLE: {
         type: 'tween' as const,
-        duration: 0.18,
-        ease: [0.23, 1, 0.32, 1] as [number, number, number, number]
+        duration: 0.28,
+        ease: [0.22, 1, 0.36, 1] as [number, number, number, number]
     },
     STACK_EXIT: {
-        type: 'spring' as const,
-        stiffness: 1218.5,
-        damping: 69.8,
-        mass: 1
+        default: {
+            type: 'tween' as const,
+            duration: 0.28,
+            ease: [0.32, 0.72, 0, 1] as [number, number, number, number]
+        },
+        opacity: {
+            type: 'tween' as const,
+            duration: 0.22,
+            ease: [0.3, 0, 0.2, 1] as [number, number, number, number]
+        }
     }
 } as const
 
@@ -71,5 +79,7 @@ export const StackConfig = {
     ENTER_SCALE: 0.85,
     EXIT_TRAVEL: 24,
     EXIT_SCALE: 0.8,
-    COLLAPSE_DELAY_MS: 60
+    COLLAPSE_DELAY_MS: 60,
+    REVEAL_STAGGER: 0.024,
+    REVEAL_STAGGER_MAX: 4
 } as const

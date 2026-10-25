@@ -3,6 +3,7 @@
   "icon": "Compass",
   "pages": [
     "progress",
+    "number-animation",
     "promises",
     "state-swaps",
     "custom-toasts",

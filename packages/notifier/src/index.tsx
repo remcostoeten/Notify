@@ -6,6 +6,8 @@ export { useToast } from './components/context'
 export type {
     ActionColor,
     ActionConfig,
+    ActionLabels,
+    ActionState,
     ActionVariant,
     AvatarBadge,
     AvatarConfig,
