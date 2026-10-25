@@ -9,11 +9,23 @@ icon: Route
 
 <ToastPreview example="update" trigger={false} />
 
+## Usage
+
 ```tsx
 <Toast.Body>
   <Toast.Title meta="v4.2">A new update is available</Toast.Title>
   <Toast.Description>Includes the all new dashboard view.</Toast.Description>
 </Toast.Body>
+```
+
+From `notify`, set `title`, `meta` and `description`. The body is built for you:
+
+```tsx
+notify({
+  title: "A new update is available",
+  meta: "v4.2",
+  description: "Includes the all new dashboard view.",
+});
 ```
 
 ## Meta

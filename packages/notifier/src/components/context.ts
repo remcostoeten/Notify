@@ -16,6 +16,8 @@ export const SlotContext = createContext<ToastClassNames>({})
 
 export const SheetContext = createContext(false)
 
+export const NumbersContext = createContext(false)
+
 export const CloseLabelContext = createContext<string>(Defaults.CLOSE_LABEL)
 
 export function useToast(): ToastRuntime {

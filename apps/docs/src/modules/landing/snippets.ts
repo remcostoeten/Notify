@@ -95,15 +95,21 @@ notify.custom((toast) => (
 export const exampleSnippets = {
   profile: `import { notify } from '@remcostoeten/notifier'
 
-notify({
-  status: 'success',
-  icon: { shape: 'ring' },
-  title: '“Amélie Laurent” details updated',
-  description: 'Your changes have been saved and your profile is live. Your team can make edits.',
-  actions: [
-    { label: 'Dismiss', color: 'muted' },
-    { label: 'View profile', onClick: () => router.push('/profile') }
-  ]
+await notify.promise(saveProfile(form), {
+  loading: { title: 'Saving “Amélie Laurent”', description: 'Publishing your profile changes to the team.' },
+  success: {
+    title: '“Amélie Laurent” details updated',
+    description: 'Your changes have been saved and your profile is live. Your team can make edits.',
+    actions: [
+      { label: 'Dismiss', color: 'muted' },
+      {
+        label: 'View profile',
+        onClick: () => router.push('/profile'),
+        labels: { loading: 'Opening', success: 'Opened' }
+      }
+    ]
+  },
+  error: (error) => ({ title: 'Could not save', description: error.message })
 })`,
   upload: `import { notify } from '@remcostoeten/notifier'
 import { CloudUpload } from 'lucide-react'
@@ -114,12 +120,30 @@ const id = notify({
   description: 'Please wait while we upload your file.',
   progress: 0,
   actions: [
-    { label: 'Cancel', color: 'muted', onClick: () => upload.cancel() },
-    { label: 'Upload another', color: 'accent', onClick: () => pickFile() }
+    {
+      label: 'Cancel',
+      color: 'muted',
+      onClick: () => upload.cancel(),
+      labels: { loading: 'Cancelling', success: 'Cancelled' }
+    },
+    { label: 'Upload another', dismiss: false, onClick: () => pickFile() }
   ]
 })
 
-upload.on('progress', (percent) => notify.update(id, { progress: percent }))`,
+upload.on('progress', (percent) => notify.update(id, { progress: percent }))
+upload.on('done', (file) =>
+  notify.update(id, {
+    icon: { shape: 'box' },
+    status: 'success',
+    title: \`Uploaded ‘\${file.name}’\`,
+    description: 'Saved to Files. Your team can open it now.',
+    progress: 100,
+    actions: [
+      { label: 'Open file', color: 'muted', onClick: () => open(file), labels: { loading: 'Opening' } },
+      { label: 'Upload another', dismiss: false, onClick: () => pickFile() }
+    ]
+  })
+)`,
   message: `import { notify } from '@remcostoeten/notifier'
 import sienna from './sienna.jpg'
 
@@ -130,7 +154,12 @@ notify({
   description: 'I’ve finished adding my notes. Happy for us to review whenever you’re ready!',
   actions: [
     { label: 'Dismiss', variant: 'outline' },
-    { label: 'Reply', variant: 'filled', color: 'accent', onClick: () => reply() }
+    {
+      label: 'Reply',
+      variant: 'filled',
+      onClick: () => sendReply(thread),
+      labels: { loading: 'Sending', success: 'Sent', error: 'Not sent' }
+    }
   ]
 })`,
   update: `import { notify } from '@remcostoeten/notifier'
@@ -143,7 +172,27 @@ notify({
   description: 'Includes the all new dashboard view. Pages and exports will now load faster.',
   actions: [
     { label: 'Skip this update', variant: 'outline', color: 'muted' },
-    { label: 'Install now', variant: 'filled', onClick: () => installUpdate() }
+    {
+      label: 'Install now',
+      variant: 'filled',
+      onClick: () => installUpdate(),
+      labels: { loading: 'Installing', success: 'Installed' }
+    }
   ]
+})`,
+  sync: `import { notify } from '@remcostoeten/notifier'
+
+const id = notify({
+  status: 'loading',
+  title: 'Syncing 0 of 120 files',
+  description: '0 MB of 480 MB',
+  progress: 0,
+  animateNumbers: true
+})
+
+notify.update(id, {
+  title: 'Syncing 45 of 120 files',
+  description: '180 MB of 480 MB',
+  progress: 37
 })`,
 } satisfies Record<ExampleName, string>;

@@ -60,10 +60,10 @@ const mediaOptions: Option<Media>[] = [
 ];
 
 const shapeOptions: Option<IconShape>[] = [
+  { value: "bare", label: "bare" },
   { value: "ring", label: "ring" },
   { value: "box", label: "box" },
   { value: "circle", label: "circle" },
-  { value: "bare", label: "bare" },
 ];
 
 const progressOptions: Option<ProgressMode>[] = [
@@ -226,7 +226,7 @@ export function Playground() {
   const siteTone = useSiteTone();
   const [draft, setDraft] = useState<Draft>({
     media: "success",
-    shape: "circle",
+    shape: "bare",
     meta: false,
     description: true,
     progress: "none",

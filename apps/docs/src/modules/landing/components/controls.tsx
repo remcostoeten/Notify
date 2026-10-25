@@ -40,7 +40,7 @@ export function SelectField<Value extends string | number>({
           const next = options.find((option) => String(option.value) === event.target.value);
           if (next) onChange(next.value);
         }}
-        className="themed-select h-8 w-full border border-foreground/10 bg-background px-2 text-[13px] text-foreground transition-colors duration-150 ease-hover hover:border-foreground/20 focus-visible:border-foreground/40 focus-visible:bg-foreground/5 focus-visible:outline-none open:border-foreground/20"
+        className="themed-select h-8 w-full border border-foreground/10 bg-background px-2 text-[13px] text-foreground transition-colors duration-150 ease-hover hover:border-foreground/20 focus-visible:bg-foreground/5 focus-visible:outline-none open:border-foreground/20"
       >
         {options.map((option) => (
           <option key={option.value} value={String(option.value)}>

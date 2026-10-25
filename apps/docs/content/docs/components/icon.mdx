@@ -33,10 +33,14 @@ notify({ icon: <CloudUpload />, title: "Uploading" });
 
 | Shape    | Description                                                  | Default for   |
 | -------- | ------------------------------------------------------------ | ------------- |
+| `bare`   | The glyph alone, 20px, colored by the status.                | Status toasts |
 | `ring`   | Glyph with two concentric rings, 20px in the layout.         | Opt-in        |
-| `box`    | 40px square with a border and a fill.                        | Custom icons  |
-| `circle` | 40px circle tinted with the status color, plain mark inside. | Status toasts |
-| `bare`   | The glyph alone, 20px.                                       | Opt-in        |
+| `box`    | 36px square with a border and a fill.                        | Custom icons  |
+| `circle` | 28px circle tinted with the status color, plain mark inside. | Opt-in        |
+
+Every shape with every status:
+
+<IconGallery />
 
 ## Props
 
@@ -45,7 +49,7 @@ notify({ icon: <CloudUpload />, title: "Uploading" });
     shape: {
       type: '"ring" | "box" | "circle" | "bare"',
       description: "How the icon is drawn.",
-      default: '"circle" with a status, "box" without one',
+      default: '"bare" with a status, "box" without one',
     },
     status: {
       type: '"success" | "error" | "warning" | "info" | "loading"',

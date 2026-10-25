@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.1.0 (2026-10-25)
+
+### New
+
+- `animateNumbers` on `Notifier` or a single toast rolls the digits of a number when text changes, with no dependency. It is off by default and skipped under reduced motion. `Toast.Number` always rolls, and `formatNumber` formats a value through `Intl.NumberFormat`.
+- An action whose `onClick` returns a promise runs through `loading`, `success` and `error` with a spinner, check or cross. `labels` sets the text of each state, and `ActionLabels` and `ActionState` are exported.
+- Icons, glyphs and the close button play short hover and swap motions.
+
+### Design
+
+- Status colors are brighter in both tones, and the stack reveal, settle and exit use slower tween easings with a small stagger.
+
 ## 3.0.0 (2026-10-20)
 
 ### Breaking changes

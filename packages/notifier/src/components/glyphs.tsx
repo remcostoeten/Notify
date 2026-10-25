@@ -1,4 +1,4 @@
-import type { ReactElement, SVGProps } from 'react'
+import type { ReactElement, ReactNode, SVGProps } from 'react'
 import type { IconShape, ToastStatus } from '../types'
 
 function Svg(props: SVGProps<SVGSVGElement>) {
@@ -16,11 +16,24 @@ function Svg(props: SVGProps<SVGSVGElement>) {
     )
 }
 
+type PartProps = {
+    name: string
+    children: ReactNode
+}
+
+function Part({ name, children }: PartProps) {
+    return <g data-ntf-part={name}>{children}</g>
+}
+
 export function CheckCircleGlyph() {
     return (
         <Svg>
-            <circle cx='12' cy='12' r='10' />
-            <path d='m7.5 12 3 3 6-6' />
+            <Part name='circle'>
+                <circle cx='12' cy='12' r='10' />
+            </Part>
+            <Part name='tick'>
+                <path d='m7.5 12 3 3 6-6' />
+            </Part>
         </Svg>
     )
 }
@@ -28,9 +41,13 @@ export function CheckCircleGlyph() {
 export function XCircleGlyph() {
     return (
         <Svg>
-            <circle cx='12' cy='12' r='10' />
-            <path d='m15 9-6 6' />
-            <path d='m9 9 6 6' />
+            <Part name='circle'>
+                <circle cx='12' cy='12' r='10' />
+            </Part>
+            <Part name='cross'>
+                <path d='m15 9-6 6' />
+                <path d='m9 9 6 6' />
+            </Part>
         </Svg>
     )
 }
@@ -38,9 +55,17 @@ export function XCircleGlyph() {
 export function AlertGlyph() {
     return (
         <Svg>
-            <path d='m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3' />
-            <path d='M12 9v4' />
-            <path d='M12 17h.01' />
+            <Part name='sign'>
+                <path d='m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3' />
+                <Part name='bang'>
+                    <Part name='bar'>
+                        <path d='M12 9v4' />
+                    </Part>
+                    <Part name='point'>
+                        <path d='M12 17h.01' />
+                    </Part>
+                </Part>
+            </Part>
         </Svg>
     )
 }
@@ -48,9 +73,15 @@ export function AlertGlyph() {
 export function InfoGlyph() {
     return (
         <Svg>
-            <circle cx='12' cy='12' r='10' />
-            <path d='M12 16v-4' />
-            <path d='M12 8h.01' />
+            <Part name='circle'>
+                <circle cx='12' cy='12' r='10' />
+            </Part>
+            <Part name='stem'>
+                <path d='M12 16v-4' />
+            </Part>
+            <Part name='dot'>
+                <path d='M12 8h.01' />
+            </Part>
         </Svg>
     )
 }
@@ -58,7 +89,9 @@ export function InfoGlyph() {
 export function CheckMark() {
     return (
         <Svg>
-            <path d='m5.5 12.5 4.5 4.5 8.5-9' />
+            <Part name='tick'>
+                <path d='m5.5 12.5 4.5 4.5 8.5-9' />
+            </Part>
         </Svg>
     )
 }
@@ -66,7 +99,9 @@ export function CheckMark() {
 export function CrossMark() {
     return (
         <Svg>
-            <path d='M6.5 6.5l11 11M17.5 6.5l-11 11' />
+            <Part name='cross'>
+                <path d='M6.5 6.5l11 11M17.5 6.5l-11 11' />
+            </Part>
         </Svg>
     )
 }
@@ -74,8 +109,12 @@ export function CrossMark() {
 export function InfoMark() {
     return (
         <Svg>
-            <path d='M12 10.5v6.5' />
-            <path d='M12 7h.01' />
+            <Part name='stem'>
+                <path d='M12 10.5v6.5' />
+            </Part>
+            <Part name='dot'>
+                <path d='M12 7h.01' />
+            </Part>
         </Svg>
     )
 }
@@ -91,7 +130,9 @@ export function SpinnerGlyph() {
 export function CloseGlyph() {
     return (
         <Svg>
-            <path d='M18 6 6 18M6 6l12 12' />
+            <Part name='cross'>
+                <path d='M18 6 6 18M6 6l12 12' />
+            </Part>
         </Svg>
     )
 }

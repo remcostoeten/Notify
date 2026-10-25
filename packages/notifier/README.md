@@ -24,6 +24,7 @@ A toast is a surface with slots. Pass the slots as one object to `notify`, or co
 
 - **Slots**: icon or avatar, title with meta, description, progress and actions, in a light or dark tone.
 - **Updates in place**: `notify.update` and `notify.promise` change an open toast, so a progress toast stays one element.
+- **Number animation**: `animateNumbers` rolls the digits of numbers in a toast when an update changes them, with no extra package.
 - **Primitives**: `Toast` and its parts render any layout through `notify.custom`.
 - **Tokens**: colors, radius, width, spacing and font are CSS variables, set from the `theme` prop or your own stylesheet. The stylesheet can sit in a cascade layer so Tailwind v4 utilities override it.
 - **Behavior**: six positions, hover and focus pause, swipe to dismiss, an expanding stack and reduced motion.

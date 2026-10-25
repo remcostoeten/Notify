@@ -85,13 +85,57 @@ actions: [
 ];
 ```
 
-## Links and disabled
+## Links, disabled and pending
 
 An action with an `href` renders an anchor. `disabled` dims it and ignores presses, and a disabled link drops its `href`, so Enter does not follow it either.
 
 ```tsx
 actions: [{ label: "Open inbox", href: "/inbox" }];
 ```
+
+`pending` is for an action whose request is in flight. It shows a spinner before the label, sets `aria-busy` and ignores presses, without the dimmed look of `disabled`. Pair it with `dismiss: false` so the toast stays open while the request runs.
+
+```tsx
+notify.update(id, {
+  actions: [{ label: "Joining", variant: "filled", pending: true, dismiss: false }],
+});
+```
+
+## Async actions
+
+An `onClick` that returns a promise makes the action stateful on its own. The action turns `loading` with a spinner while the promise runs, then `success` with a check for 900ms before the toast dismisses, or `error` with a cross for 1.6s before it returns to idle and the toast stays open. `labels` gives each state its own text; a state without a label keeps the children. The label, the glyph and the width of the action crossfade between states, and a second press during a state is ignored.
+
+```tsx
+notify({
+  title: "Sienna Hewitt",
+  description: "Happy for us to review whenever you’re ready!",
+  actions: [
+    { label: "Dismiss", variant: "outline" },
+    {
+      label: "Reply",
+      variant: "filled",
+      onClick: () => sendReply(thread),
+      labels: { loading: "Sending", success: "Sent", error: "Not sent" },
+    },
+  ],
+});
+```
+
+<ToastPreview
+  title="Sienna Hewitt"
+  description="Happy for us to review whenever you’re ready!"
+  actions={[
+    { label: "Dismiss", variant: "outline" },
+    {
+      label: "Reply",
+      variant: "filled",
+      onClick: () => new Promise((resolve) => setTimeout(resolve, 1200)),
+      labels: { loading: "Sending", success: "Sent" },
+    },
+  ]}
+/>
+
+A sync `onClick` behaves as before: the toast dismisses right after it runs unless `dismiss` is false.
 
 ## Props
 
@@ -121,6 +165,14 @@ actions: [{ label: "Open inbox", href: "/inbox" }];
     },
     href: { type: "string", description: "Renders an anchor instead of a button." },
     disabled: { type: "boolean", description: "Dims the action and ignores presses." },
+    pending: {
+      type: "boolean",
+      description: "Keeps the action in the loading state, sets aria-busy and ignores presses.",
+    },
+    labels: {
+      type: "{ loading?: ReactNode; success?: ReactNode; error?: ReactNode }",
+      description: "Label per state of an async onClick. A missing state keeps the children.",
+    },
     className: { type: "string", description: "Added to the action." },
   }}
 />

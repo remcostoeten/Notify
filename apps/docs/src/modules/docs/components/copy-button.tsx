@@ -27,17 +27,28 @@ export function CopyButton({ className }: Props) {
   }
 
   return (
-    <button
-      type="button"
-      aria-label={copied ? "Copied" : "Copy code"}
-      data-copied={copied || undefined}
-      onClick={(event) => copy(event.currentTarget)}
-      className={cn(
-        "pressable inline-flex size-7 shrink-0 items-center justify-center rounded-md text-foreground/45 hover:bg-foreground/6 hover:text-foreground/80 focus-visible:bg-foreground/8 focus-visible:text-foreground data-copied:text-foreground",
-        className,
-      )}
-    >
-      {copied ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
-    </button>
+    <>
+      <button
+        type="button"
+        aria-label={copied ? "Copied" : "Copy code"}
+        data-copied={copied || undefined}
+        onClick={(event) => copy(event.currentTarget)}
+        className={cn(
+          "code-block-copy pressable relative inline-flex size-7 shrink-0 items-center justify-center rounded-md text-foreground/45 hover:bg-foreground/6 hover:text-foreground/80 focus-visible:bg-foreground/8 focus-visible:text-foreground data-copied:text-foreground",
+          className,
+        )}
+      >
+        <span className="copy-swap" data-visible={!copied || undefined}>
+          <CopyIcon className="size-3.5" />
+        </span>
+        <span className="copy-swap" data-visible={copied || undefined}>
+          <CheckIcon className="size-3.5" />
+        </span>
+        <span aria-hidden="true" className="copy-label" data-visible={copied || undefined}>
+          Copied
+        </span>
+      </button>
+      <output className="sr-only">{copied ? "Copied" : ""}</output>
+    </>
   );
 }

@@ -87,6 +87,40 @@ async function upload(fail: boolean) {
 
 The patch with `duration` restarts the timer, so the success toast closes four seconds after it appears.
 
+## Action to result
+
+A pressed action can hand the toast on to a result. Set `dismiss: false` so the press does not close the toast, return a promise from `onClick` so the button runs through `loading` and `success`, and patch the toast through the handle `onClick` receives.
+
+```tsx
+notify({
+  id: "reply",
+  avatar: { src: "/sienna.jpg", badge: "online" },
+  title: "Sienna Hewitt",
+  description: "Are you free for a quick call?",
+  duration: 0,
+  actions: [
+    {
+      label: "Reply",
+      dismiss: false,
+      labels: { loading: "Sending", success: "Sent" },
+      onClick: async (toast) => {
+        await sendReply();
+        setTimeout(() => {
+          toast.update({
+            title: "Reply sent",
+            description: "Just now",
+            actions: [],
+            duration: 3000,
+          });
+        }, 900);
+      },
+    },
+  ],
+});
+```
+
+The button shows **Sending**, then **Sent** with a check. Patching after 900ms, the length of the success hold, replaces the content once the check has been seen. A patch with `duration` restarts the timer, so the toast closes three seconds after the result appears. A chain of results is a chain of patches, each with its own `duration`. Give every step a `duration` so the toast cannot stay open if the chain is cut short.
+
 ## A fixed id
 
 Two calls with the same `id` are two states of one toast. Repeating either call never stacks a second toast.

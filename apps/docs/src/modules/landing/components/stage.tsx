@@ -20,7 +20,7 @@ export function Stage({ children, scene, className }: Props) {
           {scene}
         </div>
       ) : (
-        <div className="dot-grid absolute inset-0 right-6 bottom-6 rounded-br-[36px] border-r border-b border-foreground/10 bg-background md:right-11 md:bottom-11" />
+        <div className="absolute inset-0 right-6 bottom-6 rounded-br-[36px] border-r border-b border-foreground/10 bg-background md:right-11 md:bottom-11" />
       )}
       <div
         className={cn(

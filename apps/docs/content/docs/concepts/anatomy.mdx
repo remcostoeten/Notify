@@ -76,12 +76,14 @@ An icon has a **shape**:
 
 | Shape    | Looks like                                     | Slot size |
 | -------- | ---------------------------------------------- | --------- |
+| `bare`   | The glyph alone, colored by the status.        | 20px      |
 | `ring`   | The glyph with two concentric rings around it. | 20px      |
-| `box`    | A 40px bordered square.                        | 40px      |
-| `circle` | A 40px circle tinted with the status color.    | 40px      |
-| `bare`   | The glyph alone.                               | 20px      |
+| `box`    | A 36px bordered square.                        | 36px      |
+| `circle` | A 28px circle tinted with the status color.    | 28px      |
 
-A status toast uses `circle`, with a plain check, cross or mark inside the tinted disc, and so does a loading toast, so the text does not move when a loading toast becomes a success toast. A custom icon element uses `box`. `ring` and `bare` are opt-in. The rings of `ring` are drawn outside its 20px slot, so they do not push the text.
+A status toast uses `bare`: a 20px glyph on the title line whose stroke carries the status color, and so does a loading toast, so the text does not move when a loading toast becomes a success toast. A custom icon element uses `box`. `ring` and `circle` are opt-in. The rings of `ring` are drawn outside its 20px slot, so they do not push the text.
+
+When the status changes, the old glyph fades and shrinks out while the new one fades in, so a loading toast that settles reads as one mark becoming another.
 
 <ToastPreview
   icon={{ shape: "ring", status: "success" }}

@@ -76,14 +76,20 @@ export type ProgressConfig = {
     label?: boolean | ReactNode
 }
 
+export type ActionState = 'idle' | 'loading' | 'success' | 'error'
+
+export type ActionLabels = Partial<Record<Exclude<ActionState, 'idle'>, ReactNode>>
+
 export type ActionConfig = {
     label: ReactNode
-    onClick?: (toast: ToastHandle) => void
+    onClick?: (toast: ToastHandle) => void | Promise<unknown>
+    labels?: ActionLabels
     variant?: ActionVariant
     color?: ActionColor
     dismiss?: boolean
     href?: string
     disabled?: boolean
+    pending?: boolean
 }
 
 export type ToastContent = {
@@ -104,6 +110,7 @@ export type ToastSurface = {
     className?: string
     classNames?: ToastClassNames
     style?: CSSProperties
+    animateNumbers?: boolean
 }
 
 export type ToastBehavior = {
@@ -158,6 +165,7 @@ export type NotifierProps = {
     gap?: number
     theme?: ToastTheme
     labels?: NotifierLabels
+    animateNumbers?: boolean
     layer?: boolean | string
     nonce?: string
     className?: string

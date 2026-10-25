@@ -48,6 +48,11 @@ icon: Search
       default: "The tone of Notifier",
     },
     width: { type: "number | string", description: "Toast width.", default: "400" },
+    animateNumbers: {
+      type: "boolean",
+      description: "Rolls the digits of changing numbers in this toast. Overrides Notifier.",
+      default: "The setting of Notifier",
+    },
     className: { type: "string", description: "Added to the root element." },
     classNames: {
       type: "Partial<Record<ToastSlot, string>>",
@@ -144,8 +149,8 @@ icon: Search
   type={{
     label: { type: "ReactNode", description: "The label.", required: true },
     onClick: {
-      type: "(toast: ToastHandle) => void",
-      description: "Called before the toast is dismissed.",
+      type: "(toast: ToastHandle) => void | Promise<unknown>",
+      description: "Called on press. A returned promise makes the action stateful; see labels.",
     },
     variant: {
       type: '"text" | "outline" | "filled"',
@@ -162,6 +167,15 @@ icon: Search
     disabled: {
       type: "boolean",
       description: "Dims the action and ignores presses. A disabled link has no href.",
+    },
+    pending: {
+      type: "boolean",
+      description: "Keeps the action in the loading state, sets aria-busy and ignores presses.",
+    },
+    labels: {
+      type: "{ loading?: ReactNode; success?: ReactNode; error?: ReactNode }",
+      description:
+        "Label per state when onClick returns a promise: loading while it runs, success for 900ms before the toast dismisses, error for 1.6s before the action returns to idle.",
     },
   }}
 />

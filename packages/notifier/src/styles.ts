@@ -31,7 +31,12 @@ const rules = [
     '.ntf-meta{color:var(--ntf-meta);font-weight:400;letter-spacing:-.015em;white-space:nowrap}',
     '.ntf-description{max-width:min(100%,calc(var(--ntf-width,400px)*.71));margin:4px 0 0;color:var(--ntf-body);letter-spacing:-.023em;overflow-wrap:anywhere}',
 
-    '.ntf-icon{position:relative;display:flex;flex:none;align-items:center;justify-content:center;width:20px;height:20px;color:var(--ntf-foreground)}',
+    '.ntf-num{display:inline-flex;vertical-align:top;overflow:clip;font-variant-numeric:tabular-nums}',
+    '.ntf-digit{display:inline-grid;overflow:clip}',
+    '.ntf-digit-face{grid-area:1/1}',
+
+    '.ntf-icon{position:relative;display:grid;flex:none;place-items:center;width:20px;height:20px;color:var(--ntf-foreground)}',
+    '.ntf-glyph{display:flex;grid-area:1/1;align-items:center;justify-content:center;pointer-events:none}',
     '.ntf-icon svg{position:relative;flex:none;width:20px;height:20px}',
     '.ntf-icon[data-status]{color:var(--ntf-hue)}',
     '.ntf-icon[data-status=success]{--ntf-hue:var(--ntf-success)}',
@@ -39,12 +44,14 @@ const rules = [
     '.ntf-icon[data-status=warning]{--ntf-hue:var(--ntf-warning)}',
     '.ntf-icon[data-status=info]{--ntf-hue:var(--ntf-info)}',
     '.ntf-icon[data-status=loading]{--ntf-hue:var(--ntf-muted)}',
-    '.ntf-icon[data-shape=box]{width:40px;height:40px;border:1px solid var(--ntf-control-border);border-radius:8px;background:var(--ntf-control);box-shadow:0 1px 2px rgba(10,13,18,.05)}',
-    '.ntf-icon[data-shape=circle] svg{width:24px;height:24px}',
-    '.ntf-icon[data-shape=circle]{width:40px;height:40px;border-radius:50%;background:color-mix(in srgb,var(--ntf-hue,var(--ntf-foreground)) 12%,transparent)}',
-    '.ntf-icon[data-shape=ring]::before,.ntf-icon[data-shape=ring]::after{content:"";position:absolute;border-radius:50%;border-style:solid;border-color:color-mix(in srgb,var(--ntf-hue,var(--ntf-foreground)) 27%,transparent)}',
-    '.ntf-icon[data-shape=ring]::before{inset:-4px;border-width:2px}',
-    '.ntf-icon[data-shape=ring]::after{inset:-9px;border-width:2px;border-color:color-mix(in srgb,var(--ntf-hue,var(--ntf-foreground)) 12%,transparent);filter:blur(.6px)}',
+    '.ntf-icon[data-shape=box]{width:36px;height:36px;border:1px solid var(--ntf-control-border);border-radius:8px;background:var(--ntf-control);box-shadow:0 1px 2px rgba(10,13,18,.05)}',
+    '.ntf-icon[data-shape=box] svg{width:18px;height:18px}',
+    '.ntf-icon[data-shape=circle] svg{width:16px;height:16px}',
+    '.ntf-icon[data-shape=circle]{width:28px;height:28px;border-radius:50%;background:color-mix(in srgb,var(--ntf-hue,var(--ntf-foreground)) 12%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ntf-hue,var(--ntf-foreground)) 30%,transparent)}',
+    '.ntf-ring,.ntf-halo{position:absolute;border-radius:50%;border:2px solid color-mix(in srgb,var(--ntf-hue,var(--ntf-foreground)) 27%,transparent);pointer-events:none}',
+    '.ntf-ring[data-ring=inner]{inset:-4px}',
+    '.ntf-ring[data-ring=outer]{inset:-9px;border-color:color-mix(in srgb,var(--ntf-hue,var(--ntf-foreground)) 12%,transparent);filter:blur(.6px)}',
+    '.ntf-halo{inset:0;border-color:color-mix(in srgb,var(--ntf-hue,var(--ntf-foreground)) 50%,transparent);visibility:hidden}',
 
     '.ntf-avatar{position:relative;display:block;flex:none;width:40px;height:40px;border-radius:8px;background:var(--ntf-control)}',
     '.ntf-avatar[data-shape=circle]{border-radius:50%}',
@@ -62,11 +69,19 @@ const rules = [
     '.ntf-label{align-self:flex-end;margin-top:8px;color:var(--ntf-muted);font-variant-numeric:tabular-nums}',
     '.ntf-progress:has(.ntf-label)+.ntf-actions{margin-top:-8px}',
 
-    '.ntf-actions{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-top:11px}',
+    `.ntf-actions{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-top:11px;transition:opacity .2s ${TRANSITION},transform .2s ${TRANSITION}}`,
+    '@starting-style{.ntf-actions{opacity:0;transform:translateY(4px)}}',
+    '.ntf-action:not([data-state=idle]){pointer-events:none}',
+    '.ntf-action-glyph,.ntf-action-label{display:grid;align-items:center;justify-items:center}',
+    '.ntf-action-glyph>*,.ntf-action-label>*{grid-area:1/1;display:flex;align-items:center;white-space:nowrap}',
+    '.ntf-action-glyph{width:0}',
+    '.ntf-action:not([data-state=idle]) .ntf-action-glyph{width:14px;margin-right:6px}',
+    '.ntf-action-glyph svg{display:block;width:14px;height:14px}',
+    '.ntf-action[data-state=error]{--ntf-action-color:var(--ntf-error)}',
     '.ntf-actions-list{display:flex;flex-wrap:wrap;align-items:center;gap:12px}',
     '.ntf-actions-list:has(.ntf-action[data-variant=text]){gap:8px}',
     '.ntf-aside{flex:none;color:var(--ntf-muted);font-variant-numeric:tabular-nums}',
-    `.ntf-action{display:inline-flex;align-items:center;justify-content:center;height:20px;margin:0;padding:0;border:0;border-radius:8px;background:none;color:var(--ntf-action-color,var(--ntf-foreground));font:inherit;font-weight:600;letter-spacing:-.015em;text-decoration:none;white-space:nowrap;cursor:pointer;transition:color .15s,background-color .15s,border-color .15s,opacity .15s,transform .1s ${TRANSITION};-webkit-tap-highlight-color:transparent}`,
+    `.ntf-action{display:inline-flex;align-items:center;justify-content:center;overflow:hidden;height:20px;margin:0;padding:0;border:0;border-radius:8px;background:none;color:var(--ntf-action-color,var(--ntf-foreground));font:inherit;font-weight:600;letter-spacing:-.015em;text-decoration:none;white-space:nowrap;cursor:pointer;transition:color .15s,background-color .15s,border-color .15s,opacity .15s,transform .1s ${TRANSITION};-webkit-tap-highlight-color:transparent}`,
     '.ntf-action[data-color=muted]{--ntf-action-color:var(--ntf-muted)}',
     '.ntf-action[data-color=accent]{--ntf-action-color:var(--ntf-accent-text)}',
     '.ntf-action[data-variant=text]:hover{opacity:.75}',
@@ -94,7 +109,7 @@ const rules = [
     '.ntf-spin{animation:ntf-spin .8s linear infinite}',
     '@keyframes ntf-spin{to{transform:rotate(360deg)}}',
     '@keyframes ntf-slide{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}',
-    '@media (prefers-reduced-motion:reduce){.ntf-spin{animation-duration:2s}.ntf-fill{transition:none}.ntf-track[data-indeterminate] .ntf-fill{animation:none;width:100%;opacity:.5}.ntf-action,.ntf-close{transition:none}}'
+    '@media (prefers-reduced-motion:reduce){.ntf-spin{animation-duration:2s}.ntf-fill{transition:none}.ntf-actions{transition:opacity .2s}@starting-style{.ntf-actions{transform:none}}.ntf-track[data-indeterminate] .ntf-fill{animation:none;width:100%;opacity:.5}.ntf-action,.ntf-close{transition:none}}'
 ]
 
 export const toastStyles = rules.join('')

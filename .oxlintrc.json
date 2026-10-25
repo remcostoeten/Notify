@@ -25,12 +25,6 @@
         "react/exhaustive-deps": "warn",
         "react/react-in-jsx-scope": "off"
     },
-    "overrides": [
-        {
-            "files": ["apps/demo/**"],
-            "plugins": ["nextjs"]
-        }
-    ],
     "ignorePatterns": [
         "**/node_modules/**",
         "**/.next/**",

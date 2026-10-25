@@ -4,7 +4,7 @@ import { notify } from "@remcostoeten/notifier";
 import type { ReactNode } from "react";
 import { cn } from "@/shared/helpers/cn";
 import type { ExampleName } from "@/modules/notifier/examples";
-import { examples } from "@/modules/notifier/examples";
+import { examples, timelines } from "@/modules/notifier/examples";
 import { useShowToast } from "@/modules/notifier/components/toast-preview";
 
 type Props = {
@@ -21,7 +21,7 @@ export function ShowToastButton({ example, message, size = "md", children }: Pro
     <button
       type="button"
       onClick={() => {
-        if (example) show(examples[example]);
+        if (example) show(examples[example], timelines[example]);
         else if (message) notify.success(message);
       }}
       className={cn(
